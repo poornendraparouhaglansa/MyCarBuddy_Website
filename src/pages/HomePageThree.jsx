@@ -15,6 +15,8 @@ import BlogAreaThree from "../components/BlogAreaThree";
 import FooterAreaOne from "../components/FooterAreaOne";
 import SubscribeOne from "../components/SubscribeOne";
 import Preloader from "../helper/Preloader";
+import AboutFour from "../components/AboutFour";
+
 
 const HomePageThree = () => {
   let [active, setActive] = useState(true);
@@ -35,10 +37,10 @@ const HomePageThree = () => {
       <HeroThree />
 
       {/* Feature Area One */}
-      <FeatureAreaOne />
+       <AboutFour />
 
       {/* About Three */}
-      <AboutThree />
+      {/* <AboutThree /> */}
 
       {/* Intro Area One */}
       <IntroAreaOne />
@@ -66,7 +68,7 @@ const HomePageThree = () => {
       <TestimonialOne />
 
       {/* Blog Area Three */}
-      <BlogAreaThree />
+      {/* <BlogAreaThree /> */}
 
       {/* Subscribe One */}
       <SubscribeOne />

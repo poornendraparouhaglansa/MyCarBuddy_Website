@@ -29,7 +29,7 @@ function App() {
       <RouteScrollToTop />
       <ScrollToTop smooth color="#E8092E" />
       <Routes>
-        <Route exact path="/" element={<HomePageOne />} />
+        <Route exact path="/" element={<HomePageThree />} />
         <Route exact path="/home-2" element={<HomePageTwo />} />
         <Route exact path="/home-3" element={<HomePageThree />} />
         <Route exact path="/home-4" element={<HomePageFour />} />

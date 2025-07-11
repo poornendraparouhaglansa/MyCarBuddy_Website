@@ -1,6 +1,8 @@
 import React from "react";
 import TrackVisibility from "react-on-screen";
 import CountUp from "react-countup";
+import { Link } from "react-router-dom";
+
 const AboutFour = () => {
   return (
     <div className="about-area-2 bg-smoke space-top">
@@ -69,32 +71,33 @@ const AboutFour = () => {
                   ensuring that the car
                 </p>
               </div>
-              <div className="about-feature-wrap">
-                <div className="icon">
-                  <img src="assets/img/icon/about_icon2-3.svg" alt="Fixturbo" />
+             <div className="col-xl-auto col-lg-6">
+                  <div className="checklist">
+                    <ul>
+                      <li>
+                        <i className="fas fa-check-circle" />
+                        Professional Car Repair Services
+                      </li>
+                      <li>
+                        <i className="fas fa-check-circle" />A car repair is a
+                        service provided to fix
+                      </li>
+                      <li>
+                        <i className="fas fa-check-circle" />
+                        Get Your Car Fixed Right Away Car Repair{" "}
+                      </li>
+                      <li>
+                        <i className="fas fa-check-circle" />
+                        Quick and Efficient Car Repairs
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-                <div className="about-feature-wrap-details">
-                  <h5 className="about-feature-title">
-                    Elite Automotive Service
-                  </h5>
-                  <p className="about-feature-text">
-                    Et purus duis sollicitudin dignissim habitant. Egestas nulla
-                    quis venenatis cras sed{" "}
-                  </p>
+                 <div className="btn-wrap mt-20">
+                    <Link to="/about" className="btn style2 mt-xl-0 mt-20">
+                      Read More <i className="fas fa-arrow-right ms-2" />
+                    </Link>
                 </div>
-              </div>
-              <div className="about-feature-wrap">
-                <div className="icon">
-                  <img src="assets/img/icon/about_icon2-4.svg" alt="Fixturbo" />
-                </div>
-                <div className="about-feature-wrap-details">
-                  <h5 className="about-feature-title">Pro Drive Garage</h5>
-                  <p className="about-feature-text">
-                    Et purus duis sollicitudin dignissim habitant. Egestas nulla
-                    quis venenatis cras sed{" "}
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
