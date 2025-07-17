@@ -1,21 +1,28 @@
 import React, { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import SignIn from "./SignIn";
+import RegisterModal from "./RegisterModal";
+import { FaCarSide } from "react-icons/fa";
+import ChooseCarModal from "./ChooseCarModal";
 
 const HeaderOne = () => {
   const [active, setActive] = useState(false);
   const [scroll, setScroll] = useState(false);
+  const [signInVisible, setSignInVisible] = useState(false);
+  const [registerVisible, setRegisterVisible] = useState(false);
+  const [carModalVisible, setCarModalVisible] = useState(false);
 
   const [showLocationModal, setShowLocationModal] = useState(false);
-    const [location, setLocation] = useState(null);
+  const [location, setLocation] = useState(null);
 
-    useEffect(() => {
-      const alreadyShown = localStorage.getItem("locationModalShown");
-      if (!alreadyShown) {
-        setShowLocationModal(true); // show only first time
-      }
+  useEffect(() => {
+    const alreadyShown = localStorage.getItem("locationModalShown");
+    if (!alreadyShown) {
+      setShowLocationModal(true); // show only first time
+    }
 
-      // your scroll and menu logic remains unchanged...
-    }, []);
+    // your scroll and menu logic remains unchanged...
+  }, []);
 
   useEffect(() => {
     var offCanvasNav = document.getElementById("offcanvas-navigation");
@@ -59,31 +66,31 @@ const HeaderOne = () => {
     setActive(!active);
   };
 
-   const handleGetLocation = () => {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation(position.coords);
-        localStorage.setItem("locationModalShown", "true");
-        setShowLocationModal(false);
-      },
-      (error) => {
-        console.error("Location error:", error.message);
-        localStorage.setItem("locationModalShown", "true");
-        setShowLocationModal(false);
-      }
-    );
-  } else {
-    alert("Geolocation is not supported by this browser.");
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation(position.coords);
+          localStorage.setItem("locationModalShown", "true");
+          setShowLocationModal(false);
+        },
+        (error) => {
+          console.error("Location error:", error.message);
+          localStorage.setItem("locationModalShown", "true");
+          setShowLocationModal(false);
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by this browser.");
+      localStorage.setItem("locationModalShown", "true");
+      setShowLocationModal(false);
+    }
+  };
+
+  const handleCloseModal = () => {
     localStorage.setItem("locationModalShown", "true");
     setShowLocationModal(false);
-  }
-};
-
-const handleCloseModal = () => {
-  localStorage.setItem("locationModalShown", "true");
-  setShowLocationModal(false);
-};
+  };
 
   return (
     <>
@@ -147,7 +154,7 @@ const handleCloseModal = () => {
                 <div className="col-auto d-xl-none d-block">
                   <div className="header-logo mt-0">
                     <Link to="/">
-                      <img src="assets/img/logo-yellow-01.svg" alt="MyCarBuddy"  />
+                      <img src="assets/img/logo-yellow-01.svg" alt="MyCarBuddy" />
                     </Link>
                   </div>
                 </div>
@@ -169,9 +176,9 @@ const handleCloseModal = () => {
                       </li>
                       <li>
                         <Link to="/services">Services</Link>
-                       
+
                       </li>
-    
+
                       <li>
                         <NavLink
                           to="/contact"
@@ -211,18 +218,60 @@ const handleCloseModal = () => {
                           />
                         </svg>
                       </div>
-                    {/* <img src="assets/img/icon/chat.svg" alt="MyCarBuddy" /> */}
-                    <div className="navbar-right-desc-details">
-                      <span className="header-grid-text">Sign In</span>
-                          <h6 className="header-grid-title">
-                            <Link to="#">Account</Link>
-                                        </h6>
-                    </div>
+                      {/* <img src="assets/img/icon/chat.svg" alt="MyCarBuddy" /> */}
+                      <div className="navbar-right-desc-details">
+                        <span className="header-grid-text">Sign In</span>
+                        <h6 className="header-grid-title">
+                          <span
+                            className="account-link"
+                            onClick={() => setSignInVisible(true)}
+                            style={{ cursor: "pointer", color: "#116d6e", textDecoration: "underline" }}
+                          >
+                            Account
+                          </span>
+                        </h6>
+
+                      </div>
+                      <div className="navbar-right-desc-details" style={{marginLeft:"6px"}}>
+                        <span className="header-grid-text">Vehicle</span>
+                        <h6 className="header-grid-title">
+                          <span
+                            className="account-link"
+                            onClick={() => setCarModalVisible(true)}
+                            style={{ cursor: "pointer", color: "#116d6e", display: "flex", alignItems: "center", gap: "10px" }}
+                          >
+                          Choose Your Car
+                          </span>
+                        </h6>
+                      </div>
+                      <SignIn
+                        isVisible={signInVisible}
+                        onClose={() => setSignInVisible(false)}
+                        onRegister={() => {
+                          setSignInVisible(false);
+                          setRegisterVisible(true);
+                        }}
+                        onForgotPassword={() => {
+                          setSignInVisible(false);
+                        }}
+                      />
+                      <RegisterModal
+                        isVisible={registerVisible}
+                        onClose={() => setRegisterVisible(false)}
+                        onBackToSignIn={() => {
+                          setRegisterVisible(false);
+                          setSignInVisible(true);
+                        }}
+                      />
+                      <ChooseCarModal
+                        isVisible={carModalVisible}
+                        onClose={() => setCarModalVisible(false)}
+                      />
                     </div>
                   </div>
                 </div>
 
-                
+
               </div>
             </div>
             <div className="logo-bg" />
@@ -534,70 +583,70 @@ const handleCloseModal = () => {
         </div>
       </header>
 
-        {showLocationModal && (
+      {showLocationModal && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0,0,0,0.6)",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}>
           <div style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.6)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
+            position: "relative",
+            backgroundColor: "#fff",
+            borderRadius: "12px",
+            padding: "10px",
+            width: "90%",
+            maxWidth: "350px",
+            textAlign: "center",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.25)"
           }}>
-            <div style={{
-              position: "relative",
-              backgroundColor: "#fff",
-              borderRadius: "12px",
-              padding: "10px",
-              width: "90%",
-              maxWidth: "350px",
-              textAlign: "center",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.25)"
-            }}>
-              {/* ✕ Close Icon */}
-              <button
-                onClick={handleCloseModal}
-                style={{
-                  position: "absolute",
-                  top: "10px",
-                  right: "15px",
-                  background: "none",
-                  border: "none",
-                  fontSize: "22px",
-                  color: "#888",
-                  cursor: "pointer"
-                }}
-                aria-label="Close"
-              >
-                &times;
-              </button>
+            {/* ✕ Close Icon */}
+            <button
+              onClick={handleCloseModal}
+              style={{
+                position: "absolute",
+                top: "10px",
+                right: "15px",
+                background: "none",
+                border: "none",
+                fontSize: "22px",
+                color: "#888",
+                cursor: "pointer"
+              }}
+              aria-label="Close"
+            >
+              &times;
+            </button>
 
-              <img
-                src="https://cdn-icons-png.flaticon.com/512/684/684908.png"
-                alt="Location Icon"
-                style={{ width: 40, height: 40, marginBottom: 20 , marginTop: 20}}
-              />
-              <h4 style={{ marginBottom: 10 }}>Allow Location Access</h4>
-              <p style={{ color: "#666", marginBottom: 25 }}>
-                We use your location to show services near you.
-              </p>
-              <button
-                onClick={handleGetLocation}
-                style={{
-                  backgroundColor: "#e60012",
-                  color: "#fff",
-                  padding: "5px 15px",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  cursor: "pointer"
-                }}
-              >
-                Get Location
-              </button>
-            </div>
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/684/684908.png"
+              alt="Location Icon"
+              style={{ width: 40, height: 40, marginBottom: 20, marginTop: 20 }}
+            />
+            <h4 style={{ marginBottom: 10 }}>Allow Location Access</h4>
+            <p style={{ color: "#666", marginBottom: 25 }}>
+              We use your location to show services near you.
+            </p>
+            <button
+              onClick={handleGetLocation}
+              style={{
+                backgroundColor: "#e60012",
+                color: "#fff",
+                padding: "5px 15px",
+                border: "none",
+                borderRadius: "6px",
+                fontSize: "12px",
+                cursor: "pointer"
+              }}
+            >
+              Get Location
+            </button>
           </div>
-        )}
+        </div>
+      )}
     </>
   );
 };

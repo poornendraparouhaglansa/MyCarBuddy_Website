@@ -1,4 +1,4 @@
-.choose-car-modal {
+.sign-in-modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -12,23 +12,24 @@
   z-index: 999;
 }
 
-.choose-car-modal.hidden {
-  transform: translateX(100%);
+.sign-in-modal.hidden {
+  transform: translateY(100%);
   opacity: 0;
   pointer-events: none;
 }
 
-.choose-car-modal.visible {
-  transform: translateX(0%);
+.sign-in-modal.visible {
+  transform: translateY(0%);
   opacity: 1;
 }
 
 .modal-content {
-  background: #fff;
+  background: #ffffff;
   padding: 30px;
   border-radius: 12px;
   width: 90%;
   max-width: 400px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   text-align: center;
 }
 .modal-close {

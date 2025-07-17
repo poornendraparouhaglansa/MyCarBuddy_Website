@@ -1,12 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode, Thumbs, EffectFade, Autoplay } from "swiper";
 import { Link } from "react-router-dom";
 
 const HeroThree = () => {
-
-
-  
   return (
     <div className="hero-wrapper hero-3" style={{ position: "relative" }}>
 

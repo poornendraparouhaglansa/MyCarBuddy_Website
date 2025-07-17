@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from "react";
 import HeaderOne from "./../components/HeaderOne";
-import HeroThree from "../components/HeroThree";
-import FeatureAreaOne from "../components/FeatureAreaOne";
-import AboutThree from "../components/AboutThree";
-import IntroAreaOne from "../components/IntroAreaOne";
-import ServiceAreaOne from "../components/ServiceAreaOne";
-import PortfolioTwo from "../components/PortfolioTwo";
+// import HeroThree from "../components/HeroThree";
+// import FeatureAreaOne from "../components/FeatureAreaOne";
+// import AboutThree from "../components/AboutThree";
+// import IntroAreaOne from "../components/IntroAreaOne";
+// import ServiceAreaOne from "../components/ServiceAreaOne";
+// import PortfolioTwo from "../components/PortfolioTwo";
 import FaqAreaTwo from "../components/FaqAreaTwo";
 import MarqueeOne from "../components/MarqueeOne";
-import TeamAreaThree from "../components/TeamAreaThree";
+// import TeamAreaThree from "../components/TeamAreaThree";
 import CTAAreaOne from "../components/CTAAreaOne";
 import TestimonialOne from "../components/TestimonialOne";
-import BlogAreaThree from "../components/BlogAreaThree";
+// import BlogAreaThree from "../components/BlogAreaThree";
 import FooterAreaOne from "../components/FooterAreaOne";
 import SubscribeOne from "../components/SubscribeOne";
 import Preloader from "../helper/Preloader";
 import AboutFour from "../components/AboutFour";
-import HeroFive from "../components/HeroFive";
+// import HeroFive from "../components/HeroFive";
 import HeroSection from "../components/HeroSection";
 import ChooseCarModal from "../components/ChooseCarModal";
 import ServiceAreaTwo from "../components/ServiceAreaTwo";
@@ -28,8 +28,8 @@ const HomePageThree = () => {
 useEffect(() => {
     setTimeout(() => setActive(false), 2000);
 
-    const selectedCar = localStorage.getItem("selectedCarType");
-    if (!selectedCar) setShowModal(true);
+    // const selectedCar = localStorage.getItem("selectedCarType");
+    // if (!selectedCar) setShowModal(true);
   }, []);
   return (
     <>
