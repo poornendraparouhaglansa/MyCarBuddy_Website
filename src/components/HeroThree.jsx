@@ -5,95 +5,12 @@ import { Link } from "react-router-dom";
 
 const HeroThree = () => {
 
-  const [showLocationModal, setShowLocationModal] = useState(true);
-  const [location, setLocation] = useState(null);
 
-  const handleGetLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation(position.coords);
-          console.log("Latitude:", position.coords.latitude);
-          console.log("Longitude:", position.coords.longitude);
-          setShowLocationModal(false);
-        },
-        (error) => {
-          console.error("Location error:", error.message);
-          setShowLocationModal(false);
-        }
-      );
-    } else {
-      alert("Geolocation is not supported by this browser.");
-      setShowLocationModal(false);
-    }
-  };
+  
   return (
     <div className="hero-wrapper hero-3" style={{ position: "relative" }}>
 
-        {showLocationModal && (
-          <div style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.6)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
-          }}>
-            <div style={{
-              position: "relative",
-              backgroundColor: "#fff",
-              borderRadius: "12px",
-              padding: "30px",
-              width: "90%",
-              maxWidth: "400px",
-              textAlign: "center",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.25)"
-            }}>
-              {/* ✕ Close Icon */}
-              <button
-                onClick={() => setShowLocationModal(false)}
-                style={{
-                  position: "absolute",
-                  top: "10px",
-                  right: "15px",
-                  background: "none",
-                  border: "none",
-                  fontSize: "22px",
-                  color: "#888",
-                  cursor: "pointer"
-                }}
-                aria-label="Close"
-              >
-                &times;
-              </button>
-
-              <img
-                src="https://cdn-icons-png.flaticon.com/512/684/684908.png"
-                alt="Location Icon"
-                style={{ width: 60, height: 60, marginBottom: 20 }}
-              />
-              <h2 style={{ marginBottom: 10 }}>Allow Location Access</h2>
-              <p style={{ color: "#666", marginBottom: 25 }}>
-                We use your location to show services near you.
-              </p>
-              <button
-                onClick={handleGetLocation}
-                style={{
-                  backgroundColor: "#e60012",
-                  color: "#fff",
-                  padding: "10px 25px",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "16px",
-                  cursor: "pointer"
-                }}
-              >
-                Get Location
-              </button>
-            </div>
-          </div>
-        )}
+        
 
       <div className="hero-3-slider global-carousel">
         <Swiper

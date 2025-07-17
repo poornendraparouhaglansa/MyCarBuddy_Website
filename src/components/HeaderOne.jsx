@@ -5,6 +5,18 @@ const HeaderOne = () => {
   const [active, setActive] = useState(false);
   const [scroll, setScroll] = useState(false);
 
+  const [showLocationModal, setShowLocationModal] = useState(false);
+    const [location, setLocation] = useState(null);
+
+    useEffect(() => {
+      const alreadyShown = localStorage.getItem("locationModalShown");
+      if (!alreadyShown) {
+        setShowLocationModal(true); // show only first time
+      }
+
+      // your scroll and menu logic remains unchanged...
+    }, []);
+
   useEffect(() => {
     var offCanvasNav = document.getElementById("offcanvas-navigation");
     var offCanvasNavSubMenu = offCanvasNav.querySelectorAll(".sub-menu");
@@ -46,6 +58,33 @@ const HeaderOne = () => {
   const mobileMenu = () => {
     setActive(!active);
   };
+
+   const handleGetLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation(position.coords);
+        localStorage.setItem("locationModalShown", "true");
+        setShowLocationModal(false);
+      },
+      (error) => {
+        console.error("Location error:", error.message);
+        localStorage.setItem("locationModalShown", "true");
+        setShowLocationModal(false);
+      }
+    );
+  } else {
+    alert("Geolocation is not supported by this browser.");
+    localStorage.setItem("locationModalShown", "true");
+    setShowLocationModal(false);
+  }
+};
+
+const handleCloseModal = () => {
+  localStorage.setItem("locationModalShown", "true");
+  setShowLocationModal(false);
+};
+
   return (
     <>
       <header className="nav-header header-layout1">
@@ -494,6 +533,71 @@ const HeaderOne = () => {
           </div>
         </div>
       </header>
+
+        {showLocationModal && (
+          <div style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}>
+            <div style={{
+              position: "relative",
+              backgroundColor: "#fff",
+              borderRadius: "12px",
+              padding: "10px",
+              width: "90%",
+              maxWidth: "350px",
+              textAlign: "center",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.25)"
+            }}>
+              {/* ✕ Close Icon */}
+              <button
+                onClick={handleCloseModal}
+                style={{
+                  position: "absolute",
+                  top: "10px",
+                  right: "15px",
+                  background: "none",
+                  border: "none",
+                  fontSize: "22px",
+                  color: "#888",
+                  cursor: "pointer"
+                }}
+                aria-label="Close"
+              >
+                &times;
+              </button>
+
+              <img
+                src="https://cdn-icons-png.flaticon.com/512/684/684908.png"
+                alt="Location Icon"
+                style={{ width: 40, height: 40, marginBottom: 20 , marginTop: 20}}
+              />
+              <h4 style={{ marginBottom: 10 }}>Allow Location Access</h4>
+              <p style={{ color: "#666", marginBottom: 25 }}>
+                We use your location to show services near you.
+              </p>
+              <button
+                onClick={handleGetLocation}
+                style={{
+                  backgroundColor: "#e60012",
+                  color: "#fff",
+                  padding: "5px 15px",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  cursor: "pointer"
+                }}
+              >
+                Get Location
+              </button>
+            </div>
+          </div>
+        )}
     </>
   );
 };
