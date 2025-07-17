@@ -137,17 +137,17 @@ const handleCloseModal = () => {
         <div className={`sticky-wrapper ${scroll && "sticky"}`}>
           {/* Main Menu Area */}
           <div className="menu-area">
-            <div className="header-navbar-logo">
+            <div className="header-navbar-logo mt-0">
               <Link to="/">
-                <img src="assets/img/logo-white.svg" alt="Fixturbo" />
+                <img src="assets/img/logo-yellow-01.svg" alt="MyCarBuddy" />
               </Link>
             </div>
             <div className="container">
               <div className="row align-items-center justify-content-lg-start justify-content-between">
                 <div className="col-auto d-xl-none d-block">
-                  <div className="header-logo">
+                  <div className="header-logo mt-0">
                     <Link to="/">
-                      <img src="assets/img/logo-white.svg" alt="Fixturbo" />
+                      <img src="assets/img/logo-yellow-01.svg" alt="MyCarBuddy"  />
                     </Link>
                   </div>
                 </div>
@@ -155,7 +155,7 @@ const handleCloseModal = () => {
                   <nav className="main-menu d-none d-lg-inline-block">
                     <ul>
                       <li>
-                        <Link to="#">Home</Link>
+                        <Link to="/">Home</Link>
                       </li>
                       <li>
                         <NavLink
@@ -168,7 +168,7 @@ const handleCloseModal = () => {
                         </NavLink>
                       </li>
                       <li>
-                        <Link to="#">Services</Link>
+                        <Link to="/services">Services</Link>
                        
                       </li>
     
@@ -211,7 +211,7 @@ const handleCloseModal = () => {
                           />
                         </svg>
                       </div>
-                    {/* <img src="assets/img/icon/chat.svg" alt="Fixturbo" /> */}
+                    {/* <img src="assets/img/icon/chat.svg" alt="MyCarBuddy" /> */}
                     <div className="navbar-right-desc-details">
                       <span className="header-grid-text">Sign In</span>
                           <h6 className="header-grid-title">
@@ -234,7 +234,7 @@ const handleCloseModal = () => {
           <div className="mobile-menu-area">
             <div className="mobile-logo">
               <Link to="/">
-                <img src="assets/img/logo.svg" alt="Fixturbo" />
+                <img src="assets/img/logo-yellow-01.svg" alt="MyCarBuddy" />
               </Link>
               <button className="menu-toggle" onClick={mobileMenu}>
                 <i className="fa fa-times" />

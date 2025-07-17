@@ -4,11 +4,14 @@
   "private": true,
   "dependencies": {
     "@ramonak/react-progress-bar": "^5.2.0",
+    "@react-three/drei": "^9.79.1",
+    "@react-three/fiber": "^8.12.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "animate.css": "^4.1.1",
     "bootstrap": "^5.3.3",
+    "framer-motion": "^12.23.3",
     "imagesloaded": "^5.0.0",
     "isotope-layout": "^3.0.6",
     "rc-slider": "^10.5.0",
@@ -23,6 +26,7 @@
     "react-scripts": "5.0.1",
     "react-scroll-to-top": "^3.0.0",
     "swiper": "^9.1.1",
+    "three": "^0.152.2",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

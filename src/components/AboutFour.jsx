@@ -62,13 +62,10 @@ const AboutFour = () => {
               <div className="title-area mb-30">
                 <span className="sub-title">Know About Us</span>
                 <h2 className="sec-title">
-                  Non Leo Libero Amet The Maecenas Gravida
+                 Professional Car Service You Can Trust
                 </h2>
                 <p className="sec-text">
-                  A car repair is a service provided to fix any issues or
-                  damages with a your vehicle. It involves diagnosing the
-                  problem, repairing or replacing the necessary parts, and
-                  ensuring that the car
+                  At MyCarBuddy, we specialize in providing reliable, professional, and convenient car care solutions right at your doorstep. Whether it's a quick interior clean or a complete service package, our skilled technicians are trained to handle every detail with precision and care.
                 </p>
               </div>
              <div className="col-xl-auto col-lg-6">
@@ -76,25 +73,25 @@ const AboutFour = () => {
                     <ul>
                       <li>
                         <i className="fas fa-check-circle" />
-                        Professional Car Repair Services
+                       Interior & Exterior Car Wash
                       </li>
                       <li>
                         <i className="fas fa-check-circle" />A car repair is a
-                        service provided to fix
+                        Waterless Eco-Friendly Wash
                       </li>
                       <li>
                         <i className="fas fa-check-circle" />
-                        Get Your Car Fixed Right Away Car Repair{" "}
+                        AC & Engine Deep Cleaning
                       </li>
                       <li>
                         <i className="fas fa-check-circle" />
-                        Quick and Efficient Car Repairs
+                        Quick and Efficient Car Service
                       </li>
                     </ul>
                   </div>
                 </div>
-                 <div className="btn-wrap mt-20">
-                    <Link to="/about" className="btn style2 mt-xl-0 mt-20">
+                 <div className="btn-wrap mt-20 font-bold">
+                    <Link to="/about" className="  mt-xl-0 mt-20 my-0 font-weight-bold">
                       Read More <i className="fas fa-arrow-right ms-2" />
                     </Link>
                 </div>

@@ -573,7 +573,7 @@
 }
 @media (max-width: 1700px) {
   .header-layout1 .header-navbar-logo {
-    padding-left: 35px;
+    padding-left: 20px;
   }
   .header-layout1 .header-top {
     .header-links {
@@ -598,7 +598,7 @@
   }
   .header-layout1 .menu-area .logo-bg {
     height: calc(100% + 10px);
-    width: 17%;
+    width: 14%;
     top: 0;
   }
   .header-layout1 .header-navbar-logo {
@@ -613,7 +613,7 @@
     padding-left: 160px;
   }
   .header-layout1 .header-navbar-logo {
-    padding-left: 30px;
+    padding-left: 10px;
   }
 }
 @include xl {

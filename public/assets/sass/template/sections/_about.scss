@@ -101,9 +101,9 @@
 
 /* About Area 2 ---------------------------------- */
 .about-area-2 {
-  padding-bottom: calc(120px + 111px);
+  padding-bottom: calc(8px + 111px);
   @include md {
-    padding-bottom: calc(80px + 111px);
+    padding-bottom: calc(8px + 111px);
   }
   @include ml {
     padding-bottom: 120px;

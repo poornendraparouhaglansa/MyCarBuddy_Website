@@ -24,7 +24,7 @@
         margin-top: -0.3em;
         margin-bottom: 13px;
         font-weight: 900;
-        font-size: 26px;
+        font-size: 16px;
         a {
             color: $title-color;
             &:hover {
@@ -36,7 +36,9 @@
         padding: 0 40px 27px;
     }
     &_text {
-        font-size: 18px;
+        // font-size: 18px;
+        font-size: 16px;
+        line-height: 1;
         font-family: $title-font;
         margin-bottom: 27px;
     }
@@ -98,7 +100,9 @@
         overflow: hidden;
         z-index: 1;
         padding: 40px;
-        min-height: 414px;
+        // min-height: 414px;
+        min-height: 0px;
+
         display: flex;
         align-items: flex-end;
         &:after {
@@ -164,10 +168,14 @@
 }
 @include lg {
     .service-card.style2 .service-card_title {
-        font-size: 24px;
+        // font-size: 24px;
+        font-size: 16px;
+
     }
     .service-card.style2 .service-card_content {
-        min-height: 374px;
+        // min-height: 374px;
+        min-height: 0px;
+
     }
 }
 

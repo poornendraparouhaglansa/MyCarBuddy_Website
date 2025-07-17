@@ -1,7 +1,46 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 const ServiceAreaTwo = () => {
+  const [services, setServices] = useState([]);
+
+  useEffect(() => {
+    // Example service data (replace with API call)
+    const data = [
+      {
+        id: 1,
+        title: "Interior Wash",
+        description: "Complete interior cleaning & sanitization",
+        image: "assets/img/portfolio/2-2.png",
+        icon: "assets/img/icon/service-icon_1-1.svg",
+      },
+      {
+        id: 2,
+        title: "Exterior Detailing",
+        description: "Exterior polish and scratch removal",
+        image: "assets/img/portfolio/2-1.png",
+        icon: "assets/img/icon/service-icon_1-2.svg",
+      },
+      // {
+      //   id: 3,
+      //   title: "Engine Deep Clean",
+      //   description: "Engine bay cleaning with care",
+      //   image: "assets/img/portfolio/2-3.png",
+      //   icon: "assets/img/icon/service-icon_1-3.svg",
+      // },
+      // {
+      //   id: 3,
+      //   title: "Engine Deep Clean",
+      //   description: "Engine bay cleaning with care",
+      //   image: "assets/img/portfolio/2-3.png",
+      //   icon: "assets/img/icon/service-icon_1-3.svg",
+      // },
+      
+    ];
+
+    setServices(data); // Replace with API if needed
+  }, []);
+
   return (
     <div className="service-area-2 space overflow-hidden">
       <div className="container">
@@ -21,88 +60,77 @@ const ServiceAreaTwo = () => {
           </div>
         </div>
       </div>
-      <div className="container">
-        <div className="row gy-4 justify-content-center">
-          <div className="col-lg-4 col-md-6">
-            <div className="service-card style2">
-              <div
-                className="service-card_content"
-                style={{
-                  backgroundImage: "url(assets/img/service/service-2-1.png)",
-                }}
-              >
-                <div>
-                  <div className="service-card_icon">
-                    <img src="assets/img/icon/service-icon_1-1.svg" alt="Fixturbo" />
+
+      {services.length === 2 ? (
+        // 🔄 Two Services Layout
+        <div className="container">
+          <div className="counter-area-1 space-bottom">
+            <div className="row gx-0 align-items-center justify-content-center gap-3">
+              {services.map((service) => (
+                <div key={service.id} className="col-lg-5">
+                  <div
+                    className="counter-checklist-wrap"
+                    style={{ backgroundImage: `url(${service.image})` }}
+                  >
+                    <div className="call-media-wrap">
+                      <div className="icon">
+                        <img src={service.icon} alt="icon" />
+                      </div>
+                      <div className="media-body">
+                        <h4 className="link">
+                          <a className="text-white" href="#">
+                            {service.title}
+                          </a>
+                        </h4>
+                       
+                      </div>
+                       <p className="service-card_text text-white">
+                          {service.description}
+                        </p>
+                    </div>
+                    <div className="checklist style-white mb-50">
+                      <div className="btn-wrap mt-20">
+                        <a className="btn style4 py-2 px-3" href="/service-details">
+                          Read More <i className="fas fa-arrow-right ms-2"></i>
+                        </a>
+                      </div>
+                    </div>
                   </div>
-                  <h4 className="service-card_title h5">
-                    <Link to="/service-details">Mechanic Masters</Link>
-                  </h4>
-                  <p className="service-card_text">
-                    Customer satisfaction is crucial for amohlo di business as
-                    it leads to customer loyalty.{" "}
-                  </p>
                 </div>
-              </div>
-              <Link to="/service-details" className="btn style4">
-                Read More <i className="fas fa-arrow-right" />
-              </Link>
-            </div>
-          </div>
-          <div className="col-lg-4 col-md-6">
-            <div className="service-card style2">
-              <div
-                className="service-card_content"
-                style={{
-                  backgroundImage: "url(assets/img/service/service-2-2.png)",
-                }}
-              >
-                <div>
-                  <div className="service-card_icon">
-                    <img src="assets/img/icon/service-icon_1-2.svg" alt="Fixturbo" />
-                  </div>
-                  <h4 className="service-card_title h5">
-                    <Link to="/service-details">Speedy Auto Repair</Link>
-                  </h4>
-                  <p className="service-card_text">
-                    Customer satisfaction is crucial for amohlo di business as
-                    it leads to customer loyalty.{" "}
-                  </p>
-                </div>
-              </div>
-              <Link to="/service-details" className="btn style4">
-                Read More <i className="fas fa-arrow-right" />
-              </Link>
-            </div>
-          </div>
-          <div className="col-lg-4 col-md-6">
-            <div className="service-card style2">
-              <div
-                className="service-card_content"
-                style={{
-                  backgroundImage: "url(assets/img/service/service-2-3.png)",
-                }}
-              >
-                <div>
-                  <div className="service-card_icon">
-                    <img src="assets/img/icon/service-icon_1-3.svg" alt="Fixturbo" />
-                  </div>
-                  <h4 className="service-card_title h5">
-                    <Link to="/service-details">Precision Auto Works</Link>
-                  </h4>
-                  <p className="service-card_text">
-                    Customer satisfaction is crucial for amohlo di business as
-                    it leads to customer loyalty.{" "}
-                  </p>
-                </div>
-              </div>
-              <Link to="/service-details" className="btn style4">
-                Read More <i className="fas fa-arrow-right" />
-              </Link>
+              ))}
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        // 🔄 3 or More Services Layout
+        <div className="container">
+          <div className="row gy-4 justify-content-center">
+            {services.map((service) => (
+              <div key={service.id} className="col-lg-3 col-md-6">
+                <div className="service-card style2">
+                  <div
+                    className="service-card_content"
+                    style={{ backgroundImage: `url(${service.image})` }}
+                  >
+                    <div>
+                      <div className="service-card_icon">
+                        <img src={service.icon} alt="icon" />
+                      </div>
+                      <h4 className="service-card_title h5">
+                        <Link to="/service-details">{service.title}</Link>
+                      </h4>
+                      <p className="service-card_text">{service.description}</p>
+                    </div>
+                  </div>
+                  <Link to="/service-details" className="btn style4">
+                    Read More <i className="fas fa-arrow-right" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

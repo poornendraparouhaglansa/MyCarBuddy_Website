@@ -1,12 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import HeroSection from "./HeroSection";
 
 const HeroTwo = () => {
   return (
     <div
       className="hero-wrapper hero-2"
       id="hero"
-      style={{ backgroundImage: "url(assets/img/hero/hero_bg_2_1.png)" }}
+      // style={{ backgroundImage: "url(assets/img/hero/hero_bg_2_1.png)" }}
     >
       <div className="hero-shape2-1">
         <span className="hero-shape2-2" />
@@ -47,6 +48,9 @@ const HeroTwo = () => {
                 </div>
               </div>
             </div>
+          </div>
+          <div className="col-xxl-6 col-xl-7 col-lg-4">
+            <HeroSection />
           </div>
         </div>
       </div>
