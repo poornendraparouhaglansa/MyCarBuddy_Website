@@ -22,6 +22,7 @@ import HomePageThree from "./pages/HomePageThree";
 import HomePageFour from "./pages/HomePageFour";
 import HomePageFive from "./pages/HomePageFive";
 import HomePageSix from "./pages/HomePageSix";
+import ServiceDetails from "./components/ServiceDetails";
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
         <Route exact path="/about" element={<AboutPage />} />
         <Route exact path="/service" element={<ServicePage />} />
         <Route exact path="/service-details" element={<ServiceDetailsPage />} />
+         <Route path="/servicedetails/:id" element={<ServiceDetails />} />
         <Route exact path="/project" element={<ProjectPage />} />
         <Route exact path="/project-details" element={<ProjectDetailsPage />} />
         <Route exact path="/blog" element={<BlogPage />} />

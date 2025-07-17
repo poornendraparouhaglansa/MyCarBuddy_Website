@@ -146,7 +146,7 @@ const HeaderOne = () => {
           <div className="menu-area">
             <div className="header-navbar-logo mt-0">
               <Link to="/">
-                <img src="assets/img/logo-yellow-01.svg" alt="MyCarBuddy" />
+                <img src="/assets/img/logo-yellow-01.svg" alt="MyCarBuddy" />
               </Link>
             </div>
             <div className="container">

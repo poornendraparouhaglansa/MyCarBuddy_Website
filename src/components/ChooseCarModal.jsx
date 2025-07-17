@@ -28,7 +28,7 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
             .map((b) => ({
               id: b.BrandID,
               name: b.BrandName,
-              logo: `https://api.mycarsbuddy.com${b.BrandLogo.startsWith("/") ? "" : "/"}${b.BrandLogo}`,
+              logo: `https://api.mycarsbuddy.com/images${b.BrandLogo.startsWith("/") ? "" : "/"}${b.BrandLogo}`,
             }));
           console.log("Formatted brands:", formattedBrands);
           setBrands(formattedBrands);
@@ -51,7 +51,7 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
           .map((m) => ({
             id: m.ModelID,
             name: m.ModelName,
-            logo: `https://api.mycarsbuddy.com/${m.VehicleImage.startsWith("/") ? m.VehicleImage.slice(1) : m.VehicleImage}`
+            logo: `https://api.mycarsbuddy.com/images${m.VehicleImage.startsWith("/") ? m.VehicleImage.slice(1) : m.VehicleImage}`
           }));
         setModels(filteredModels);
       }

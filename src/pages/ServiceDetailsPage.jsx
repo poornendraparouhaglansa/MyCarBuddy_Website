@@ -6,6 +6,7 @@ import Breadcrumb from "../components/Breadcrumb";
 import SubscribeOne from "../components/SubscribeOne";
 import ServiceDetails from "../components/ServiceDetails";
 import Preloader from "../helper/Preloader";
+import ServiceCards from "../components/ServiceCards";
 
 const ServiceDetailsPage = () => {
   let [active, setActive] = useState(true);
@@ -26,7 +27,7 @@ const ServiceDetailsPage = () => {
       <Breadcrumb title={"Service Details"} />
 
       {/* Service Details */}
-      <ServiceDetails />
+      <ServiceCards />
 
       {/* Subscribe One */}
       <SubscribeOne />

@@ -80,7 +80,7 @@
 }
 
 .brand-card {
-  border: 1px solid #099670;
+  border: 1px solid #01615b;
   border-radius: 10px;
   cursor: pointer;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
@@ -98,7 +98,7 @@
 }
 
 .brand-logo {
-  height: 32px; /* slightly smaller logo */
+  height: 22px; 
   object-fit: contain;
   display: block;
   margin: 0 auto;
