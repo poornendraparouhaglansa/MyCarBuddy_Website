@@ -1,10 +1,10 @@
 // src/components/HeroSection.jsx
 import React from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment } from "@react-three/drei";
-import { motion } from "framer-motion";
-import CarModel from "./CarModel";
-import ParticlesBg from "./ParticlesBg";
+// import { Canvas } from "@react-three/fiber";
+// import { OrbitControls, Environment } from "@react-three/drei";
+// import { motion } from "framer-motion";
+// import CarModel from "./CarModel";
+// import ParticlesBg from "./ParticlesBg";
 
 const HeroSection = () => {
   return (
