@@ -16,6 +16,8 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
   const [showBrandPopup, setShowBrandPopup] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
   const modalRef = useRef();
+  const imageBaseURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
+  const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
 
   useEffect(() => {
     const fetchBrands = async () => {
@@ -29,7 +31,7 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
             .map((b) => ({
               id: b.BrandID,
               name: b.BrandName,
-              logo: `https://api.mycarsbuddy.com/images${b.BrandLogo.startsWith("/") ? "" : "/"}${b.BrandLogo}`,
+              logo: `${imageBaseURL}${b.BrandLogo.startsWith("/") ? b.BrandLogo.slice(1) : b.BrandLogo}`,
             }));
           console.log("Formatted brands:", formattedBrands);
           setBrands(formattedBrands);
@@ -50,7 +52,7 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
         const getImageUrl = (path) => {
           if (!path) return "https://via.placeholder.com/100?text=No+Image";
           const fileName = path.split('/').pop();
-          return `https://api.mycarsbuddy.com/Images/VehicleModel/${fileName}`;
+          return  `${imageBaseURL}${path.startsWith("/") ? path.slice(1) : path}`;
         };
         const filteredModels = response.data.data
           .filter((m) => m.BrandID === brandId && m.IsActive)
@@ -76,7 +78,7 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
           .map(f => {
             const fileName = f.FuelImage?.split("/").pop();
             const encodedFileName = encodeURIComponent(fileName);
-            const imageUrl = `https://api.mycarsbuddy.com/images/FuelImages/${encodedFileName}`;
+            const imageUrl = `${imageBaseURL}${encodedFileName}`;
 
             return {
               id: f.FuelTypeID,
