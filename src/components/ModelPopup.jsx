@@ -17,7 +17,7 @@ const ModelPopup = ({ models, selected, onSelect, onClose }) => {
               <div key={m.id} className="col-6 col-sm-4 col-md-3 mb-3">
                 <div
                   className={`card brand-card ${selected === m.name ? "selected" : ""}`}
-                  onClick={() => onSelect(m.name)}
+                  onClick={() => onSelect(m.id)}
                 >
                   <img
                     src={m.logo}

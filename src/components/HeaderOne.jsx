@@ -11,6 +11,7 @@ const HeaderOne = () => {
   const [signInVisible, setSignInVisible] = useState(false);
   const [registerVisible, setRegisterVisible] = useState(false);
   const [carModalVisible, setCarModalVisible] = useState(false);
+  const [selectedCar, setSelectedCar] = useState(null);
 
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [location, setLocation] = useState(null);
@@ -22,6 +23,17 @@ const HeaderOne = () => {
     }
 
     // your scroll and menu logic remains unchanged...
+  }, []);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("selectedCarDetails");
+    if (saved) {
+      try {
+        setSelectedCar(JSON.parse(saved));
+      } catch (err) {
+        console.error("Error parsing saved car", err);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -232,16 +244,47 @@ const HeaderOne = () => {
                         </h6>
 
                       </div>
-                      <div className="navbar-right-desc-details" style={{marginLeft:"6px"}}>
+                      <div className="navbar-right-desc-details" style={{ marginLeft: "6px" }}>
                         <span className="header-grid-text">Vehicle</span>
                         <h6 className="header-grid-title">
                           <span
                             className="account-link"
                             onClick={() => setCarModalVisible(true)}
-                            style={{ cursor: "pointer", color: "#116d6e", display: "flex", alignItems: "center", gap: "10px" }}
+                            style={{
+                              cursor: "pointer",
+                              color: "#116d6e",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px"
+                            }}
                           >
-                          Choose Your Car
+                            {selectedCar ? (
+                              <>
+                                <img
+                                  src={selectedCar.model?.logo || "https://via.placeholder.com/50"}
+                                  alt={selectedCar.model?.name}
+                                  style={{
+                                    width: 40,
+                                    height: 40,
+                                    objectFit: "contain",
+                                    borderRadius: 8,
+                                    // border: "1px solid #ccc",
+                                    backgroundColor: "#fff"
+                                  }}
+                                />
+                                <div style={{ display: "flex", flexDirection: "column" }}>
+                                  <small style={{ fontSize: "12px", color: "#555" }}>
+                                    {selectedCar.brand?.name}
+                                  </small>
+                                  <strong>{selectedCar.model?.name}</strong>
+                                </div>
+                              </>
+                            ) : (
+                              "Choose Your Car"
+                            )}
                           </span>
+
+
                         </h6>
                       </div>
                       <SignIn
@@ -265,7 +308,11 @@ const HeaderOne = () => {
                       />
                       <ChooseCarModal
                         isVisible={carModalVisible}
-                        onClose={() => setCarModalVisible(false)}
+                        onClose={() => {
+                          setCarModalVisible(false);
+                          const saved = localStorage.getItem("selectedCarDetails");
+                          if (saved) setSelectedCar(JSON.parse(saved));
+                        }}
                       />
                     </div>
                   </div>

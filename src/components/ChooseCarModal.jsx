@@ -5,6 +5,7 @@ import ModelPopup from "./ModelPopup";
 import axios from "axios";
 
 const ChooseCarModal = ({ isVisible, onClose }) => {
+  const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
   const [carType, setCarType] = useState("");
   const [brand, setBrand] = useState(null);
   const [brands, setBrands] = useState([]);
@@ -20,11 +21,11 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
     const fetchBrands = async () => {
       try {
         const response = await axios.get(
-          "https://api.mycarsbuddy.com/api/VehicleBrands/GetVehicleBrands"
+          `${BASE_URL}VehicleBrands/GetVehicleBrands`
         );
         if (response.data?.status && Array.isArray(response.data.data)) {
           const formattedBrands = response.data.data
-            .filter((b) => b.BrandLogo) // skip null/undefined logos
+            .filter((b) => b.BrandLogo)
             .map((b) => ({
               id: b.BrandID,
               name: b.BrandName,
@@ -46,13 +47,19 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
     try {
       const response = await axios.get("https://api.mycarsbuddy.com/api/VehicleModels/GetListVehicleModel");
       if (response.data?.status && Array.isArray(response.data.data)) {
+        const getImageUrl = (path) => {
+          if (!path) return "https://via.placeholder.com/100?text=No+Image";
+          const fileName = path.split('/').pop();
+          return `https://api.mycarsbuddy.com/Images/VehicleModel/${fileName}`;
+        };
         const filteredModels = response.data.data
           .filter((m) => m.BrandID === brandId && m.IsActive)
           .map((m) => ({
             id: m.ModelID,
             name: m.ModelName,
-            logo: `https://api.mycarsbuddy.com/images${m.VehicleImage.startsWith("/") ? m.VehicleImage.slice(1) : m.VehicleImage}`
+            logo: getImageUrl(m.VehicleImage), // Use the full valid image URL
           }));
+
         setModels(filteredModels);
       }
     } catch (error) {
@@ -67,8 +74,8 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
         const formatted = res.data.data
           .filter(f => f.IsActive)
           .map(f => {
-            const fileName = f.FuelImage?.split("/").pop(); 
-            const encodedFileName = encodeURIComponent(fileName); 
+            const fileName = f.FuelImage?.split("/").pop();
+            const encodedFileName = encodeURIComponent(fileName);
             const imageUrl = `https://api.mycarsbuddy.com/images/FuelImages/${encodedFileName}`;
 
             return {
@@ -84,15 +91,26 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
     }
   };
 
-  const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid"];
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (carType) {
-      localStorage.setItem("selectedCarType", carType);
-      onClose();
+
+    if (!brand || !model || !fuel) {
+      alert("Please select brand, model, and fuel type.");
+      return;
     }
+
+    const selectedCarDetails = {
+      brand: brands.find((b) => b.id === brand),
+      model: models.find((m) => m.id === model),
+      fuel: fuel,
+    };
+
+    localStorage.setItem("selectedCarDetails", JSON.stringify(selectedCarDetails));
+    console.log("Saved Car:", selectedCarDetails);
+
+    onClose();
   };
+
   const handleBrandSelect = (id) => {
     setBrand(id);
     setModel(""); // Reset model if brand changes
@@ -133,7 +151,7 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
                 onClick={() => setShowModelPopup(true)}
                 disabled={!brand}
               >
-                {model ? model : "Choose Model"}
+                {model ? models.find((m) => m.id === model)?.name || "Choose Model" : "Choose Model"}
               </button>
             </div>
           </div>
