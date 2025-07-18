@@ -45,7 +45,7 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
 
   const fetchModels = async (brandId) => {
     try {
-      const response = await axios.get("https://api.mycarsbuddy.com/api/VehicleModels/GetListVehicleModel");
+      const response = await axios.get(`${BASE_URL}VehicleModels/GetListVehicleModel`);
       if (response.data?.status && Array.isArray(response.data.data)) {
         const getImageUrl = (path) => {
           if (!path) return "https://via.placeholder.com/100?text=No+Image";
@@ -69,7 +69,7 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
 
   const fetchFuels = async () => {
     try {
-      const res = await axios.get("https://api.mycarsbuddy.com/api/FuelTypes/GetFuelTypes");
+      const res = await axios.get(`${BASE_URL}FuelTypes/GetFuelTypes`);
       if (res.data?.status && Array.isArray(res.data.data)) {
         const formatted = res.data.data
           .filter(f => f.IsActive)
