@@ -16,6 +16,17 @@ Version: 2.0.1
   --body-font: "Roboto", sans-serif;
 }
 
+.left-scrollable {
+  max-height: calc(100vh - 120px); /* adjust based on header height */
+  overflow-y: auto;
+  padding-right: 1rem;
+}
+
+.cart-fixed {
+  position: sticky;
+  top: 100px; /* below header/navbar */
+}
+
 /***default-btn-area***/
 .demo .btn {
   height: 50px;

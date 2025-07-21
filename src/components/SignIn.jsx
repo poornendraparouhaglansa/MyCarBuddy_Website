@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./SignInModal.css";
 
-const SignIn = ({ isVisible, onClose, onRegister, onForgotPassword }) => {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+const SignIn = ({ isVisible, onClose, onRegister }) => {
+    const [identifier, setIdentifier] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
+    const [otp, setOtp] = useState("");
     const modalRef = useRef();
 
     useEffect(() => {
@@ -20,11 +21,20 @@ const SignIn = ({ isVisible, onClose, onRegister, onForgotPassword }) => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isVisible, onClose]);
 
-
-    const handleSignIn = (e) => {
+    const handleSendOTP = (e) => {
         e.preventDefault();
-        // Replace with actual sign-in logic
-        console.log("Signing in with:", { email, password });
+        if (!identifier) return;
+        console.log("Sending OTP to:", identifier);
+        setOtpSent(true);
+        // Call your API to send OTP here
+    };
+
+    const handleVerifyOTP = (e) => {
+        e.preventDefault();
+        console.log("Verifying OTP:", otp, "for", identifier);
+        localStorage.setItem("user", JSON.stringify({ id: "123", name: null, identifier }));
+         window.dispatchEvent(new Event("userProfileUpdated"));
+        // Call your verify OTP logic
         onClose();
     };
 
@@ -33,44 +43,36 @@ const SignIn = ({ isVisible, onClose, onRegister, onForgotPassword }) => {
             <div className="modal-content" ref={modalRef}>
                 <button className="modal-close" onClick={onClose}>×</button>
                 <h5 className="mb-4">Welcome Back</h5>
-                <form onSubmit={handleSignIn}>
+                <form onSubmit={otpSent ? handleVerifyOTP : handleSendOTP}>
                     <div className="mb-3 text-start">
-                        <label className="form-label">Email</label>
+                        <label className="form-label">Mobile Number or Email</label>
                         <input
-                            type="email"
+                            type="text"
                             className="form-control"
-                            placeholder="carbuddy@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Enter mobile number or email"
+                            value={identifier}
+                            onChange={(e) => setIdentifier(e.target.value)}
                             required
                         />
                     </div>
 
-                    <div className="mb-3 text-start">
-                        <label className="form-label">Password</label>
-                        <input
-                            type="password"
-                            className="form-control"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    {/* <div className="mb-3 text-end">
-                        <button
-                            type="button"
-                            className="btn btn-link p-0"
-                            onClick={onForgotPassword}
-                        >
-                            Forgot Password?
-                        </button>
-                    </div> */}
+                    {otpSent && (
+                        <div className="mb-3 text-start">
+                            <label className="form-label">Enter OTP</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Enter OTP"
+                                value={otp}
+                                onChange={(e) => setOtp(e.target.value)}
+                                required
+                            />
+                        </div>
+                    )}
 
                     <div className="d-grid mb-3">
                         <button type="submit" className="btn btn-primary">
-                            Sign In
+                            {otpSent ? "Verify OTP" : "Send OTP"}
                         </button>
                     </div>
 

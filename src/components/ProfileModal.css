@@ -1,0 +1,75 @@
+.profile-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.5s ease, opacity 0.5s ease;
+  z-index: 999;
+}
+
+.profile-modal.hidden {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.profile-modal.visible {
+  transform: translateY(0%);
+  opacity: 1;
+}
+
+.profile-modal .modal-content {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  position: relative;
+}
+
+.profile-modal .modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
+
+.profile-modal .modal-close:hover {
+  color: #000;
+}
+
+.profile-modal p {
+  margin: 10px 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.profile-modal strong {
+  color: #116d6e;
+}
+
+.profile-modal .btn-outline-primary {
+  background-color: transparent;
+  border: 1px solid #116d6e;
+  color: #116d6e;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.profile-modal .btn-outline-primary:hover {
+  background-color: #116d6e;
+  color: white;
+}

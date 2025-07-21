@@ -24,6 +24,11 @@ import HomePageFive from "./pages/HomePageFive";
 import HomePageSix from "./pages/HomePageSix";
 import ServiceDetails from "./components/ServiceDetails";
 import { CartProvider } from "./context/CartContext";
+import SelectTimeSlotPage from './components/SelectTimeSlotPage';
+import TimeSlotPage from "./pages/TimeSlotPage";
+import 'react-datepicker/dist/react-datepicker.css';
+import ProfilePage from "./pages/ProfilePage";
+import MyBookingsPage from "./pages/MyBookingsPage";
 
 function App() {
   return (
@@ -54,6 +59,10 @@ function App() {
           <Route exact path="/checkout" element={<CheckoutPage />} />
           <Route exact path="/wishlist" element={<WishlistPage />} />
           <Route exact path="/contact" element={<ContactPage />} />
+          <Route exact path="/selecttimeslot" element={<TimeSlotPage />} />
+          <Route exact path="/profile" element={<ProfilePage />} />
+          <Route exact path="/mybookings" element={<MyBookingsPage />} />
+
         </Routes>
       </CartProvider>
     </BrowserRouter>

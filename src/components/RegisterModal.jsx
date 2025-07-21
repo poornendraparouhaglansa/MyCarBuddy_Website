@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./RegisterModal.css";
 
-const RegisterModal = ({ isVisible, onClose, onBackToSignIn }) => {
+const RegisterModal = ({ isVisible, onClose, onBackToSignIn, onRegistered }) => {
     const [fullname, setFullname] = useState("");
     const [email, setEmail] = useState("");
     const [mobile, setMobile] = useState("");
@@ -25,8 +25,14 @@ const RegisterModal = ({ isVisible, onClose, onBackToSignIn }) => {
 
     const handleRegister = (e) => {
         e.preventDefault();
-        // Handle registration logic here
-        console.log("Registering:", { fullname, email, mobile, altMobile });
+
+        const savedUser = JSON.parse(localStorage.getItem("user"));
+        const updatedUser = { ...savedUser, name: fullname };
+
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        window.dispatchEvent(new Event("userProfileUpdated"));
+        if (onRegistered) onRegistered(updatedUser); // Notify parent
         onClose();
     };
 

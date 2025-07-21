@@ -6,6 +6,7 @@ import { FaCarSide } from "react-icons/fa";
 import ChooseCarModal from "./ChooseCarModal";
 import { FaShoppingCart } from "react-icons/fa";
 import { useCart } from "../context/CartContext";
+import ProfileModal from "./ProfileModal";
 
 const HeaderOne = () => {
   const [active, setActive] = useState(false);
@@ -17,6 +18,9 @@ const HeaderOne = () => {
 
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [location, setLocation] = useState(null);
+
+  const [user, setUser] = useState(null);
+  const [profileVisible, setProfileVisible] = useState(false);
 
   const { cartItems } = useCart();
   const itemCount = cartItems.length;
@@ -40,6 +44,21 @@ const HeaderOne = () => {
       }
     }
   }, []);
+
+  useEffect(() => {
+    const loadUser = () => {
+      const saved = localStorage.getItem("user");
+      if (saved) {
+        setUser(JSON.parse(saved));
+      }
+    };
+
+    loadUser(); 
+
+    window.addEventListener("userProfileUpdated", loadUser);
+    return () => window.removeEventListener("userProfileUpdated", loadUser);
+  }, []);
+
 
   useEffect(() => {
     var offCanvasNav = document.getElementById("offcanvas-navigation");
@@ -232,32 +251,26 @@ const HeaderOne = () => {
                     >
                       <div
                         className="navbar-right-desc-details"
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-start",
-                          cursor: "pointer",
+                        style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", cursor: "pointer" }}
+                        onClick={() => {
+                          if (user && (user.name || user.identifier)) {
+                            setProfileVisible(true); // Show profile modal
+                          } else {
+                            setSignInVisible(true); // Show sign-in modal
+                          }
                         }}
-                        onClick={() => setSignInVisible(true)}
                       >
-                        <span
-                          className="header-grid-text"
-                          style={{ fontSize: "13px", color: "#666", marginBottom: "2px" }}
-                        >
-                          Sign In
+                        <span className="header-grid-text" style={{ fontSize: "13px", color: "#666", marginBottom: "2px" }}>
+                          {user?.name || user?.identifier ? "Hello," : "Sign In"}
                         </span>
                         <h6
                           className="header-grid-title"
-                          style={{
-                            fontSize: "15px",
-                            fontWeight: 600,
-                            color: "#116d6e",
-                            textDecoration: "underline",
-                          }}
+                          style={{ fontSize: "15px", fontWeight: 600, color: "#116d6e", textDecoration: "underline" }}
                         >
-                          Account
+                          {user?.name || user?.identifier || "Account"}
                         </h6>
                       </div>
+
 
                       <div
                         className="navbar-right-desc-details"
@@ -285,7 +298,7 @@ const HeaderOne = () => {
                             style={{
                               display: "flex",
                               alignItems: "center",
-                              gap: "10px",
+                              gap: "6px",
                             }}
                           >
                             {selectedCar ? (
@@ -359,6 +372,10 @@ const HeaderOne = () => {
                 setRegisterVisible(false);
                 setSignInVisible(true);
               }}
+              onRegistered={(updatedUser) => {
+                setRegisterVisible(false);
+                setUser(updatedUser);
+              }}
             />
             <ChooseCarModal
               isVisible={carModalVisible}
@@ -366,6 +383,14 @@ const HeaderOne = () => {
                 setCarModalVisible(false);
                 const saved = localStorage.getItem("selectedCarDetails");
                 if (saved) setSelectedCar(JSON.parse(saved));
+              }}
+            />
+            <ProfileModal
+              isVisible={profileVisible}
+              onClose={() => setProfileVisible(false)}
+              onRegister={() => {
+                setProfileVisible(false);
+                setRegisterVisible(true);
               }}
             />
             <div className="logo-bg" />

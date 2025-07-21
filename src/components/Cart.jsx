@@ -65,8 +65,8 @@ const CartPage = () => {
 
           {cartItems.length > 0 && (
             <div className="d-flex justify-content-end mt-4">
-              <Link to="/checkout" className="btn btn-primary btn-lg">
-                Proceed to Checkout
+              <Link to="/selecttimeslot" className="btn btn-danger btn-lg">
+                Select Time Slot
               </Link>
             </div>
           )}
