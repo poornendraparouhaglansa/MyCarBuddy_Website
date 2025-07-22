@@ -102,7 +102,7 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
     const selectedCarDetails = {
       brand: brands.find((b) => b.id === brand),
       model: models.find((m) => m.id === model),
-      fuel: fuel,
+      fuel: fuels.find((f) => f.id === fuel),
     };
 
     localStorage.setItem("selectedCarDetails", JSON.stringify(selectedCarDetails));
@@ -113,9 +113,9 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
 
   const handleBrandSelect = (id) => {
     setBrand(id);
-    setModel(""); // Reset model if brand changes
+    setModel(""); 
     setShowBrandPopup(false);
-    fetchModels(id); // Fetch models for the selected brand
+    fetchModels(id); 
   };
 
   const handleModelSelect = (id) => {
@@ -163,9 +163,9 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
                 {fuels.map((f) => (
                   <div
                     key={f.id}
-                    className={`text-center px-2 py-1 border rounded shadow-sm ${fuel === f.name ? "border-primary" : ""}`}
+                    className={`text-center px-2 py-1 border rounded shadow-sm ${fuel === f.id ? "border-primary" : ""}`}
                     style={{ cursor: "pointer", width: 100 }}
-                    onClick={() => setFuel(f.name)}
+                    onClick={() => setFuel(f.id)}
                   >
                     <img src={f.image} alt={f.name} style={{ width: "40px", height: "40px", objectFit: "contain" }} />
                     <small className="d-block mt-1">{f.name}</small>

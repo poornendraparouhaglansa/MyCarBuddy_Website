@@ -129,15 +129,21 @@ const SelectTimeSlotPage = () => {
                                         <input type="text" className="form-control" placeholder="Enter Locality *" />
                                     </div>
                                     <div className="mb-3">
-                                        <input type="text" className="form-control" placeholder="Flat Number / Room Number / Suite (Optional)" />
+                                        <input type="text" className="form-control" placeholder="Flat Number / Room Number / Suite *" />
                                     </div>
-                                    <div className="text-end mt-3">
+                                    <div className="mb-3">
+                                        <input type="text" className="form-control" placeholder="Landmark (Optional)" />
+                                    </div>
+                                    <div className="mb-3">
+                                        <input type="number" className="form-control" placeholder="Mobile Number *" />
+                                    </div>
+                                    {/* <div className="text-end mt-3">
                                         <button
                                             className="btn btn-danger m-0 p-3"
                                         >
                                             Save
                                         </button>
-                                    </div>
+                                    </div> */}
                                     <div className="mt-3">
                                         <p className="fw-bold mb-1">Choose from Saved Addresses</p>
                                         <div className="border p-3 rounded d-flex flex-column gap-2" style={{ maxWidth: "100%" }}>

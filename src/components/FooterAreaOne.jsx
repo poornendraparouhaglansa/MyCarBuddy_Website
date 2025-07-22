@@ -60,13 +60,13 @@ const FooterAreaOne = () => {
                 <h3 className="widget_title">Contact</h3>
                 <div className="widget-contact">
                   <p>
-                    <Link to="tel:888123456765">(+888) 123 456 765</Link>
+                    <Link to="tel:888123456765">(+91) 123 456 765</Link>
                   </p>
                   <p>
-                    <Link to="mailto:infoname@mail.com">infoname@mail.com</Link>
+                    <Link to="mailto:infoname@mail.com">carbuddy@example.com</Link>
                   </p>
                   <p>
-                    Old city Street,USA <br /> 1212 New york-3500
+                    Madhapur, Hyderabad <br /> India, 500081
                   </p>
                 </div>
               </div>
@@ -100,7 +100,7 @@ const FooterAreaOne = () => {
           <div className="row gy-3 justify-content-md-between justify-content-center">
             <div className="col-auto align-self-center">
               <p className="copyright-text text-center">
-                © <Link to="#">Fixturbo</Link> 2024 | All Rights Reserved
+                © <Link to="#">MyCarBuddy</Link> 2025 | All Rights Reserved
               </p>
             </div>
             <div className="col-auto">

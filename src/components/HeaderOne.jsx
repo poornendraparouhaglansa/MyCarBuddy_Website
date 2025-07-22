@@ -53,7 +53,7 @@ const HeaderOne = () => {
       }
     };
 
-    loadUser(); 
+    loadUser();
 
     window.addEventListener("userProfileUpdated", loadUser);
     return () => window.removeEventListener("userProfileUpdated", loadUser);
@@ -139,15 +139,15 @@ const HeaderOne = () => {
                   <ul>
                     <li>
                       <i className="fas fa-envelope" />
-                      <Link to="mailto:info@example.com">info@example.com</Link>
+                      <Link to="mailto:info@example.com">carbuddy@example.com</Link>
                     </li>
                     <li>
                       <i className="fas fa-map-marker-alt" />
-                      6391 Elgin St. Celina, 10299
+                      Madhapur, Hyderabad, India
                     </li>
                     <li>
                       <i className="fas fa-clock" />
-                      Sunday - Friday
+                      Monday - Sunday
                     </li>
                   </ul>
                 </div>
@@ -157,16 +157,16 @@ const HeaderOne = () => {
                   <ul>
                     <li>
                       <div className="social-links">
-                        <Link to="https://www.facebook.com/">
+                        <Link to="">
                           <i className="fab fa-facebook-f" />
                         </Link>
-                        <Link to="https://www.instagram.com/">
+                        <Link to="">
                           <i className="fab fa-instagram" />
                         </Link>
-                        <Link to="https://www.twitter.com/">
+                        <Link to="">
                           <i className="fab fa-twitter" />
                         </Link>
-                        <Link to="https://www.linkedin.com/">
+                        <Link to="">
                           <i className="fab fa-linkedin" />
                         </Link>
                       </div>
@@ -211,8 +211,19 @@ const HeaderOne = () => {
                         </NavLink>
                       </li>
                       <li>
-                        <Link to="/services">Services</Link>
-
+                        <Link
+                          to="/"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (window.location.pathname !== "/") {
+                              window.location.href = "/#scroll-to-service";
+                            } else {
+                              window.dispatchEvent(new Event("scrollToService"));
+                            }
+                          }}
+                        >
+                          Services
+                        </Link>
                       </li>
 
                       <li>
@@ -260,7 +271,7 @@ const HeaderOne = () => {
                           }
                         }}
                       >
-                        <span className="header-grid-text" style={{ fontSize: "13px", color: "#666", marginBottom: "2px" }}>
+                        <span className="header-grid-text" style={{ fontSize: "13px", color: "#555", marginBottom: "2px" }}>
                           {user?.name || user?.identifier ? "Hello," : "Sign In"}
                         </span>
                         <h6

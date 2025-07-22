@@ -22,8 +22,7 @@ const ProfileModal = ({ isVisible, onClose, onRegister }) => {
         localStorage.removeItem("user");
         setUser(null);
         onClose();
-        window.location.reload();
-        
+        window.location.reload();        
     };
 
     return (

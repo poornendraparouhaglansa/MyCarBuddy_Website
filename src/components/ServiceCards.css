@@ -9,6 +9,7 @@
   display: flex;
   overflow-x: auto;
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
   gap: 12px;
   padding: 38px 0;
   flex: 1;
@@ -21,6 +22,23 @@
 .scrollable-tabs::-webkit-scrollbar {
   display: none;
   /* Chrome, Safari */
+}
+
+.scrollable-tabs:has(.tab-pill:hover) {
+  scroll-behavior: auto;
+  /* Disable smooth scroll when manually dragging */
+}
+
+.scrollable-tabs::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 50px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, white);
+  z-index: 1;
 }
 
 .tab-pill {

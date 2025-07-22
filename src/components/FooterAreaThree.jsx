@@ -103,7 +103,7 @@ const FooterAreaThree = () => {
           <div className="row gy-3 justify-content-md-between justify-content-center">
             <div className="col-auto align-self-center">
               <p className="copyright-text text-center">
-                © <Link to="#">Fixturbo</Link> 2024 | All Rights Reserved
+                © <Link to="#">MyCarBuddy</Link> 2024 | All Rights Reserved
               </p>
             </div>
             <div className="col-auto">

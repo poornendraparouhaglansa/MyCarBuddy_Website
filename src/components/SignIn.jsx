@@ -1,10 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./SignInModal.css";
+import axios from "axios";
+import { v4 as uuidv4 } from 'uuid';
 
 const SignIn = ({ isVisible, onClose, onRegister }) => {
     const [identifier, setIdentifier] = useState("");
     const [otpSent, setOtpSent] = useState(false);
     const [otp, setOtp] = useState("");
+    const [loading, setLoading] = useState(false);
+    const baseUrl = process.env.REACT_APP_CARBUDDY_BASE_URL;
+
     const modalRef = useRef();
 
     useEffect(() => {
@@ -21,21 +26,58 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isVisible, onClose]);
 
-    const handleSendOTP = (e) => {
-        e.preventDefault();
-        if (!identifier) return;
-        console.log("Sending OTP to:", identifier);
-        setOtpSent(true);
-        // Call your API to send OTP here
+    const getDeviceId = () => {
+        let deviceId = localStorage.getItem("deviceId");
+        if (!deviceId) {
+            deviceId = uuidv4(); // Generate a new UUID
+            localStorage.setItem("deviceId", deviceId);
+        }
+        return deviceId;
     };
 
-    const handleVerifyOTP = (e) => {
+    const handleSendOTP = async (e) => {
         e.preventDefault();
+        if (!identifier) return;
+        setLoading(true);
+        console.log("Sending OTP to:", identifier);
+        try {
+            const response = await axios.post(`${baseUrl}Auth/send-otp`, { loginId: identifier });
+            console.log("OTP sent response:", response.data);
+            setOtpSent(true);
+        } catch (error) {
+            console.error("Error sending OTP:", error);
+            alert("Failed to send OTP. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = async (e) => {
+        e.preventDefault();
+        const deviceId = getDeviceId();
+        setLoading(true);
         console.log("Verifying OTP:", otp, "for", identifier);
-        localStorage.setItem("user", JSON.stringify({ id: "123", name: null, identifier }));
-         window.dispatchEvent(new Event("userProfileUpdated"));
-        // Call your verify OTP logic
-        onClose();
+        try {
+            const response = await axios.post(`${baseUrl}Auth/verify-otp`, {
+                loginId: identifier,
+                otp,
+                deviceToken: "web-token",
+                deviceId
+            });
+            console.log("OTP verification response:", response.data);
+            localStorage.setItem("user", JSON.stringify({
+                id: response.data?.id || "123",
+                name: response.data?.name || null,
+                identifier
+            }));
+            window.dispatchEvent(new Event("userProfileUpdated"));
+            onClose();
+        } catch (error) {
+            console.error("Error verifying OTP:", error);
+            alert("Invalid OTP. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

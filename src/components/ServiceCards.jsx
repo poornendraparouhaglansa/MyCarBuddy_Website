@@ -1,96 +1,133 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./ServiceCards.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { FaSnowflake, FaCarBattery, FaCarSide, FaPaintRoller, FaMagic, FaShower, FaTools, FaGasPump } from "react-icons/fa";
 import servicetwo from '../../src/images/service-2.png';
 import { useCart } from "../context/CartContext";
 import toast from "react-hot-toast";
-
-const categories = [
-  { id: 1, name: "AC Service", icon: <FaSnowflake /> },
-  { id: 2, name: "Batteries", icon: <FaCarBattery /> },
-  { id: 3, name: "Tyres & Wheels", icon: <FaCarSide /> },
-  { id: 4, name: "Painting", icon: <FaPaintRoller /> },
-  { id: 5, name: "Detailing", icon: <FaMagic /> },
-  { id: 6, name: "Car Spa", icon: <FaShower /> },
-  { id: 7, name: "Repairs", icon: <FaTools /> },
-  { id: 8, name: "Fuel Delivery", icon: <FaGasPump /> },
-  { id: 9, name: "AC Service", icon: <FaSnowflake /> },
-  { id: 10, name: "Batteries", icon: <FaCarBattery /> },
-  { id: 11, name: "Tyres & Wheels", icon: <FaCarSide /> },
-  { id: 12, name: "Painting", icon: <FaPaintRoller /> },
-];
-
-const services = [
-  {
-    id: 101,
-    title: "Regular AC Service",
-    duration: "Takes 4 hours",
-    price: 2399,
-    originalPrice: 3199,
-    includes: [
-      "AC Vent Cleaning",
-      "AC Gas (upto 400 gms)",
-      "AC Filter Cleaning",
-      "AC Inspection",
-      "Condenser Cleaning",
-    ],
-    image: servicetwo,
-    tag: "FREE AC UNIT INSPECTION",
-    categoryId: 1,
-  },
-  {
-    id: 102,
-    title: "High Performance AC Service",
-    duration: "Takes 8 Hours",
-    price: 3499,
-    originalPrice: 4999,
-    includes: [
-      "AC Vent Cleaning",
-      "Dashboard Removing Refitting",
-      "AC Gas (Upto 600gms)",
-      "AC Leak Test",
-      "Dashboard Cleaning",
-    ],
-    image: servicetwo,
-    tag: "FREE AC GAS",
-    categoryId: 1,
-  },
-];
+import axios from "axios";
 
 export default function ServiceCards() {
-  const id = useParams();
-  const [activeTab, setActiveTab] = useState(categories[0]);
+  const { categoryId } = useParams();
+  const [subcategories, setSubcategories] = useState([]);
+  const [activeTab, setActiveTab] = useState(null);
+  const [packages, setPackages] = useState([]);
+  const [categoryName, setCategoryName] = useState("");
   const navigate = useNavigate();
   const scrollRef = useRef();
+  const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
+  const baseUrlImage = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
 
   const { cartItems, addToCart } = useCart();
 
+  const selectedCarDetails = JSON.parse(localStorage.getItem("selectedCarDetails"));
+ let brandId;
+  let modelId;
+  let fuelId;
+  if (selectedCarDetails) {
+     brandId = selectedCarDetails.brand?.id;
+     modelId = selectedCarDetails.model?.id;
+     fuelId = selectedCarDetails.fuel?.id;
+
+    console.log({ brandId, modelId, fuelId });
+  } else {
+    console.log("No car selected yet.");
+  }
+
+  useEffect(() => {
+    const fetchCategoryAndSubcategories = async () => {
+      try {
+        const [subRes, catRes] = await Promise.all([
+          axios.get(`${BASE_URL}SubCategory1/subcategorybycategoryid?categoryid=${categoryId}`),
+          axios.get(`${BASE_URL}Category`)
+        ]);
+
+        if (Array.isArray(subRes.data)) {
+          setSubcategories(subRes.data);
+          setActiveTab(subRes.data[0]?.SubCategoryID || null);
+        }
+
+        if (catRes.data?.status && Array.isArray(catRes.data.data)) {
+          const matchedCategory = catRes.data.data.find(
+            (cat) => cat.CategoryID.toString() === categoryId
+          );
+          if (matchedCategory) {
+            setCategoryName(matchedCategory.CategoryName);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching category or subcategories", err);
+      }
+    };
+
+    fetchCategoryAndSubcategories();
+  }, [categoryId]);
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      if (!activeTab) return;
+      try {
+        const response = await axios.get(
+          `${BASE_URL}PlanPackage/GetPlanPackagesByCategoryAndSubCategory?categoryId=${categoryId}&subCategoryId=${activeTab}&BrandId=${brandId || ''}&ModelId=${modelId || ''}&fuelTypeId=${fuelId || ''}`
+        );
+        if (Array.isArray(response.data)) {
+          const formatted = response.data.map(pkg => ({
+            id: pkg.packageID,
+            title: pkg.packageName,
+            description: pkg.subCategoryName,
+            image: `${baseUrlImage}${pkg.packageImage}`,
+            tag: "Featured Package",
+            duration: "",
+            price: pkg.serv_Off_Price,
+            originalPrice: pkg.serv_Reg_Price,
+            includes: [],
+            BrandId: '',
+            ModelId: '',
+          }));
+          setPackages(formatted);
+          console.log("Fetched packages:", response.data);
+
+        } else {
+          setPackages([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch packages", err);
+      }
+    };
+
+    fetchPackages();
+  }, [categoryId, activeTab]);
+
+  useEffect(() => {
+    setPackages([]);
+  }, [activeTab]);
+
 
   const scroll = (direction) => {
-    if (direction === "left") {
-      scrollRef.current.scrollBy({ left: -150, behavior: "smooth" });
-    } else {
-      scrollRef.current.scrollBy({ left: 150, behavior: "smooth" });
-    }
+    const container = scrollRef.current;
+    const tabWidth = container?.firstChild?.offsetWidth || 150;
+    const scrollAmount = tabWidth + 12;
+    container.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth"
+    });
   };
-
-  const filteredServices = services.filter(s => s.categoryId === activeTab.id);
-
 
   return (
     <div className="container my-4">
+      {categoryName && (
+        <h4 className="mb-3 text-uppercase fw-bold">{categoryName}</h4>
+      )}
       <div className="d-flex align-items-center position-relative mb-4">
         <button className="arrow-btn left" onClick={() => scroll("left")}>&lt;</button>
         <div className="scrollable-tabs" ref={scrollRef}>
-          {categories.map(cat => (
+          {subcategories.map((sub) => (
             <div
-              key={cat.id}
-              className={`tab-pill ${cat.id === activeTab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(cat)}
+              key={sub.SubCategoryID}
+              className={`tab-pill ${activeTab?.toString() === sub.SubCategoryID.toString() ? "active" : ""}`}
+              onClick={() => setActiveTab(sub.SubCategoryID)}
             >
-              <span className="icon">{cat.icon}</span>
-              <span>{cat.name}</span>
+              <span>{sub.SubCategoryName}</span>
             </div>
           ))}
         </div>
@@ -99,47 +136,52 @@ export default function ServiceCards() {
 
       {/* Services */}
       <div className="row">
-        {filteredServices.map(service => {
-          const isInCart = cartItems.some(i => i.id === service.id);
+        {packages.length === 0 && (
+          <p className="text-muted">No packages available for this subcategory.</p>
+        )}
+        {packages.map((pkg) => {
+          const isInCart = cartItems.some((i) => i.id === pkg.id);
           return (
-            <div key={service.id} className="col-md-12 mb-4">
+            <div key={pkg.id} className="col-md-12 mb-4">
               <div
                 className="card shadow-sm service-card-horizontal"
-                onClick={() => navigate(`/servicedetails/${service.id}`)}
+                onClick={() => navigate(`/servicedetails/${pkg.id}`)}
                 style={{ cursor: "pointer" }}
               >
                 <div className="row g-0">
                   <div className="col-md-3 position-relative">
                     <img
-                      src={service.image}
+                      src={pkg.image}
                       className="img-fluid h-100 object-fit-cover"
-                      alt={service.title}
+                      alt={pkg.title}
                     />
-                    <span className="tag-label">{service.tag}</span>
+                    <span className="tag-label">{pkg.tag}</span>
                   </div>
                   <div className="col-md-9">
                     <div className="card-body">
                       <div className="d-flex justify-content-between">
-                        <h5 className="card-title">{service.title}</h5>
-                        <span className="text-muted small">{service.duration}</span>
+                        <h5 className="card-title">{pkg.title}</h5>
+                        {pkg.duration && (
+                          <span className="text-muted small">{pkg.duration}</span>
+                        )}
                       </div>
                       <ul className="list-unstyled small mb-3 mt-2">
-                        {service.includes.map((item, idx) => (
+                        {pkg.includes.map((item, idx) => (
                           <li key={idx}>✔ {item}</li>
                         ))}
                       </ul>
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
                           <div className="text-muted text-decoration-line-through">
-                            ₹{service.originalPrice}
+                            ₹{pkg.originalPrice}
                           </div>
-                          <div className="fw-bold text-success">₹{service.price}</div>
+                          <div className="fw-bold text-success">₹{pkg.price}</div>
                         </div>
                         {isInCart ? (
                           <button
                             className="btn btn-sm btn-success"
                             onClick={(e) => {
-                              e.stopPropagation(); // prevent card click
+                              e.stopPropagation();
                               navigate("/cart");
                             }}
                           >
@@ -150,7 +192,7 @@ export default function ServiceCards() {
                             className="btn btn-sm btn-outline-danger"
                             onClick={(e) => {
                               e.stopPropagation();
-                              addToCart(service);
+                              addToCart(pkg);
                               toast.success("Service added to cart");
                             }}
                           >
@@ -163,9 +205,8 @@ export default function ServiceCards() {
                 </div>
               </div>
             </div>
-          )
-        }
-        )}
+          );
+        })}
       </div>
     </div>
   );

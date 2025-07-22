@@ -10,15 +10,14 @@ const MainProfile = () => {
     const navigation = useNavigate();
 
     const tabs = [
-        { key: "profile", label: "Profile", icon: "👤" },
-        { key: "addresses", label: "Addresses", icon: "📍" },
-        { key: "mybookings", label: "My Bookings", icon: "🧪" },
-        { key: "mycars", label: "My Car List", icon: "🧪" },
-        { key: "test3", label: "Test 3", icon: "🧪" },
-        { key: "test4", label: "Test 4", icon: "🧪" },
-        { key: "logout", label: "Log Out", icon: "🚪" },
+        { key: "profile", label: "Profile", icon: "👤" },         
+        { key: "addresses", label: "Addresses", icon: "🏠" },     
+        { key: "mybookings", label: "My Bookings", icon: "📅" }, 
+        { key: "mycars", label: "My Car List", icon: "🚗" },      
+        { key: "test3", label: "Test 3", icon: "🧪" },            
+        { key: "test4", label: "Test 4", icon: "🛠️" },            
+        { key: "logout", label: "Log Out", icon: "🚪" },          
     ];
-
 
     const user = JSON.parse(localStorage.getItem("user"));
     const userName = user?.name || "Guest User";
@@ -31,9 +30,9 @@ const MainProfile = () => {
             case "addresses":
                 return <AddressTab />;
             case "mybookings":
-                return <MyBookings/>;
+                return <MyBookings />;
             case "mycars":
-                return <MyCarList/>;
+                return <MyCarList />;
             case "test3":
                 return <div>Test 3</div>;
             case "test4":
