@@ -1,6 +1,6 @@
 .custom-alert-backdrop {
   position: fixed;
-  top: 20px;
+  top: 60px;
   right: 20px;
   z-index: 9999;
   display: flex;
@@ -10,7 +10,7 @@
 
 .custom-alert {
   background: #ffffff;
-  border-left: 6px solid #007bff;
+  border-left: 6px solid #ffdd00;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 16px 20px;
@@ -50,8 +50,26 @@
     opacity: 0;
     transform: translateY(-20%);
   }
+
   to {
     opacity: 1;
     transform: translateY(0%);
   }
+}
+
+.custom-alert.info {
+  border-left: 6px solid #ffdd00;
+  /* Yellow for info/warning */
+}
+
+.custom-alert.error {
+  border-left: 6px solid #e53935;
+  /* Red for errors */
+  background-color: #fff5f5;
+}
+
+.custom-alert.success {
+  border-left: 6px solid #4caf50;
+  /* Optional: green for success */
+  background-color: #f5fff5;
 }

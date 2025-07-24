@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import "./CustomAlert.css";
 
-const CustomAlert = ({ title, message, onClose, duration = 3000 }) => {
+const CustomAlert = ({ title, message, onClose, duration = 3000, type = "info" }) => {
     useEffect(() => {
         const timer = setTimeout(() => {
             onClose();
@@ -11,7 +11,7 @@ const CustomAlert = ({ title, message, onClose, duration = 3000 }) => {
 
     return (
         <div className="custom-alert-backdrop">
-            <div className="custom-alert">
+            <div className={`custom-alert ${type}`}>
                 <div className="custom-alert-header">
                     <span>{title}</span>
                     <button className="custom-alert-close" onClick={onClose}>×</button>

@@ -23,7 +23,7 @@ const TimeSlotPage = () => {
       <HeaderOne />
 
       {/* Breadcrumb */}
-      <Breadcrumb title={"Select Time Slot"} />
+      <Breadcrumb title={"Checkout"} />
 
       {/* Checkout */}
       <SelectTimeSlotPage />

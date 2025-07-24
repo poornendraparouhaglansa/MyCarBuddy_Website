@@ -41,7 +41,7 @@ const Checkout = () => {
     <div className="container py-5">
       <div className="row g-4">
         {/* Payment Options Section */}
-        <div className="col-lg-8">
+        <div className="col-lg-12">
           <div className="card shadow p-4">
             <h3 className="mb-4">Checkout</h3>
 
@@ -84,7 +84,7 @@ const Checkout = () => {
         </div>
 
         {/* Service Summary Section */}
-        <div className="col-lg-4">
+        {/* <div className="col-lg-4">
           <div className="card shadow p-4">
             <h5 className="mb-4">Services in Cart</h5>
 
@@ -117,7 +117,7 @@ const Checkout = () => {
               </div>
             )}
           </div>
-        </div>
+        </div> */}
 
       </div>
     </div>

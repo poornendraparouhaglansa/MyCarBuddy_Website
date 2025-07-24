@@ -7,6 +7,7 @@ import ChooseCarModal from "./ChooseCarModal";
 import { FaShoppingCart } from "react-icons/fa";
 import { useCart } from "../context/CartContext";
 import ProfileModal from "./ProfileModal";
+import { useAlert} from "../context/AlertContext"
 
 const HeaderOne = () => {
   const [active, setActive] = useState(false);
@@ -24,6 +25,7 @@ const HeaderOne = () => {
 
   const { cartItems } = useCart();
   const itemCount = cartItems.length;
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     const alreadyShown = localStorage.getItem("locationModalShown");
@@ -117,7 +119,7 @@ const HeaderOne = () => {
         }
       );
     } else {
-      alert("Geolocation is not supported by this browser.");
+      showAlert("Geolocation is not supported by this browser.");
       localStorage.setItem("locationModalShown", "true");
       setShowLocationModal(false);
     }

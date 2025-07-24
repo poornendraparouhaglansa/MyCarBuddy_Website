@@ -1,15 +1,29 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import WeeklyCalendar from "./WeeklyCalender";
 import { format } from "date-fns";
+import { useAlert } from "../context/AlertContext";
+import Checkout from "./Checkout";
+import axios from "axios";
 
 const SelectTimeSlotPage = () => {
+    const baseUrl = process.env.REACT_APP_CARBUDDY_BASE_URL;
     const { cartItems } = useCart();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedTime, setSelectedTime] = useState(null);
     const [showAddressFields, setShowAddressFields] = useState(false);
     const [dateTouched, setDateTouched] = useState(false);
+    const [showCheckout, setShowCheckout] = useState(false);
+    const [states, setStates] = useState([]);
+    const [cities, setCities] = useState([]);
+    const [selectedState, setSelectedState] = useState("");
+    const [selectedCity, setSelectedCity] = useState("");
+    const [addressLine1, setAddressLine1] = useState("");
+    const addressRef = useRef(null);
+    const paymentRef = useRef(null);
+
+    const { showAlert } = useAlert();
 
     const navigate = useNavigate();
 
@@ -21,15 +35,96 @@ const SelectTimeSlotPage = () => {
     const isToday = format(new Date(), "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
 
 
-    const handleContinue = () => {
-        if (selectedDate && selectedTime) {
-            navigate("/checkout");
-        } else {
-            alert("Please select a date and time slot.");
+    // const handleContinue = () => {
+    //     if (selectedDate && selectedTime) {
+    //         setShowCheckout(true);
+    //         setTimeout(() => {
+    //             paymentRef.current?.scrollIntoView({ behavior: "smooth" });
+    //         }, 100);
+    //     } else {
+    //         showAlert("Please select a date and time slot.");
+    //     }
+    // };
+
+    const totalAmount = cartItems.reduce((sum, i) => sum + i.price, 0);
+
+    useEffect(() => {
+        const fetchStates = async () => {
+            try {
+                const response = await axios.get(`${baseUrl}State`);
+                const activeStates = response.data.filter((s) => s.IsActive);
+                setStates(activeStates);
+            } catch (err) {
+                console.error("Error fetching states:", err);
+            }
+        };
+
+        fetchStates();
+    }, []);
+
+    useEffect(() => {
+        const fetchCities = async () => {
+            if (!selectedState) return;
+            try {
+                const response = await axios.get(`${baseUrl}City`);
+                const filteredCities = response.data.filter(
+                    (c) => c.StateID === parseInt(selectedState) && c.IsActive
+                );
+                setCities(filteredCities);
+            } catch (err) {
+                console.error("Error fetching cities:", err);
+            }
+        };
+
+        fetchCities();
+    }, [selectedState]);
+
+    const handleContinue = async () => {
+        if (!selectedDate || !selectedTime) {
+            showAlert("Please select a date and time slot.");
+            return;
+        }
+
+        if (!selectedState || !selectedCity || !addressLine1.trim()) {
+            showAlert("Please complete the address (state, city, and address).");
+            return;
+        }
+
+        const custId = JSON.parse(localStorage.getItem("user"))?.id;
+
+        const payload = {
+            custID: custId,
+            addressLine1: addressLine1,
+            addressLine2: 'addressLine2',
+            stateID: Number(selectedState),
+            cityID: Number(selectedCity),
+            pincode: 500081,
+            latitude: 17.4343443,
+            longitude: 78.448224,
+            isDefault: true,
+            createdBy: 1,
+            isActive: true,
+        };
+
+        try {
+            const res = await axios.post(`${baseUrl}CustomerAddresses`, payload);
+
+            if (res.status === 200 || res.status === 201) {
+                showAlert("success", "Address saved successfully!", 3000, "success");
+                setShowCheckout(true);
+                setTimeout(() => {
+                    paymentRef.current?.scrollIntoView({ behavior: "smooth" });
+                }, 100);
+            } else {
+                showAlert("Failed to save address. Please try again.");
+            }
+        } catch (error) {
+            console.error("Address save error:", error);
+            showAlert("Error saving address. Please try again.");
         }
     };
 
-    const totalAmount = cartItems.reduce((sum, i) => sum + i.price, 0);
+
 
     return (
         <div className="container py-4">
@@ -111,21 +206,27 @@ const SelectTimeSlotPage = () => {
                         <div className="text-end mt-3">
                             <button
                                 className="btn btn-danger"
-                                onClick={() => setShowAddressFields(true)}
+                                onClick={() => {
+                                    setShowAddressFields(true)
+                                    setTimeout(() => {
+                                        addressRef.current?.scrollIntoView({ behavior: "smooth" });
+                                    }, 100);
+                                }}
+
                             >
                                 Continue
                             </button>
                         </div>
                     )}
                     {showAddressFields && (
-                        <div className="border-start border-3 border-danger ps-3 pt-3 mt-4">
+                        <div ref={addressRef} className="border-start border-3 border-danger ps-3 pt-3 mt-4">
                             <h5 className="fw-bold">Select / Add Address</h5>
                             <p className="text-muted mb-3">Select from saved address or add a new address</p>
 
                             <div className="row">
                                 {/* Left Column: Address Fields */}
                                 <div className="col-md-7">
-                                    <div className="mb-3">
+                                    {/* <div className="mb-3">
                                         <input type="text" className="form-control" placeholder="Enter Locality *" />
                                     </div>
                                     <div className="mb-3">
@@ -136,30 +237,54 @@ const SelectTimeSlotPage = () => {
                                     </div>
                                     <div className="mb-3">
                                         <input type="number" className="form-control" placeholder="Mobile Number *" />
-                                    </div>
-                                    {/* <div className="text-end mt-3">
-                                        <button
-                                            className="btn btn-danger m-0 p-3"
-                                        >
-                                            Save
-                                        </button>
                                     </div> */}
-                                    <div className="mt-3">
+                                    <div className="mb-3 row">
+                                        <div className="col-md-6">
+                                            <select className="form-select" value={selectedState}
+                                                onChange={(e) => {
+                                                    setSelectedState(e.target.value);
+                                                    setSelectedCity("");
+                                                }}>
+                                                <option value="">Select State</option>
+                                                {states.map((state) => (
+                                                    <option key={state.StateID} value={state.StateID}>
+                                                        {state.StateName}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="col-md-6">
+                                            <select className="form-select" value={selectedCity}
+                                                onChange={(e) => setSelectedCity(e.target.value)}
+                                                disabled={!selectedState}>
+                                                <option value="">Select City</option>
+                                                {cities.map((city) => (
+                                                    <option key={city.CityID} value={city.CityID}>
+                                                        {city.CityName}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <textarea
+                                            className="form-control"
+                                            rows="3"
+                                            placeholder="Address"
+                                            value={addressLine1}
+                                            onChange={(e) => setAddressLine1(e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* <div className="mt-3">
                                         <p className="fw-bold mb-1">Choose from Saved Addresses</p>
                                         <div className="border p-3 rounded d-flex flex-column gap-2" style={{ maxWidth: "100%" }}>
                                             <div><i className="bi bi-geo-alt" /> Hyderabad, Hyderabad</div>
                                             <button className="btn btn-outline-dark w-100">Select</button>
                                         </div>
-                                    </div>
-
-                                    {/* <div className="text-end mt-3">
-                                        <button
-                                            className="btn btn-danger"
-                                            onClick={handleContinue}
-                                        >
-                                            Continue
-                                        </button>
                                     </div> */}
+
                                 </div>
 
                                 {/* Right Column: Dummy Map */}
@@ -183,7 +308,11 @@ const SelectTimeSlotPage = () => {
                             </div>
                         </div>
                     )}
-
+                    {showCheckout && (
+                        <div ref={paymentRef} className="mt-5">
+                            <Checkout />
+                        </div>
+                    )}
                 </div>
 
                 {/* Right: Cart Items */}
@@ -221,9 +350,24 @@ const SelectTimeSlotPage = () => {
                                 </div>
                             )}
                         </div>
+                        {dateTouched && (
+                            <div className="alert alert-success d-flex align-items-center gap-3 mt-3" role="alert">
+                                <i className="bi bi-calendar-event" />
+                                <div>
+                                    <strong>
+                                        You selected: {format(selectedDate, "EEEE, dd MMMM")}
+                                        {selectedTime ? ` at ${selectedTime}` : " — Select a slot"}
+                                    </strong>
+                                    
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </div>
+
             </div>
+
         </div>
 
     );

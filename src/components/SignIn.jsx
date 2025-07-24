@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import "./SignInModal.css";
 import axios from "axios";
 import { v4 as uuidv4 } from 'uuid';
+import { useAlert } from "../context/AlertContext";
 
 const SignIn = ({ isVisible, onClose, onRegister }) => {
     const [identifier, setIdentifier] = useState("");
@@ -9,6 +10,8 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
     const [otp, setOtp] = useState("");
     const [loading, setLoading] = useState(false);
     const baseUrl = process.env.REACT_APP_CARBUDDY_BASE_URL;
+
+    const { showAlert } = useAlert();
 
     const modalRef = useRef();
 
@@ -46,7 +49,7 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
             setOtpSent(true);
         } catch (error) {
             console.error("Error sending OTP:", error);
-            alert("Failed to send OTP. Please try again.");
+            showAlert("Error", "Failed to send OTP. Please try again.", 3000, "error");
         } finally {
             setLoading(false);
         }
@@ -66,20 +69,21 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
             });
             console.log("OTP verification response:", response.data);
             localStorage.setItem("user", JSON.stringify({
-                id: response.data?.id || "123",
+                id: response.data?.custID,
                 name: response.data?.name || null,
-                identifier
+                identifier,
+                token: response.data?.token
             }));
             const userCarKey = `selectedCar_${identifier}`;
             const userCar = localStorage.getItem(userCarKey);
             if (userCar) {
-                localStorage.setItem("selectedCarDetails", userCar); 
+                localStorage.setItem("selectedCarDetails", userCar);
             }
             window.dispatchEvent(new Event("userProfileUpdated"));
             onClose();
         } catch (error) {
             console.error("Error verifying OTP:", error);
-            alert("Invalid OTP. Please try again.");
+            showAlert("Error", "Invalid OTP. Please try again.", 3000, "error");
         } finally {
             setLoading(false);
         }

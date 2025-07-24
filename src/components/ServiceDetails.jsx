@@ -92,22 +92,32 @@ const ServiceDetails = () => {
             {/* Main Content */}
             <div className="col-lg-8">
               <div className="service-page-single">
-                <div className="page-img mb-4 d-flex">
-                  <div className="w-50">
-                    <img
-                      src={service.image}
-                      className="img-fluid rounded w-100"
-                      alt={service.title}
-                      style={{ objectFit: 'cover' }}
-                    />
+                <div className="page-img mb-4">
+                  <div className="d-flex">
+                    <div className="w-50">
+                      <img
+                        src={service.image}
+                        className="img-fluid rounded-start w-100 h-100"
+                        alt={service.title}
+                        style={{ objectFit: 'cover' }}
+                      />
+                    </div>
+
+                    <div className="w-50 d-flex flex-row justify-content-end gap-2">
+                      <i className="bi bi-clock-fill text-muted">  </i>
+                      <p className="mb-0 fw-regular text-muted"> {service.duration}</p>
+                    </div>
                   </div>
 
-                  <div className="w-50 d-flex align-items-end justify-content-end">
-                    <button className="btn style-border2">
+                  <div className="d-flex justify-content-between align-items-center px-4 py-3" style={{ backgroundColor: '#f1f1f1' }}>
+                    <h5 className="mb-0 fw-bold text-dark">₹ {service.price}</h5>
+                    <button className="btn btn-danger fw-bold">
                       + ADD TO CART
                     </button>
                   </div>
                 </div>
+
+
 
                 <div className="page-content">
                   <h2 className="page-title">{service.title}</h2>

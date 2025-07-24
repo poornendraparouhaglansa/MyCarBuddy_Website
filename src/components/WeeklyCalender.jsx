@@ -18,9 +18,10 @@ const WeeklyCalendar = ({ selectedDate, onDateSelect }) => {
     };
 
     const getWeekDates = (offset = 0) => {
-        const start = startOfWeek(addWeeks(new Date(), offset), { weekStartsOn: 1 }); // Monday
-        return Array.from({ length: 7 }, (_, i) => addDays(start, i));
-    };
+        const today = new Date();
+        const baseDate = addDays(today, offset * 7);
+        return Array.from({ length: 7 }, (_, i) => addDays(baseDate, i));
+    };;
 
     const weekDates = getWeekDates(weekOffset);
 

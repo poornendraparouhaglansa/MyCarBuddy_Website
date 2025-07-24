@@ -1,7 +1,8 @@
 // CartPage.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
 import { Link, useNavigate } from "react-router-dom";
+import SignIn from "./SignIn";
 
 const CartPage = () => {
   const { cartItems, removeFromCart } = useCart();
@@ -9,6 +10,28 @@ const CartPage = () => {
   const total = cartItems.reduce((sum, i) => sum + i.price, 0);
 
   const navigate = useNavigate();
+
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("user"));
+  
+  useEffect(() => {
+    const handleUserChange = () => {
+      setIsLoggedIn(!!localStorage.getItem("user"));
+    };
+
+    window.addEventListener("userProfileUpdated", handleUserChange);
+    return () => {
+      window.removeEventListener("userProfileUpdated", handleUserChange);
+    };
+  }, []);
+
+  const handleSelectSlot = () => {
+    if (isLoggedIn) {
+      navigate("/selecttimeslot");
+    } else {
+      setShowSignInModal(true);
+    }
+  };
 
   return (
     <div className="container py-4">
@@ -65,13 +88,20 @@ const CartPage = () => {
 
           {cartItems.length > 0 && (
             <div className="d-flex justify-content-end mt-4">
-              <Link to="/selecttimeslot" className="btn btn-danger btn-lg">
-                Select Time Slot
-              </Link>
+              <button onClick={handleSelectSlot} className="btn btn-danger btn-lg">
+                Check Out
+              </button>
             </div>
           )}
         </>
       )}
+      <SignIn
+        isVisible={showSignInModal}
+        onClose={() => setShowSignInModal(false)}
+        onRegister={() => {
+          setShowSignInModal(false);
+        }}
+      />
     </div>
   );
 };

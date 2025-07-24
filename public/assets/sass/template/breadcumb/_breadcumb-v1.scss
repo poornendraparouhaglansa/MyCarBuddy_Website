@@ -51,8 +51,8 @@
 .breadcumb-title {
     color: $white-color;
     margin: -0.15em 0 -0.2em 0;
-    line-height: 1.1;
-    font-size: 38px;
+    line-height: 1;
+    font-size: 30px;
     font-weight: 700;
     font-family: $title-font;
     z-index: 1;
@@ -62,14 +62,14 @@
 
 .breadcumb-wrapper {
     position: relative;
-    padding: 150px 0 155px;
+    padding: 120px 0 155px;
     background: $title-color;
     overflow: hidden;
     z-index: auto;
 
     .breadcumb-content {
         position: absolute;
-        bottom: 20px; 
+        bottom: 25px; 
         left: 0;
         right: 0;
         z-index: 2;
