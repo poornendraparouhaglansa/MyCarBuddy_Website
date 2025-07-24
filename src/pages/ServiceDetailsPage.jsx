@@ -24,7 +24,7 @@ const ServiceDetailsPage = () => {
       <HeaderOne />
 
       {/* Breadcrumb */}
-      <Breadcrumb title={"Service Details"} />
+      <Breadcrumb title={"Service Packages"} />
 
       {/* Service Details */}
       <ServiceCards />

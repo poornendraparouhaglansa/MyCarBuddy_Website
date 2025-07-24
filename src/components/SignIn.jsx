@@ -70,6 +70,11 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
                 name: response.data?.name || null,
                 identifier
             }));
+            const userCarKey = `selectedCar_${identifier}`;
+            const userCar = localStorage.getItem(userCarKey);
+            if (userCar) {
+                localStorage.setItem("selectedCarDetails", userCar); 
+            }
             window.dispatchEvent(new Event("userProfileUpdated"));
             onClose();
         } catch (error) {
@@ -112,8 +117,8 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
                         </div>
                     )}
 
-                    <div className="d-grid mb-3">
-                        <button type="submit" className="btn btn-primary">
+                    <div className="text-center mb-3">
+                        <button type="submit" className="btn btn-primary btn-sm">
                             {otpSent ? "Verify OTP" : "Send OTP"}
                         </button>
                     </div>

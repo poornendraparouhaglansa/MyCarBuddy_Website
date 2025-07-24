@@ -395,6 +395,7 @@ const HeaderOne = () => {
                 const saved = localStorage.getItem("selectedCarDetails");
                 if (saved) setSelectedCar(JSON.parse(saved));
               }}
+              onCarSaved={(car) => setSelectedCar(car)}
             />
             <ProfileModal
               isVisible={profileVisible}

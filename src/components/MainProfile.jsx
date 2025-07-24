@@ -80,7 +80,7 @@ const MainProfile = () => {
                 </ul>
             </aside>
 
-            <main className="profile-content p-4 flex-grow-1">
+            <main className="profile-content p-2 flex-grow-1">
                 {renderTabContent()}
             </main>
 
@@ -90,6 +90,7 @@ const MainProfile = () => {
           display: flex;
           min-height: 100vh;
           background: #f8f9fb;
+          min-width: 900px;
         }
         .profile-sidebar {
           width: 280px;

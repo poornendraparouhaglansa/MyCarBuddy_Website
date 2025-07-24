@@ -64,7 +64,7 @@ const HomePageThree = () => {
       </div>
 
       {/* Choose Car Modal */}
-      <ChooseCarModal isVisible={showModal} onClose={() => setShowModal(false)} />
+      <ChooseCarModal isVisible={showModal} onClose={() => setShowModal(false)}  />
 
       {/* Reopen button */}
       {!showModal && (

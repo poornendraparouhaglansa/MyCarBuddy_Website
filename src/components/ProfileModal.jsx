@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./ProfileModal.css";
+import { useNavigate } from "react-router-dom";
 
 const ProfileModal = ({ isVisible, onClose, onRegister }) => {
     const [user, setUser] = useState(null);
     const modalRef = useRef();
+    const navigation = useNavigate();
 
     useEffect(() => {
         const saved = localStorage.getItem("user");
@@ -22,6 +24,7 @@ const ProfileModal = ({ isVisible, onClose, onRegister }) => {
         localStorage.removeItem("user");
         setUser(null);
         onClose();
+        navigation('/');
         window.location.reload();        
     };
 
@@ -35,13 +38,13 @@ const ProfileModal = ({ isVisible, onClose, onRegister }) => {
                         <p><strong>ID:</strong> {user.identifier}</p>
                         <p><strong>Name:</strong> {user.name || "Not Registered"}</p>
 
-                        {!user.name && (
+                        {/* {!user.name && (
                             <button className="btn btn-outline-primary mt-3" onClick={onRegister}>
                                 Complete Registration
                             </button>
-                        )}
+                        )} */}
 
-                        {user.name && ( 
+                        {/* {user.name && (  */}
                             <button
                                 className="btn btn-outline-secondary mt-3"
                                 onClick={() => {
@@ -51,7 +54,7 @@ const ProfileModal = ({ isVisible, onClose, onRegister }) => {
                             >
                                 View Profile
                             </button>
-                        )}
+                        {/* )} */}
 
                         <button className="btn btn-danger mt-3" onClick={handleLogout}>
                             Logout

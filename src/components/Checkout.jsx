@@ -6,6 +6,37 @@ const Checkout = () => {
 
   const totalAmount = cartItems.reduce((acc, item) => acc + item.price, 0);
 
+  const loadRazorpay = () => {
+    const options = {
+      key: process.env.REACT_APP_RAZORPAY_KEY,
+      amount: totalAmount * 100, 
+      currency: "INR",
+      name: "MyCarBuddy",
+      description: "Test Payment for Car Services",
+      image: "./public/assets/img/logo-yellow-01.png",
+      handler: function (response) {
+        alert("Payment successful!");
+        console.log("Payment ID:", response.razorpay_payment_id);
+        console.log("Order ID:", response.razorpay_order_id); // Will be undefined without backend
+        console.log("Signature:", response.razorpay_signature); // Will be undefined
+      },
+      prefill: {
+        name: "Sourav",
+        email: "sourav@example.com",
+        contact: "9999999999",
+      },
+      notes: {
+        address: "Developer Test Address",
+      },
+      theme: {
+        color: "#28a745",
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
   return (
     <div className="container py-5">
       <div className="row g-4">
@@ -47,7 +78,7 @@ const Checkout = () => {
             </div>
 
             <div className="text-end">
-              <button className="btn btn-success btn-lg">Confirm Payment</button>
+              <button className="btn btn-success btn-lg" onClick={loadRazorpay}>Confirm Payment</button>
             </div>
           </div>
         </div>

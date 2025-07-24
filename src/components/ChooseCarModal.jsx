@@ -4,7 +4,7 @@ import BrandPopup from "./BrandPopup"; // new popup component
 import ModelPopup from "./ModelPopup";
 import axios from "axios";
 
-const ChooseCarModal = ({ isVisible, onClose }) => {
+const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
   const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
   const [carType, setCarType] = useState("");
   const [brand, setBrand] = useState(null);
@@ -106,6 +106,16 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
     };
 
     localStorage.setItem("selectedCarDetails", JSON.stringify(selectedCarDetails));
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user?.identifier) {
+      const userCarKey = `selectedCar_${user.identifier}`;
+      localStorage.setItem(userCarKey, JSON.stringify(selectedCarDetails));
+    }
+    if (onCarSaved) {
+      onCarSaved(selectedCarDetails);
+    }
+
     console.log("Saved Car:", selectedCarDetails);
 
     onClose();
@@ -113,9 +123,9 @@ const ChooseCarModal = ({ isVisible, onClose }) => {
 
   const handleBrandSelect = (id) => {
     setBrand(id);
-    setModel(""); 
+    setModel("");
     setShowBrandPopup(false);
-    fetchModels(id); 
+    fetchModels(id);
   };
 
   const handleModelSelect = (id) => {

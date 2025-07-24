@@ -1,0 +1,57 @@
+.custom-alert-backdrop {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.custom-alert {
+  background: #ffffff;
+  border-left: 6px solid #007bff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 16px 20px;
+  width: 280px;
+  margin-top: 10px;
+  animation: slideIn 0.3s ease;
+}
+
+.custom-alert-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  color: #333;
+}
+
+.custom-alert-body {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #555;
+}
+
+.custom-alert-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: #888;
+}
+
+.custom-alert-close:hover {
+  color: #000;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0%);
+  }
+}
