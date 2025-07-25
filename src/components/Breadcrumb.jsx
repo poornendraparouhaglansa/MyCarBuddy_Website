@@ -17,11 +17,11 @@ const Breadcrumb = ({ title }) => {
               </ul>
             </div>
           </div>
-          <div className="col-lg-6 d-lg-block d-none">
+          {/* <div className="col-lg-6 d-lg-block d-none">
             <div className="breadcumb-thumb">
               <img src="/assets/img/normal/breadcrumb-thumb.png" alt="Fixturbo" />
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

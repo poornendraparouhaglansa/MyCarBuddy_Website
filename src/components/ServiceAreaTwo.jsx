@@ -1,44 +1,34 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const ServiceAreaTwo = () => {
+  const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
   const [services, setServices] = useState([]);
 
   useEffect(() => {
-    // Example service data (replace with API call)
-    const data = [
-      {
-        id: 1,
-        title: "Interior Wash",
-        description: "Complete interior cleaning & sanitization",
-        image: "assets/img/portfolio/2-2.png",
-        icon: "assets/img/icon/service-icon_1-1.svg",
-      },
-      {
-        id: 2,
-        title: "Exterior Detailing",
-        description: "Exterior polish and scratch removal",
-        image: "assets/img/portfolio/2-1.png",
-        icon: "assets/img/icon/service-icon_1-2.svg",
-      },
-      // {
-      //   id: 3,
-      //   title: "Engine Deep Clean",
-      //   description: "Engine bay cleaning with care",
-      //   image: "assets/img/portfolio/2-3.png",
-      //   icon: "assets/img/icon/service-icon_1-3.svg",
-      // },
-      // {
-      //   id: 3,
-      //   title: "Engine Deep Clean",
-      //   description: "Engine bay cleaning with care",
-      //   image: "assets/img/portfolio/2-3.png",
-      //   icon: "assets/img/icon/service-icon_1-3.svg",
-      // },
-      
-    ];
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`${BASE_URL}Category`);
+        if (response.data.status && Array.isArray(response.data.data)) {
+          const activeCategories = response.data.data.filter(cat => cat.IsActive);
 
-    setServices(data); // Replace with API if needed
+          const formatted = activeCategories.map((cat) => ({
+            id: cat.CategoryID,
+            title: cat.CategoryName,
+            description: cat.Description || "No description provided.",
+            image: `https://api.mycarsbuddy.com/Images/${cat.ThumbnailImage}`,
+            icon: `https://api.mycarsbuddy.com/Images/${cat.IconImage}`,
+          }));
+
+          setServices(formatted);
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+
+    fetchCategories();
   }, []);
 
   return (
@@ -62,7 +52,6 @@ const ServiceAreaTwo = () => {
       </div>
 
       {services.length === 2 ? (
-        // 🔄 Two Services Layout
         <div className="container">
           <div className="counter-area-1 space-bottom">
             <div className="row gx-0 align-items-center justify-content-center gap-3">
@@ -78,21 +67,21 @@ const ServiceAreaTwo = () => {
                       </div>
                       <div className="media-body">
                         <h4 className="link">
-                          <a className="text-white" href="#">
+                          <Link className="text-white" to={`/service-details/${service.id}`}>
                             {service.title}
-                          </a>
+                          </Link>
                         </h4>
-                       
-                      </div>
-                       <p className="service-card_text text-white">
+                        <p className="service-card_text text-white mt-2">
                           {service.description}
                         </p>
+                      </div>
+
                     </div>
                     <div className="checklist style-white mb-50">
                       <div className="btn-wrap mt-20">
-                        <a className="btn style4 py-2 px-3" href="/service-details">
-                          Read More <i className="fas fa-arrow-right ms-2"></i>
-                        </a>
+                        <Link className="btn style4" to={`/service-details/${service.id}`}>
+                          Read More <i className="fas fa-arrow-right ms-2" />
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -102,7 +91,6 @@ const ServiceAreaTwo = () => {
           </div>
         </div>
       ) : (
-        // 🔄 3 or More Services Layout
         <div className="container">
           <div className="row gy-4 justify-content-center">
             {services.map((service) => (
@@ -117,12 +105,12 @@ const ServiceAreaTwo = () => {
                         <img src={service.icon} alt="icon" />
                       </div>
                       <h4 className="service-card_title h5">
-                        <Link to="/service-details">{service.title}</Link>
+                        <Link to={`/service-details/${service.id}`}>{service.title}</Link>
                       </h4>
                       <p className="service-card_text">{service.description}</p>
                     </div>
                   </div>
-                  <Link to="/service-details" className="btn style4">
+                  <Link to={`/service-details/${service.id}`} className="btn style4">
                     Read More <i className="fas fa-arrow-right" />
                   </Link>
                 </div>

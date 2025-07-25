@@ -56,7 +56,7 @@ const HeaderThree = () => {
                 <ul>
                   <li>
                     <i className="fas fa-envelope" />
-                    <Link to="mailto:info@example.com">info@example.com</Link>
+                    <Link to="mailto:carbuddy@example.com">carbuddy@example.com</Link>
                   </li>
                   <li>
                     <i className="fas fa-map-marker-alt" />
@@ -115,7 +115,7 @@ const HeaderThree = () => {
                 <nav className="main-menu d-none d-lg-inline-block">
                   <ul>
                     <li className="menu-item-has-children">
-                      <Link to="#">Home</Link>
+                      <Link to="#">Homeeeeeeee</Link>
                       <ul className="sub-menu">
                         <li>
                           <NavLink

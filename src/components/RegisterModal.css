@@ -23,15 +23,16 @@
   opacity: 1;
 }
 
-.modal-content {
+.register-modal-content {
   background: #ffffff;
   padding: 30px;
   border-radius: 12px;
   width: 90%;
-  max-width: 400px;
+  max-width: 600px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   text-align: center;
 }
+
 .modal-close {
   position: absolute;
   top: 12px;
@@ -45,4 +46,52 @@
 
 .modal-close:hover {
   color: #000;
+}
+
+.register-row {
+  display: flex;
+  gap: 12px;
+}
+
+.register-col {
+  flex: 1;
+}
+
+::placeholder {
+  color: gray;
+  opacity: 1;
+  /* Optional: makes sure it's not semi-transparent */
+}
+
+/* For Internet Explorer 10-11 */
+:-ms-input-placeholder {
+  color: gray;
+}
+
+/* For Microsoft Edge */
+::-ms-input-placeholder {
+  color: gray;
+}
+
+.mobile-otp-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.mobile-otp-row input.form-control {
+  flex: 1;
+  min-width: 0;
+  /* prevents overflow */
+}
+
+.otp-input {
+  width: 100px;
+}
+
+.verify-btn {
+  font-size: 16px;
+  line-height: 1;
+  height: 38px;
 }

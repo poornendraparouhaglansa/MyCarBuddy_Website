@@ -8,7 +8,7 @@ import servicetwo from '../../src/images/service-1-3.png';
 
 export const services = [
   {
-    id: 101,
+    id: 1,
     title: "Regular Car Service",
     duration: "Takes 4 hours",
     price: 2399,
@@ -24,7 +24,7 @@ export const services = [
     categoryId: 1,
   },
   {
-    id: 102,
+    id: 2,
     title: "High Performance AC Service",
     duration: "Takes 8 hours",
     price: 3499,
@@ -39,7 +39,7 @@ export const services = [
     categoryId: 1,
   },
   {
-    id: 103,
+    id: 3,
     title: "Regular AC Service",
     duration: "Takes 4 hours",
     price: 2399,
@@ -55,8 +55,8 @@ export const services = [
     categoryId: 1,
   },
   {
-    id: 104,
-    title: "High Performance AC Service",
+    id: 4,
+    title: "High Performance Car Service",
     duration: "Takes 8 hours",
     price: 3499,
     originalPrice: 4999,
@@ -75,15 +75,17 @@ export const services = [
 const ServiceDetails = () => {
   const { id } = useParams();
   const service = services.find(s => s.id === parseInt(id));
-  const categoryServices = services.filter(s => s.categoryId === service.categoryId && s.id !== service.id);
 
   if (!service) {
     return <div className="container mt-5"><h4>Service not found</h4></div>;
   }
+
+  const categoryServices = services.filter(s => s.categoryId === service.categoryId && s.id !== service.id);
+
   return (
     <>
       <HeaderOne />
-      <Breadcrumb title={"Service Details Inner"} />
+      <Breadcrumb title={"Service Details"} />
       <div className="service-details-area py-5">
         <div className="container">
           <div className="row gx-5 flex-row">
@@ -91,8 +93,32 @@ const ServiceDetails = () => {
             <div className="col-lg-8">
               <div className="service-page-single">
                 <div className="page-img mb-4">
-                  <img src={service.image} className="img-fluid rounded" alt={service.title} />
+                  <div className="d-flex">
+                    <div className="w-50">
+                      <img
+                        src={service.image}
+                        className="img-fluid rounded-start w-100 h-100"
+                        alt={service.title}
+                        style={{ objectFit: 'cover' }}
+                      />
+                    </div>
+
+                    <div className="w-50 d-flex flex-row justify-content-end gap-2">
+                      <i className="bi bi-clock-fill text-muted">  </i>
+                      <p className="mb-0 fw-regular text-muted"> {service.duration}</p>
+                    </div>
+                  </div>
+
+                  <div className="d-flex justify-content-between align-items-center px-4 py-3" style={{ backgroundColor: '#f1f1f1' }}>
+                    <h5 className="mb-0 fw-bold text-dark">₹ {service.price}</h5>
+                    <button className="btn btn-danger fw-bold">
+                      + ADD TO CART
+                    </button>
+                  </div>
                 </div>
+
+
+
                 <div className="page-content">
                   <h2 className="page-title">{service.title}</h2>
                   <p className="text-muted mb-3">{service.duration}</p>

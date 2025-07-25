@@ -1,22 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import HeaderOne from "./../components/HeaderOne";
-// import HeroThree from "../components/HeroThree";
-// import FeatureAreaOne from "../components/FeatureAreaOne";
-// import AboutThree from "../components/AboutThree";
-// import IntroAreaOne from "../components/IntroAreaOne";
-// import ServiceAreaOne from "../components/ServiceAreaOne";
-// import PortfolioTwo from "../components/PortfolioTwo";
 import FaqAreaTwo from "../components/FaqAreaTwo";
 import MarqueeOne from "../components/MarqueeOne";
-// import TeamAreaThree from "../components/TeamAreaThree";
 import CTAAreaOne from "../components/CTAAreaOne";
 import TestimonialOne from "../components/TestimonialOne";
-// import BlogAreaThree from "../components/BlogAreaThree";
 import FooterAreaOne from "../components/FooterAreaOne";
 import SubscribeOne from "../components/SubscribeOne";
 import Preloader from "../helper/Preloader";
 import AboutFour from "../components/AboutFour";
-// import HeroFive from "../components/HeroFive";
 import HeroSection from "../components/HeroSection";
 import ChooseCarModal from "../components/ChooseCarModal";
 import ServiceAreaTwo from "../components/ServiceAreaTwo";
@@ -25,11 +16,34 @@ import ServiceAreaTwo from "../components/ServiceAreaTwo";
 const HomePageThree = () => {
   let [active, setActive] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const serviceRef = useRef(null);
 
   useEffect(() => {
     setTimeout(() => setActive(false), 2000);
     // const selectedCar = localStorage.getItem("selectedCarType");
     // if (!selectedCar) setShowModal(true);
+  }, []);
+
+  useEffect(() => {
+    const handleScrollToService = () => {
+      if (serviceRef.current) {
+        serviceRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    };
+
+    window.addEventListener("scrollToService", handleScrollToService);
+
+    return () => {
+      window.removeEventListener("scrollToService", handleScrollToService);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (window.location.hash === "#scroll-to-service") {
+      setTimeout(() => {
+        window.dispatchEvent(new Event("scrollToService"));
+      }, 300);
+    }
   }, []);
 
   return (
@@ -45,10 +59,12 @@ const HomePageThree = () => {
       <HeroSection />
 
       {/* Service Area Two */}
-      <ServiceAreaTwo />
+      <div ref={serviceRef}>
+        <ServiceAreaTwo />
+      </div>
 
       {/* Choose Car Modal */}
-      <ChooseCarModal isVisible={showModal} onClose={() => setShowModal(false)} />
+      <ChooseCarModal isVisible={showModal} onClose={() => setShowModal(false)}  />
 
       {/* Reopen button */}
       {!showModal && (
