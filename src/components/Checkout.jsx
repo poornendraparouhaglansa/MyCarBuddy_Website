@@ -1,24 +1,37 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { useCart } from "../context/CartContext";
+import { useNavigate } from "react-router-dom";
+import SuccessFailureModal from "./SuccessFailureModal";
 
 const Checkout = () => {
   const { cartItems } = useCart();
+  const [modal, setModal] = useState({ show: false, type: "", message: "" });
+  const navigate = useNavigate();
 
   const totalAmount = cartItems.reduce((acc, item) => acc + item.price, 0);
+
+  const handleModalClose = () => {
+    setModal({ show: false, type: "", message: "" });
+    if (modal.type === "success") {
+      navigate("/profile?tab=mybookings"); // redirect to profile with query
+    }
+  };
 
   const loadRazorpay = () => {
     const options = {
       key: process.env.REACT_APP_RAZORPAY_KEY,
-      amount: totalAmount * 100, 
+      amount: totalAmount * 100,
       currency: "INR",
       name: "MyCarBuddy",
       description: "Test Payment for Car Services",
       image: "./public/assets/img/logo-yellow-01.png",
       handler: function (response) {
-        alert("Payment successful!");
-        console.log("Payment ID:", response.razorpay_payment_id);
-        console.log("Order ID:", response.razorpay_order_id); // Will be undefined without backend
-        console.log("Signature:", response.razorpay_signature); // Will be undefined
+        console.log("Payment successful:", response);
+        setModal({
+          show: true,
+          type: "success",
+          message: "Payment successful! Redirecting to bookings...",
+        });
       },
       prefill: {
         name: "Sourav",
@@ -30,6 +43,15 @@ const Checkout = () => {
       },
       theme: {
         color: "#28a745",
+      },
+      modal: {
+        ondismiss: function () {
+          setModal({
+            show: true,
+            type: "error",
+            message: "Payment was cancelled or failed.",
+          });
+        },
       },
     };
 
@@ -83,43 +105,13 @@ const Checkout = () => {
           </div>
         </div>
 
-        {/* Service Summary Section */}
-        {/* <div className="col-lg-4">
-          <div className="card shadow p-4">
-            <h5 className="mb-4">Services in Cart</h5>
-
-            {cartItems.length === 0 ? (
-              <p className="text-muted">No services in cart.</p>
-            ) : (
-              <div className="vstack gap-3">
-                {cartItems.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="d-flex gap-3 align-items-center border-bottom pb-3"
-                  >
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="rounded"
-                      style={{ width: "64px", height: "64px", objectFit: "cover" }}
-                    />
-                    <div className="flex-grow-1">
-                      <div className="fw-semibold">{item.title}</div>
-                      <div className="text-muted small">{item.duration}</div>
-                    </div>
-                    <div className="fw-bold text-success text-nowrap">₹{item.price}</div>
-                  </div>
-                ))}
-                <div className="d-flex justify-content-between pt-2 border-top mt-2">
-                  <strong>Total</strong>
-                  <strong className="text-primary">₹{totalAmount}</strong>
-                </div>
-              </div>
-            )}
-          </div>
-        </div> */}
-
       </div>
+      <SuccessFailureModal
+        show={modal.show}
+        type={modal.type}
+        message={modal.message}
+        onClose={handleModalClose}
+      />
     </div>
   );
 };

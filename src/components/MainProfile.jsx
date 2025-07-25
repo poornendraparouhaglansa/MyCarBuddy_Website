@@ -1,22 +1,26 @@
 import React, { useState } from "react";
 import Profile from "./Profile";
 import AddressTab from "./AddressTab";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import MyBookings from "./MyBookings";
 import MyCarList from "./MyCarList";
 
 const MainProfile = () => {
-    const [activeTab, setActiveTab] = useState("profile");
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const initialTab = queryParams.get("tab") || "profile";
+
+    const [activeTab, setActiveTab] = useState(initialTab);
     const navigation = useNavigate();
 
     const tabs = [
-        { key: "profile", label: "Profile", icon: "👤" },         
-        { key: "addresses", label: "Addresses", icon: "🏠" },     
-        { key: "mybookings", label: "My Bookings", icon: "📅" }, 
-        { key: "mycars", label: "My Car List", icon: "🚗" },      
-        { key: "test3", label: "Test 3", icon: "🧪" },            
-        { key: "test4", label: "Test 4", icon: "🛠️" },            
-        { key: "logout", label: "Log Out", icon: "🚪" },          
+        { key: "profile", label: "Profile", icon: "👤" },
+        { key: "addresses", label: "Addresses", icon: "🏠" },
+        { key: "mybookings", label: "My Bookings", icon: "📅" },
+        { key: "mycars", label: "My Car List", icon: "🚗" },
+        { key: "test3", label: "Test 3", icon: "🧪" },
+        { key: "test4", label: "Test 4", icon: "🛠️" },
+        { key: "logout", label: "Log Out", icon: "🚪" },
     ];
 
     const user = JSON.parse(localStorage.getItem("user"));

@@ -6,10 +6,11 @@ import { format } from "date-fns";
 import { useAlert } from "../context/AlertContext";
 import Checkout from "./Checkout";
 import axios from "axios";
+import SuccessFailureModal from "./SuccessFailureModal";
 
 const SelectTimeSlotPage = () => {
     const baseUrl = process.env.REACT_APP_CARBUDDY_BASE_URL;
-    const { cartItems } = useCart();
+    const { cartItems, clearCart } = useCart();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedTime, setSelectedTime] = useState(null);
     const [showAddressFields, setShowAddressFields] = useState(false);
@@ -20,12 +21,27 @@ const SelectTimeSlotPage = () => {
     const [selectedState, setSelectedState] = useState("");
     const [selectedCity, setSelectedCity] = useState("");
     const [addressLine1, setAddressLine1] = useState("");
+    const [addressLine2, setAddressLine2] = useState("");
+    const [technicianNote, setTechnicianNote] = useState("");
+    const [couponApplied, setCouponApplied] = useState(false);
+    const [discountAmount, setDiscountAmount] = useState(120); // example value
+    const [appliedCouponCode, setAppliedCouponCode] = useState("NEWCUS26");
+    const [paymentMethod, setPaymentMethod] = useState("razorpay");
+    const [modal, setModal] = useState({ show: false, type: "", message: "" });
     const addressRef = useRef(null);
     const paymentRef = useRef(null);
 
     const { showAlert } = useAlert();
 
     const navigate = useNavigate();
+
+    const handleModalClose = () => {
+        setModal({ show: false, type: "", message: "" });
+        if (modal.type === "success") {
+            navigate("/profile?tab=mybookings");
+        }
+    };
+
 
     const morningSlots = ["10 - 11AM", "11 - 12PM"];
 
@@ -34,24 +50,29 @@ const SelectTimeSlotPage = () => {
 
     const isToday = format(new Date(), "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
 
-
-    // const handleContinue = () => {
-    //     if (selectedDate && selectedTime) {
-    //         setShowCheckout(true);
-    //         setTimeout(() => {
-    //             paymentRef.current?.scrollIntoView({ behavior: "smooth" });
-    //         }, 100);
-    //     } else {
-    //         showAlert("Please select a date and time slot.");
-    //     }
-    // };
-
     const totalAmount = cartItems.reduce((sum, i) => sum + i.price, 0);
+
+    const getBookingDateTime = () => {
+        const [startTime] = selectedTime.split(" - "); // e.g., "3"
+        const hour = parseInt(startTime);
+        const isPM = selectedTime.includes("PM");
+        const hour24 = isPM && hour !== 12 ? hour + 12 : hour;
+
+        const combinedDate = new Date(selectedDate);
+        combinedDate.setHours(hour24, 0, 0, 0);
+
+        return format(combinedDate, "yyyy-MM-dd'T'HH:mm:ss");
+    };
 
     useEffect(() => {
         const fetchStates = async () => {
             try {
-                const response = await axios.get(`${baseUrl}State`);
+                const token = JSON.parse(localStorage.getItem("user"))?.token;
+                const response = await axios.get(`${baseUrl}State`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
                 const activeStates = response.data.filter((s) => s.IsActive);
                 setStates(activeStates);
             } catch (err) {
@@ -66,7 +87,12 @@ const SelectTimeSlotPage = () => {
         const fetchCities = async () => {
             if (!selectedState) return;
             try {
-                const response = await axios.get(`${baseUrl}City`);
+                const token = JSON.parse(localStorage.getItem("user"))?.token;
+                const response = await axios.get(`${baseUrl}City`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
                 const filteredCities = response.data.filter(
                     (c) => c.StateID === parseInt(selectedState) && c.IsActive
                 );
@@ -95,7 +121,7 @@ const SelectTimeSlotPage = () => {
         const payload = {
             custID: custId,
             addressLine1: addressLine1,
-            addressLine2: 'addressLine2',
+            addressLine2: addressLine2,
             stateID: Number(selectedState),
             cityID: Number(selectedCity),
             pincode: 500081,
@@ -107,7 +133,12 @@ const SelectTimeSlotPage = () => {
         };
 
         try {
-            const res = await axios.post(`${baseUrl}CustomerAddresses`, payload);
+            const token = JSON.parse(localStorage.getItem("user"))?.token;
+            const res = await axios.post(`${baseUrl}CustomerAddresses`, payload, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
             if (res.status === 200 || res.status === 201) {
                 showAlert("success", "Address saved successfully!", 3000, "success");
@@ -124,6 +155,101 @@ const SelectTimeSlotPage = () => {
         }
     };
 
+    const handleApplyCoupon = () => {
+        setCouponApplied(true);
+        setDiscountAmount(100);
+        setAppliedCouponCode("NEWCUS26");
+    }
+
+    const loadRazorpay = (amount) => {
+        const options = {
+            key: process.env.REACT_APP_RAZORPAY_KEY,
+            amount: amount * 100,
+            currency: "INR",
+            name: "MyCarBuddy",
+            description: "Payment for Car Services",
+            image: "/assets/img/logo-yellow-01.png",
+            handler: function (response) {
+                console.log("Payment success:", response);
+                clearCart();
+                setModal({
+                    show: true,
+                    type: "success",
+                    message: "Payment successful! Redirecting to bookings...",
+                });
+            },
+            prefill: {
+                name: "Sourav",
+                email: "sourav@example.com",
+                contact: "9999999999",
+            },
+            theme: {
+                color: "#28a745",
+            },
+            modal: {
+                ondismiss: function () {
+                    setModal({
+                        show: true,
+                        type: "error",
+                        message: "Payment was cancelled or failed.",
+                    });
+                },
+            },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+    };
+
+
+    const handleBookingSubmit = async () => {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const vehicle = JSON.parse(localStorage.getItem("selectedCarDetails"));
+        const token = user?.token;
+
+        const bookingDateTime = getBookingDateTime();
+        console.log("selectedDate:", selectedDate);
+        console.log("selectedTime:", selectedTime);
+
+        if (!user || !vehicle || cartItems.length === 0) {
+            showAlert("Missing user, vehicle or cart info.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("CustID", user.id);
+        formData.append("VehicleID", vehicle.model.id);
+        formData.append("PricingID", cartItems[0]?.id);
+        formData.append("AddressID", 1);
+        formData.append("ScheduledDate", bookingDateTime);
+        formData.append("BookingPrice", cartItems[0]?.price);
+        formData.append("Notes", technicianNote || "");
+        formData.append("OTPForCompletion", null);
+        formData.append("CouponID", 1);
+        formData.append("Images", ""); // optionally handle files here
+
+        try {
+            const res = await axios.post(`${baseUrl}Bookings/insert-booking`, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (res.status === 200 || res.status === 201) {
+                showAlert("success", "Booking submitted successfully!", 3000, "success");
+                if (paymentMethod === "razorpay") {
+                    loadRazorpay(cartItems[0]?.price);
+                } else {
+                    navigate("/profile?tab=mybookings");
+                }
+            } else {
+                showAlert("Booking failed. Please try again.");
+            }
+        } catch (err) {
+            console.error("Booking error:", err);
+            showAlert("Error while booking. Please try again.");
+        }
+    };
 
 
     return (
@@ -226,18 +352,6 @@ const SelectTimeSlotPage = () => {
                             <div className="row">
                                 {/* Left Column: Address Fields */}
                                 <div className="col-md-7">
-                                    {/* <div className="mb-3">
-                                        <input type="text" className="form-control" placeholder="Enter Locality *" />
-                                    </div>
-                                    <div className="mb-3">
-                                        <input type="text" className="form-control" placeholder="Flat Number / Room Number / Suite *" />
-                                    </div>
-                                    <div className="mb-3">
-                                        <input type="text" className="form-control" placeholder="Landmark (Optional)" />
-                                    </div>
-                                    <div className="mb-3">
-                                        <input type="number" className="form-control" placeholder="Mobile Number *" />
-                                    </div> */}
                                     <div className="mb-3 row">
                                         <div className="col-md-6">
                                             <select className="form-select" value={selectedState}
@@ -265,6 +379,7 @@ const SelectTimeSlotPage = () => {
                                                 ))}
                                             </select>
                                         </div>
+
                                     </div>
 
                                     <div className="mt-4">
@@ -274,6 +389,12 @@ const SelectTimeSlotPage = () => {
                                             placeholder="Address"
                                             value={addressLine1}
                                             onChange={(e) => setAddressLine1(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="mt-3">
+                                        <input type="text" className="form-control" placeholder="Enter Locality"
+                                            value={addressLine2}
+                                            onChange={(e) => setAddressLine2(e.target.value)}
                                         />
                                     </div>
 
@@ -310,9 +431,71 @@ const SelectTimeSlotPage = () => {
                     )}
                     {showCheckout && (
                         <div ref={paymentRef} className="mt-5">
-                            <Checkout />
+                            {/* Technician Note */}
+                            <div className="card shadow p-4 mb-4">
+                                <h5 className="mb-3">Instructions for Technician</h5>
+                                <textarea
+                                    className="form-control"
+                                    rows={4}
+                                    placeholder="E.g. Please call me before arriving, park near the main gate, etc."
+                                    value={technicianNote}
+                                    onChange={(e) => setTechnicianNote(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Payment Method */}
+                            <div className="card shadow p-4 mb-4">
+                                <h3 className="mb-4">Checkout</h3>
+
+                                <h5 className="mb-3">Select Payment Method</h5>
+                                <div className="form-check mb-2">
+                                    <input
+                                        className="form-check-input"
+                                        type="radio"
+                                        name="payment"
+                                        id="razorpay"
+                                        checked={paymentMethod === "razorpay"}
+                                        onChange={() => setPaymentMethod("razorpay")}
+                                    />
+                                    <label className="form-check-label" htmlFor="razorpay">
+                                        Razorpay/UPI/Credit/Debit Card
+                                    </label>
+                                </div>
+
+                                <div className="form-check mb-3">
+                                    <input
+                                        className="form-check-input"
+                                        type="radio"
+                                        name="payment"
+                                        id="cod"
+                                        checked={paymentMethod === "cod"}
+                                        onChange={() => setPaymentMethod("cod")}
+                                    />
+                                    <label className="form-check-label" htmlFor="cod">
+                                        Cash on Delivery
+                                    </label>
+                                </div>
+
+                                <div className="d-flex gap-3 mb-4">
+                                    <img src="/assets/img/update-img/payment-method/01.png" alt="visa" width="50" />
+                                    <img src="/assets/img/update-img/payment-method/02.png" alt="mastercard" width="50" />
+                                    <img src="/assets/img/update-img/payment-method/03.png" alt="paypal" width="50" />
+                                </div>
+
+                                <div className="text-end">
+                                    <button className="btn btn-success btn-lg" onClick={handleBookingSubmit}>
+                                        Confirm Booking
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
+                    <SuccessFailureModal
+                        show={modal.show}
+                        type={modal.type}
+                        message={modal.message}
+                        onClose={handleModalClose}
+                    />
                 </div>
 
                 {/* Right: Cart Items */}
@@ -358,10 +541,40 @@ const SelectTimeSlotPage = () => {
                                         You selected: {format(selectedDate, "EEEE, dd MMMM")}
                                         {selectedTime ? ` at ${selectedTime}` : " — Select a slot"}
                                     </strong>
-                                    
+
                                 </div>
                             </div>
                         )}
+
+                        {/* Coupon Section */}
+                        <div className="card p-3 mt-3">
+                            <h6 className="text-teal fw-semibold mb-3">Get Discount</h6>
+
+                            {!couponApplied ? (
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <div className="d-flex align-items-center gap-2">
+                                        <i className="bi bi-tag-fill text-teal bg-light rounded-circle p-1"></i>
+                                        <span>Coupon Save120</span>
+                                    </div>
+                                    <button className="btn p-1 fw-semibold" onClick={handleApplyCoupon}>
+                                        Apply
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <div className="d-flex align-items-center gap-2">
+                                        <i className="bi bi-tag-fill text-teal bg-light rounded-circle p-2"></i>
+                                        <div>
+                                            <div className="fw-medium">Hurray you saved ₹{discountAmount}</div>
+                                        </div>
+                                    </div>
+                                    <div className="text-end">
+                                        <span className="text-primary fw-bold">{appliedCouponCode}</span> <span className="text-muted">Applied</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
 
                     </div>
                 </div>
