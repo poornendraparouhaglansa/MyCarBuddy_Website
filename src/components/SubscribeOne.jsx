@@ -6,16 +6,16 @@ const SubscribeOne = () => {
     <div className="container">
       <div
         className="footer-top-1 bg-theme"
-        style={{ backgroundImage: "url(assets/img/bg/footer-top-bg1-1.png)" }}
+        style={{ backgroundImage: "url(/assets/img/bg/footer-top-bg1-1.png)" }}
       >
         <div className="footer-logo">
           <Link to="/">
-            <img src="assets/img/logo-white.svg" alt="Fixturbo" />
+            <img src="/assets/img/MyCarBuddy-Logo1.png" alt="MyCarBuddy"  width={"200px"}/>
           </Link>
         </div>
         <div className="call-media-wrap">
           <div className="icon">
-            <img src="assets/img/icon/phone-1.svg" alt="Fixturbo" />
+            <img src="/assets/img/icon/phone-1.svg" alt="MyCarBuddy" />
           </div>
           <div className="media-body">
             <h6 className="title text-white">Requesting A Call:</h6>

@@ -73,7 +73,7 @@ const HeroSection = () => {
                                 </Link> */}
                                 <div className="call-media-wrap">
                                   <div className="icon">
-                                    <img src="assets/img/icon/phone-1.svg" alt="MyCarBuddy" />
+                                    <img src="/assets/img/icon/phone-1.svg" alt="MyCarBuddy" />
                                   </div>
                                   <div className="media-body">
                                     <h6 className="title text-white">Requesting A Call:</h6>

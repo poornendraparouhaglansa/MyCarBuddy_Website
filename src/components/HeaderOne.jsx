@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import SignIn from "./SignIn";
 import RegisterModal from "./RegisterModal";
 import { FaCarSide } from "react-icons/fa";
@@ -7,7 +7,10 @@ import ChooseCarModal from "./ChooseCarModal";
 import { FaShoppingCart } from "react-icons/fa";
 import { useCart } from "../context/CartContext";
 import ProfileModal from "./ProfileModal";
-import { useAlert} from "../context/AlertContext"
+import { useAlert} from "../context/AlertContext";
+import axios from "axios";
+
+const API_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
 
 const HeaderOne = () => {
   const [active, setActive] = useState(false);
@@ -20,19 +23,24 @@ const HeaderOne = () => {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [location, setLocation] = useState(null);
 
+  const [locationText, setLocationText] = useState("Fetching location...");
+  const [isServiceAvailable, setIsServiceAvailable] = useState(null);
+
   const [user, setUser] = useState(null);
   const [profileVisible, setProfileVisible] = useState(false);
 
   const { cartItems } = useCart();
   const itemCount = cartItems.length;
   const { showAlert } = useAlert();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const alreadyShown = localStorage.getItem("locationModalShown");
     if (!alreadyShown) {
-      setShowLocationModal(true); // show only first time
+      setShowLocationModal(true);
+      // auto trigger
     }
-
+ handleGetLocation();
     // your scroll and menu logic remains unchanged...
   }, []);
 
@@ -53,6 +61,11 @@ const HeaderOne = () => {
       if (saved) {
         setUser(JSON.parse(saved));
       }
+
+      const carData = localStorage.getItem("selectedCarDetails");
+        if (carData) {
+          setSelectedCar(JSON.parse(carData));
+        }
     };
 
     loadUser();
@@ -104,31 +117,81 @@ const HeaderOne = () => {
     setActive(!active);
   };
 
-  const handleGetLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation(position.coords);
-          localStorage.setItem("locationModalShown", "true");
-          setShowLocationModal(false);
-        },
-        (error) => {
-          console.error("Location error:", error.message);
-          localStorage.setItem("locationModalShown", "true");
-          setShowLocationModal(false);
+const handleGetLocation = () => {
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const coords = position.coords;
+        setLocation(coords);
+        localStorage.setItem("location", JSON.stringify(coords));
+        localStorage.setItem("locationModalShown", "true");
+        setShowLocationModal(false);
+
+        const result = await getCityAndStateFromCoords(coords.latitude, coords.longitude);
+        if (result) {
+          const { city, state } = result;
+          setLocationText(`${city}, ${state}`);
+
+          try {
+            const token = localStorage.getItem("token"); // adjust if you're storing token differently
+
+            const res = await axios.get(`${API_URL}State`);
+
+            const states = res.data;
+            const matched = states.find(
+              (s) => s.StateName.toLowerCase() === state.toLowerCase() && s.IsActive
+            );
+
+            if (matched) {
+              setIsServiceAvailable(true);
+            } else {
+              setIsServiceAvailable(false);
+              showAlert("Service is not available in your state.");
+            }
+          } catch (err) {
+            console.error("State API error:", err);
+            setIsServiceAvailable(false);
+            showAlert("Failed to verify service availability.");
+          }
         }
-      );
-    } else {
-      showAlert("Geolocation is not supported by this browser.");
-      localStorage.setItem("locationModalShown", "true");
-      setShowLocationModal(false);
-    }
-  };
+      },
+      (error) => {
+        console.error("Location error:", error.message);
+        setLocationText("Location not found");
+        setIsServiceAvailable(false);
+        localStorage.setItem("locationModalShown", "true");
+        setShowLocationModal(false);
+      }
+    );
+  } else {
+    showAlert("Geolocation is not supported by this browser.");
+    setLocationText("Location unavailable");
+    setIsServiceAvailable(false);
+    localStorage.setItem("locationModalShown", "true");
+    setShowLocationModal(false);
+  }
+};
+
 
   const handleCloseModal = () => {
     localStorage.setItem("locationModalShown", "true");
     setShowLocationModal(false);
   };
+
+  const getCityAndStateFromCoords = async (lat, lon) => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+    );
+    const data = await response.json();
+    const { city, state } = data.address;
+    return { city, state };
+  } catch (error) {
+    console.error("Reverse geocode error:", error);
+    return null;
+  }
+};
 
   return (
     <>
@@ -143,10 +206,14 @@ const HeaderOne = () => {
                       <i className="fas fa-envelope" />
                       <Link to="mailto:info@example.com">carbuddy@example.com</Link>
                     </li>
-                    <li>
-                      <i className="fas fa-map-marker-alt" />
-                      Madhapur, Hyderabad, India
-                    </li>
+                   <li onClick={handleGetLocation} style={{ cursor: "pointer" }}>
+                        <i className="fas fa-map-marker-alt" />
+                        {isServiceAvailable === false ? (
+                          <span className="text-danger">Service not available at your location</span>
+                        ) : (
+                          locationText || "Detecting location..."
+                        )}
+                      </li>
                     <li>
                       <i className="fas fa-clock" />
                       Monday - Sunday
@@ -182,17 +249,17 @@ const HeaderOne = () => {
         <div className={`sticky-wrapper ${scroll && "sticky"}`}>
           {/* Main Menu Area */}
           <div className="menu-area">
-            <div className="header-navbar-logo mt-0">
+            {/* <div className="header-navbar-logo ">
               <Link to="/">
-                <img src="/assets/img/logo-yellow-01.svg" alt="MyCarBuddy" />
+                <img src="/assets/img/MyCarBuddy-Logo1.png" alt="MyCarBuddy" />
               </Link>
-            </div>
+            </div> */}
             <div className="container">
               <div className="row align-items-center justify-content-lg-start justify-content-between">
-                <div className="col-auto d-xl-none d-block">
-                  <div className="header-logo mt-0">
+                <div className="col-auto d-block">
+                  <div className="header-logo1 ">
                     <Link to="/">
-                      <img src="assets/img/logo-yellow-01.svg" alt="MyCarBuddy" />
+                      <img src="/assets/img/MyCarBuddy-Logo1.png" alt="MyCarBuddy" width={200} />
                     </Link>
                   </div>
                 </div>
@@ -267,7 +334,7 @@ const HeaderOne = () => {
                         style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", cursor: "pointer" }}
                         onClick={() => {
                           if (user && (user.name || user.identifier)) {
-                            setProfileVisible(true); // Show profile modal
+                           navigate("/profile");
                           } else {
                             setSignInVisible(true); // Show sign-in modal
                           }
@@ -350,7 +417,7 @@ const HeaderOne = () => {
                         }}
                       >
                         <span className="header-grid-text" style={{ visibility: "hidden" }}>
-                          Cart
+                          {/* Cart */}
                         </span>
                         <Link to="/cart" title="Go to Cart" style={{ color: "#116d6e", position: "relative" }}>
                           <FaShoppingCart size={22} />
@@ -407,7 +474,7 @@ const HeaderOne = () => {
                 setRegisterVisible(true);
               }}
             />
-            <div className="logo-bg" />
+            {/* <div className="logo-bg" /> */}
           </div>
         </div>
 
@@ -416,7 +483,7 @@ const HeaderOne = () => {
           <div className="mobile-menu-area">
             <div className="mobile-logo">
               <Link to="/">
-                <img src="assets/img/logo-yellow-01.svg" alt="MyCarBuddy" />
+                <img src="/assets/img/MyCarBuddy-Logo1.png" alt="MyCarBuddy" />
               </Link>
               <button className="menu-toggle" onClick={mobileMenu}>
                 <i className="fa fa-times" />
@@ -424,70 +491,8 @@ const HeaderOne = () => {
             </div>
             <div className="mobile-menu">
               <ul id="offcanvas-navigation">
-                <li className="menu-item-has-children submenu-item-has-children">
+                <li >
                   <Link to="#">Home</Link>
-                  <ul className="sub-menu submenu-class">
-                    <li>
-                      <NavLink
-                        to="/"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Home 01
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/home-2"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Home 02
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/home-3"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Home 03
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/home-4"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Home 04
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/home-5"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Home 05
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/home-6"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Home 06
-                      </NavLink>
-                    </li>
-                  </ul>
                 </li>
                 <li>
                   <NavLink
@@ -497,211 +502,23 @@ const HeaderOne = () => {
                     About
                   </NavLink>
                 </li>
-                <li className="menu-item-has-children submenu-item-has-children">
-                  <Link to="#">Pages</Link>
-                  <ul className="sub-menu submenu-class">
-                    <li>
-                      <NavLink
-                        to="/team"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Team Page
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/team-details"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Team Details
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/shop"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Shop Page
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/shop-details"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Shop Details
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/cart"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Cart
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/checkout"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Checkout
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/wishlist"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Wishlist
-                      </NavLink>
-                    </li>
-                  </ul>
-                </li>
-                <li className="menu-item-has-children submenu-item-has-children">
-                  <Link to="#">Project</Link>
-                  <ul className="sub-menu submenu-class">
-                    <li>
-                      <NavLink
-                        to="/project"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Projects
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/project-details"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Project Details
-                      </NavLink>
-                    </li>
-                  </ul>
-                </li>
-                <li className="menu-item-has-children submenu-item-has-children">
+               
+                <li >
                   <Link to="#">Service</Link>
-                  <ul className="sub-menu submenu-class">
-                    <li>
-                      <NavLink
-                        to="/service"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Service
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/service-details"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Service Details
-                      </NavLink>
-                    </li>
-                  </ul>
                 </li>
-                <li className="menu-item-has-children submenu-item-has-children">
-                  <Link to="#">Shop</Link>
-                  <ul className="sub-menu submenu-class">
-                    <li>
-                      <NavLink
-                        to="/shop"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Shop
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/shop-details"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Shop Details
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/cart"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Cart
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/checkout"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Checkout
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/wishlist"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Wishlist
-                      </NavLink>
-                    </li>
-                  </ul>
-                </li>
-                <li className="menu-item-has-children submenu-item-has-children">
-                  <Link to="#">Blog</Link>
-                  <ul className="sub-menu submenu-class">
-                    <li>
-                      <NavLink
-                        to="/blog"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Blog
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/blog-details"
-                        className={(navData) =>
-                          navData.isActive ? "active" : ""
-                        }
-                      >
-                        Blog Details
-                      </NavLink>
-                    </li>
-                  </ul>
-                </li>
+
+                {user?.id && (
+                  <li>
+                    <NavLink
+                      to="/profile"
+                      className={(navData) => (navData.isActive ? "active" : "")}
+                    >
+                      Profile
+                    </NavLink>
+                  </li>
+                )}
+
+
                 <li>
                   <NavLink
                     to="/contact"

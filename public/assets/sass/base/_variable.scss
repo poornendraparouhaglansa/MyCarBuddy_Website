@@ -29,6 +29,7 @@
   --section-space-mobile: 80px;
   --section-title-space: 60px;
   --ripple-ani-duration: 5s;
+  --secondary-color: #ffdf00;
 }
 
 // Color Variation
@@ -48,7 +49,6 @@ $yellow-color: var(--yellow-color);
 $success-color: var(--success-color);
 $error-color: var(--error-color);
 $border-color: var(--border-color);
-
 // Font Variation
 $icon-font: var(--icon-font);
 
@@ -158,3 +158,118 @@ $fontsMap: map-merge(
 // .header-logo img , .header-navbar-logo img {
 //     width: 18% !important;
 // }
+
+.arrow-btn.left , .arrow-btn.right{
+  background-color: var(--secondary-color);
+}
+
+.pricing-card-details .btn.style-border2{
+  padding: 12px 18px 11px;
+}
+.service-img{
+  height: 275px !important;
+  object-fit: cover;
+}
+.pricing-card_icon{
+  height: 250px !important;
+  width: 200px !important;
+  background: #ffffff !important;
+}
+.pricing-card {
+    padding: 25px 30px !important;
+    gap: 40px !important;
+}
+// .main-menu > ul > li > a {
+//     padding: 0 0 !important;
+// }
+.header-layout1 .header-navbar-logo{
+  width: 15% !important;
+  justify-content: center !important  ;
+  display: flex;
+  // margin-top: -25px !important;
+}
+.pricing-card .checklist.style2{
+  margin-bottom: 20px !important;
+}
+.checklist li {
+  color: #504e4e !important;
+}
+.main-menu a {
+    font-weight: 500 !important;
+    // color: #504e4e !important;
+    font-size: 17px !important;
+}
+
+.pricing-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #f44336;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 50px;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 2;
+}
+.price-original {
+  text-decoration: line-through;
+  color: #ddd;
+  font-size: 12px;
+}
+
+.ribbon {
+  position: absolute;
+  top: 0;
+  right: 0;
+    background: #116d6e;
+    color: white;
+    padding: 6px 14px;
+    font-weight: bold;
+    clip-path: polygon(100% 0, 100% 100%, 54% 80%, 0 100%, 0 0);
+}
+.text-muted1 {
+  font-size: 12px;
+  color: #aeb1b5 !important;
+  text-decoration: line-through !important;
+}
+.btn-sm-icon{
+  padding: 8px !important;
+}
+.btn-light{
+  background-color: #71c49f  !important;
+}
+.sticky-wrapper.sticky .header-navbar-logo img {
+    width: 80%;
+    margin-top: -24px;
+}
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link{
+      background-color: #6edbdd;
+}
+.btn.style-border2:active, .btn.style-border2:focus, .btn.style-border2:hover {
+    color: #000000 !important;
+    border: none;
+}
+
+/* Animate slide-in */
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0%);
+  }
+}
+button:disabled,
+button[disabled]{
+  border: none !important;
+  text-decoration: line-through;
+}
+.progress-bar{
+  background-color: #116d6e !important;
+}

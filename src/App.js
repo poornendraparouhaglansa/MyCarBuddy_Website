@@ -1,5 +1,4 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import HomePageOne from "./pages/HomePageOne";
 import RouteScrollToTop from "./helper/RouteScrollToTop";
 import ScrollToTop from "react-scroll-to-top";
 import AboutPage from "./pages/AboutPage";
@@ -17,11 +16,7 @@ import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import WishlistPage from "./pages/WishlistPage";
 import ContactPage from "./pages/ContactPage";
-import HomePageTwo from "./pages/HomePageTwo";
 import HomePageThree from "./pages/HomePageThree";
-import HomePageFour from "./pages/HomePageFour";
-import HomePageFive from "./pages/HomePageFive";
-import HomePageSix from "./pages/HomePageSix";
 import ServiceDetails from "./components/ServiceDetails";
 import { CartProvider } from "./context/CartContext";
 import SelectTimeSlotPage from './components/SelectTimeSlotPage';
@@ -29,6 +24,9 @@ import TimeSlotPage from "./pages/TimeSlotPage";
 import 'react-datepicker/dist/react-datepicker.css';
 import ProfilePage from "./pages/ProfilePage";
 import MyBookingsPage from "./pages/MyBookingsPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import RefundPage from "./pages/RefundPage";
 
 function App() {
   return (
@@ -38,11 +36,6 @@ function App() {
         <ScrollToTop smooth color="#E8092E" />
         <Routes>
           <Route exact path="/" element={<HomePageThree />} />
-          <Route exact path="/home-2" element={<HomePageTwo />} />
-          <Route exact path="/home-3" element={<HomePageThree />} />
-          <Route exact path="/home-4" element={<HomePageFour />} />
-          <Route exact path="/home-5" element={<HomePageFive />} />
-          <Route exact path="/home-6" element={<HomePageSix />} />
           <Route exact path="/about" element={<AboutPage />} />
           <Route exact path="/service" element={<ServicePage />} />
           <Route exact path="/service-details/:categoryId" element={<ServiceDetailsPage />} />
@@ -62,6 +55,11 @@ function App() {
           <Route exact path="/selecttimeslot" element={<TimeSlotPage />} />
           <Route exact path="/profile" element={<ProfilePage />} />
           <Route exact path="/mybookings" element={<MyBookingsPage />} />
+          <Route exact path="/terms" element={<TermsPage />} />
+          <Route exact path="/privacy" element={<PrivacyPage />} />
+          <Route exact path="/refund" element={<RefundPage />} />
+
+
 
         </Routes>
       </CartProvider>

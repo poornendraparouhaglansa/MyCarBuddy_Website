@@ -35,7 +35,7 @@ const ProfileModal = ({ isVisible, onClose, onRegister }) => {
                 <h5 className="mb-4">Your Profile</h5>
                 {user ? (
                     <>
-                        <p><strong>ID:</strong> {user.identifier}</p>
+                        {/* <p><strong>ID:</strong> {user.identifier}</p> */}
                         <p><strong>Name:</strong> {user.name || "Not Registered"}</p>
 
                         {/* {!user.name && (
@@ -45,8 +45,9 @@ const ProfileModal = ({ isVisible, onClose, onRegister }) => {
                         )} */}
 
                         {/* {user.name && (  */}
-                            <button
-                                className="btn btn-outline-secondary mt-3"
+                           <div className="d-flex justify-content-center gap-2 mt-3">
+                             <button
+                                className="btn btn-outline-secondary mt-3 px-4 py-2"
                                 onClick={() => {
                                     onClose(); 
                                     window.location.href = "/profile"; 
@@ -56,9 +57,10 @@ const ProfileModal = ({ isVisible, onClose, onRegister }) => {
                             </button>
                         {/* )} */}
 
-                        <button className="btn btn-danger mt-3" onClick={handleLogout}>
+                        <button className="btn btn-light mt-3  px-4 py-2" onClick={handleLogout}>
                             Logout
                         </button>
+                           </div>
                     </>
                 ) : (
                     <p>User not logged in.</p>

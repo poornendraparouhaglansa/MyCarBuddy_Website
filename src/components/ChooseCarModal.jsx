@@ -31,7 +31,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
         });
         if (response.data?.status && Array.isArray(response.data.data)) {
           const formattedBrands = response.data.data
-            .filter((b) => b.BrandLogo)
+            .filter((b) => b.IsActive === true)
             .map((b) => ({
               id: b.BrandID,
               name: b.BrandName,
@@ -92,7 +92,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
           .map(f => {
             const fileName = f.FuelImage?.split("/").pop();
             const encodedFileName = encodeURIComponent(fileName);
-            const imageUrl = `${imageBaseURL}${encodedFileName}`;
+            const imageUrl = `${imageBaseURL}${f.FuelImage}`;
 
             return {
               id: f.FuelTypeID,
@@ -132,9 +132,13 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
       onCarSaved(selectedCarDetails);
     }
 
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+
     console.log("Saved Car:", selectedCarDetails);
 
-    onClose();
+    // onClose();
   };
 
   const handleBrandSelect = (id) => {
@@ -151,6 +155,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
     setModel(id);
     setShowModelPopup(false);
   };
+  
 
   return (
     <div className={`choose-car-modal ${isVisible ? "visible" : "hidden"}`}>
@@ -261,7 +266,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 
           {/* Buttons */}
           <div className="d-flex justify-content-center gap-2">
-            <button type="button" className="btn btn-secondary py-2 px-4" onClick={onClose}>
+            <button type="button" className="btn btn-light py-2 px-4" onClick={onClose}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary py-2 px-4">

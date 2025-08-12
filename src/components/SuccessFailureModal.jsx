@@ -1,9 +1,17 @@
 import React from "react";
+import { useCart } from "../context/CartContext";
 
 const SuccessFailureModal = ({ show, onClose, type, message }) => {
+    const { cartItems, clearCart } = useCart();
     if (!show) return null;
 
     const isSuccess = type === "success";
+
+    const goTo = () => {
+        onClose();
+        window.location.href = "/profile?tab=mybookings";
+          clearCart();
+    };
 
     return (
         <div className="modal-overlay">
@@ -15,8 +23,8 @@ const SuccessFailureModal = ({ show, onClose, type, message }) => {
                     {isSuccess ? "Payment Successful" : "Payment Failed"}
                 </h4>
                 <p className="modal-message">{message}</p>
-                <button className="modal-button" onClick={onClose}>
-                    {isSuccess ? "Go to My Bookings" : "Try Again"}
+                <button className="modal-button" onClick={goTo}>
+                   Go to My Bookings
                 </button>
             </div>
 

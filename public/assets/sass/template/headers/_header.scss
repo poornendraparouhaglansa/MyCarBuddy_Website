@@ -524,7 +524,7 @@
   }
   .header-navbar-logo {
     margin-top: 0;
-    padding: 15px 0;
+    padding: 0px 0;
     padding-left: 60px;
     position: absolute;
     z-index: 3;
@@ -533,7 +533,7 @@
     position: relative;
     .logo-bg {
       position: absolute;
-      height: calc(100% + 80px);
+      height: calc(100% + 65px);
       width: 14.2%;
       top: -50px;
       left: 0;
@@ -574,6 +574,7 @@
 @media (max-width: 1700px) {
   .header-layout1 .header-navbar-logo {
     padding-left: 20px;
+    margin-top: -25px;
   }
   .header-layout1 .header-top {
     .header-links {
@@ -613,7 +614,12 @@
     padding-left: 160px;
   }
   .header-layout1 .header-navbar-logo {
+    margin-top: -10px;
     padding-left: 10px;
+    
+  }
+  .header-navbar-logo img{
+    max-width: 80%;
   }
 }
 @include xl {
@@ -621,7 +627,7 @@
     padding-left: 230px;
   }
   .header-layout1 .menu-area .logo-bg {
-    width: 20%;
+    // width: 20%;
   }
   .main-menu a {
     font-size: 16px;

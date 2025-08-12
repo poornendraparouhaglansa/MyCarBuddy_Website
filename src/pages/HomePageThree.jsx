@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import HeaderOne from "./../components/HeaderOne";
+import HeaderTwo from "./../components/HeaderTwo";
 import FaqAreaTwo from "../components/FaqAreaTwo";
 import MarqueeOne from "../components/MarqueeOne";
 import CTAAreaOne from "../components/CTAAreaOne";
@@ -68,27 +69,28 @@ const HomePageThree = () => {
 
       {/* Reopen button */}
       {!showModal && (
-        <button
-          style={{
-            position: "fixed",
-            right: 0,
-            top: "50%",
-            transform: "translateY(-50%)",
-            zIndex: 998,
-            padding: "10px 0px",
-            borderRadius: "8px 0 0 8px",
-            background: "#ed1c24",
-            color: "#fff",
-            border: "none",
-            cursor: "pointer",
-            transition: "transform 0.3s ease",
-            writingMode: "vertical-rl", // Note: camelCase in inline styles
-            textOrientation: "mixed",   // Also camelCase
-          }}
-          onClick={() => setShowModal(true)}
-        >
-          Choose Car
-        </button>
+        <>  </>
+        // <button
+        //   style={{
+        //     position: "fixed",
+        //     right: 0,
+        //     top: "50%",
+        //     transform: "translateY(-50%)",
+        //     zIndex: 998,
+        //     padding: "10px 0px",
+        //     borderRadius: "8px 0 0 8px",
+        //     background: "#ed1c24",
+        //     color: "#fff",
+        //     border: "none",
+        //     cursor: "pointer",
+        //     transition: "transform 0.3s ease",
+        //     writingMode: "vertical-rl", // Note: camelCase in inline styles
+        //     textOrientation: "mixed",   // Also camelCase
+        //   }}
+        //   onClick={() => setShowModal(true)}
+        // >
+        //   Choose Car
+        // </button>
 
       )}
 
@@ -116,6 +118,9 @@ const HomePageThree = () => {
       {/* Faq Area Two */}
       <FaqAreaTwo />
 
+{/* Testimonial One */}
+      <TestimonialOne />
+
       {/* Marquee One */}
 
       <MarqueeOne />
@@ -125,14 +130,13 @@ const HomePageThree = () => {
 
 
 
-      {/* Testimonial One */}
-      <TestimonialOne />
+      
 
       {/* Blog Area Three */}
       {/* <BlogAreaThree /> */}
 
       {/* Subscribe One */}
-      <SubscribeOne />
+      {/* <SubscribeOne /> */}
 
       {/* Footer Area One */}
       <FooterAreaOne />

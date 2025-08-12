@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@ramonak/react-progress-bar": "^5.2.0",
+    "@react-google-maps/api": "^2.20.7",
     "@react-three/drei": "^9.79.1",
     "@react-three/fiber": "^8.12.1",
     "@testing-library/jest-dom": "^5.17.0",
@@ -12,6 +13,7 @@
     "animate.css": "^4.1.1",
     "axios": "^1.10.0",
     "bootstrap": "^5.3.3",
+    "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "imagesloaded": "^5.0.0",
     "isotope-layout": "^3.0.6",

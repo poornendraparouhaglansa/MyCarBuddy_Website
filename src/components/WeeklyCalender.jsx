@@ -50,10 +50,11 @@ const WeeklyCalendar = ({ selectedDate, onDateSelect }) => {
                         return (
                             <button
                                 key={date}
-                                className={`btn ${isSelected ? "btn-danger" : "btn-outline-dark"} rounded-pill`}
+                                className={`tab-pill ${isSelected ? "active text-white" : ""} rounded-pill px-3 py-2 `}
                                 onClick={() => onDateSelect(date)}
                             >
-                                <div className="fw-bold">{format(date, "dd, MMM -  EEE")}</div>
+                                <div className="fw-bold">{format(date, "dd -  EEE")}</div>
+                                 <div className="fw-bold">{format(date, "MMM")}</div>
                             </button>
                         );
                     })}

@@ -14,20 +14,15 @@ import CryptoJS from "crypto-js";
 
 const SelectTimeSlotPage = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
-  const token = user?.token || "";
-  const { cartItems, clearCart } = useCart();
-  cartItems.length === 0 && navigate("/cart");
-   const [step, setStep] = useState(1);
   const baseUrl = process.env.REACT_APP_CARBUDDY_BASE_URL;
   const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
   const location = JSON.parse(localStorage.getItem("location")) || '{"lat": 17.385044, "lng": 78.486671}';
-  let decryptedCustId = null;
-  if(cartItems.length > 0){
-    const bytes = cartItems.length > 0 ? CryptoJS.AES.decrypt(user.id, secretKey) : null;
-    decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
-  }  
-    
+  const user = JSON.parse(localStorage.getItem("user"));
+  const token = user?.token || "";
+    const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
+    const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
+    const { cartItems, clearCart } = useCart();
+      cartItems.length === 0 && navigate("/cart");
   const [showCouponPopup, setShowCouponPopup] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -60,7 +55,6 @@ const SelectTimeSlotPage = () => {
   modelID: "",
   fuelTypeID: "",
   VehicleID: "",
-  selectedSavedAddressID: "",
 });
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState(null);
@@ -88,54 +82,13 @@ const [couponApplied, setCouponApplied] = useState(false); // Tracks applied sta
   const [registrationNumber, setRegistrationNumber] = useState("");
 
   // Saved Address
+  const [selectedSavedAddressID, setSelectedSavedAddressID] = useState("");
   const [savedAddresses, setSavedAddresses] = useState([]); 
  
 
   const [showCalendar, setShowCalendar] = useState(true);
 
   const { showAlert } = useAlert();
-
-
-  
-  const handleNext = () => {
-    if (step === 1 && !selectedTime) {
-      showAlert("Please select a time slot.");
-      return;
-    }
-    if (step === 2 ) {
-      if (!formData.fullName || !formData.phone || !formData.email)
-      {
-         showAlert("Please fill contact details.");
-          return;
-      }
-     
-
-       if (!formData.CityID || !formData.StateID || !formData.addressLine1.trim()) {
-          showAlert("Please complete the address (state, city, and address).");
-          
-          return;
-        }
-        if (step === 3 && (!formData.registrationNumber || !formData.yearOfPurchase )) {
-          showAlert("Please enter car details.");
-          return;
-        }
-
-        if(!formData.selectedSavedAddressID)
-        {
-           handleContinue();
-        }
-
-    }
-
-    
-    setStep((prev) => prev + 1);
-  };
-
-
-  const handleBack = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
 
 
 useEffect(() => {
@@ -339,9 +292,8 @@ const handlereInputChange = (e) => {
 const updateMapFromAddress = async (form) => {
   const { addressLine1, pincode, CityID, StateID } = form;
 
- const state = states.find(s => s.StateID === parseInt(StateID));
   const city = cities.find(c => c.CityID === parseInt(CityID));
- 
+  const state = states.find(s => s.StateID === parseInt(StateID));
 
   const fullAddress = `${addressLine1 || ""}, ${pincode || ""}, ${city?.CityName?.replace(/\s+/g, '').toLowerCase() || ""}, ${state?.StateName?.replace(/\s+/g, '').toLowerCase() || ""}`;
 
@@ -465,6 +417,17 @@ const fetchCustomerDetails = async () => {
 
 
   const handleContinue = async () => {
+    console.log(formData);
+    if (!selectedDate || !selectedTime) {
+      showAlert("Please select a date and time slot.");
+      return;
+    }
+
+    if (!formData.CityID || !formData.StateID || !formData.addressLine1.trim()) {
+      showAlert("Please complete the address (state, city, and address).");
+      return;
+    }
+
 
     const payload = {
       custID: decryptedCustId,
@@ -489,16 +452,10 @@ const fetchCustomerDetails = async () => {
 
       if (res.status === 200 || res.status === 201) {
         showAlert("success", "Address saved successfully!", 3000, "success");
-
-        setFormData((prev) => ({
-          ...prev,
-          selectedSavedAddressID: 'added',
-        }));
-
-        // setShowCheckout(true);
-        // setTimeout(() => {
-        //   paymentRef.current?.scrollIntoView({ behavior: "smooth" });
-        // }, 100);
+        setShowCheckout(true);
+        setTimeout(() => {
+          paymentRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
       } else {
         showAlert("Failed to save address. Please try again.");
       }
@@ -547,7 +504,6 @@ const fetchCustomerDetails = async () => {
             type: "error",
             message: "Payment was cancelled or failed.",
           });
-          navigate("/profile?tab=mybookings");
         }
         console.log(res);
       },
@@ -686,9 +642,10 @@ const fetchCustomerDetails = async () => {
     form.append("Latitude", formData.mapLocation.latitude);
     form.append("Notes", formData.technicianNote);
     form.append("CouponCode", couponApplied ? formData.appliedCouponCode : "");
-    form.append("DiscountAmount", getOriginalTotal() - getDiscountedTotal());
+    form.append("DiscountAmount", totalAmount - getDiscountedTotal());
 
-
+ 
+console.log("Form Data:", form);  
 
     try {
       const res = await axios.post(
@@ -759,19 +716,19 @@ const fetchCustomerDetails = async () => {
   };
 
 
-  // const handleSavedAddressChange = (e) => {
-  //   const id = e.target.value;
-  //   setSelectedSavedAddressID(id);
+  const handleSavedAddressChange = (e) => {
+    const id = e.target.value;
+    setSelectedSavedAddressID(id);
 
-  //   const selected = savedAddresses.find((a) => a.id === id);
-  //   if (selected) {
-  //     setAddressLine1(selected.addressLine1);
-  //     setAddressLine2(selected.addressLine2);
-  //     setSelectedState(selected.stateID);
-  //     setSelectedCity(selected.cityID);
-  //     setPincode(selected.pincode);
-  //   }
-  // };
+    const selected = savedAddresses.find((a) => a.id === id);
+    if (selected) {
+      setAddressLine1(selected.addressLine1);
+      setAddressLine2(selected.addressLine2);
+      setSelectedState(selected.stateID);
+      setSelectedCity(selected.cityID);
+      setPincode(selected.pincode);
+    }
+  };
 
 
   const [couponList, setCouponList] = useState([]);
@@ -831,7 +788,6 @@ useEffect(() => {
 // };
 
 const handleApplyCoupon = (coupon) => {
-  console.log(coupon);
   const minAmount = coupon.MinBookingAmount || 0;
 
   if (totalAmount < minAmount) {
@@ -844,79 +800,48 @@ const handleApplyCoupon = (coupon) => {
   setShowCouponPopup(false);
 };
 
-const getOriginalTotal = () => totalAmount; // before discount
-
 const getDiscountedTotal = () => {
-  let total = getOriginalTotal();
+  if (!couponApplied) return totalAmount;
 
-  if (appliedCoupon) {
-    if (appliedCoupon.DiscountType === "percentage") {
-      total -= (total * appliedCoupon.DiscountValue) / 100;
-    } else if (appliedCoupon.DiscountType === "FixedAmount") {
-      total -= appliedCoupon.DiscountValue;
-    }
+  const isPercentage = appliedCoupon.DiscountType === "percentage";
+  const minAmount = appliedCoupon.MinBookingAmount || 0;
+
+  if (totalAmount < minAmount) {
+    // Do not apply coupon if total < minimum
+    return totalAmount;
   }
 
-  return Math.max(total, 0); // prevent negative total
+  let discount = 0;
+
+  if (isPercentage) {
+    const percentage = parseFloat(appliedCoupon.DiscountValue) || 0;
+    discount = (totalAmount * percentage) / 100;
+
+    // Optional: Max discount cap
+    if (appliedCoupon.MaxDisAmount && discount > appliedCoupon.MaxDisAmount) {
+      discount = appliedCoupon.MaxDisAmount;
+    }
+  } else {
+    discount = appliedCoupon.DiscountValue || 0;
+  }
+
+  setFormData((prev) => ({
+     ...prev,
+     appliedCouponCode: appliedCoupon.Code,
+  }));
+
+  return Math.max(0, totalAmount - discount);
 };
-
-// const getDiscountedTotal = () => {
-//   if (!couponApplied) return totalAmount;
-
-//   const isPercentage = appliedCoupon.DiscountType === "percentage";
-//   const minAmount = appliedCoupon.MinBookingAmount || 0;
-
-//   if (totalAmount < minAmount) {
-//     // Do not apply coupon if total < minimum
-//     return totalAmount;
-//   }
-
-//   let discount = 0;
-
-//   if (isPercentage) {
-//     const percentage = parseFloat(appliedCoupon.DiscountValue) || 0;
-//     discount = (totalAmount * percentage) / 100;
-
-//     // Optional: Max discount cap
-//     if (appliedCoupon.MaxDisAmount && discount > appliedCoupon.MaxDisAmount) {
-//       discount = appliedCoupon.MaxDisAmount;
-//     }
-//   } else {
-//     discount = appliedCoupon.DiscountValue || 0;
-//   }
-
-//   setFormData((prev) => ({
-//      ...prev,
-//      appliedCouponCode: appliedCoupon.Code,
-//   }));
-
-//   return Math.max(0, totalAmount - discount);
-// };
 
 
   return (
     <div className="container py-4">
       <div className="row">
-
-        
         {/* Left: Time Slot Selection */}
         <div className="col-md-8 border-end left-scrollable">
-
-           <div className="mb-4">
-        <div className="progress">
-          <div
-            className="progress-bar"
-            role="progressbar"
-            style={{ width: `${(step / 3) * 100}%` }}
-          ></div>
-        </div>
-        <p className="text-center mt-2">Step {step} of 3</p>
-      </div>
-       {step === 1 && (
-         <>
           <h5>Select Date and Time</h5>
 
-          {/* {showCalendar && ( */}
+          {showCalendar && (
             <>
               <WeeklyCalendar
                 selectedDate={selectedDate}
@@ -935,10 +860,10 @@ const getDiscountedTotal = () => {
                     <div className="d-flex gap-2 mt-2 flex-wrap">
                       {morningSlots.map((slot, i) => (
                         <button
-                          key={i}
+                          key={slot}
                           disabled={slot.disabled}
                           className={` ${
-                            selectedTime === slot.label
+                            selectedTime === slot
                               ? "active"
                               : ""
                           } tab-pill  rounded-pill px-3 py-2`}
@@ -962,12 +887,12 @@ const getDiscountedTotal = () => {
               <div className="mb-3">
                 <strong>🌤️ Afternoon</strong>
                 <div className="d-flex gap-2 mt-2 flex-wrap">
-                  {afternoonSlots.map((slot,i) => (
+                  {afternoonSlots.map((slot) => (
                     <button
-                      key={i}
+                      key={slot}
                        disabled={slot.disabled}
                       className={` ${
-                        selectedTime === slot.label
+                        selectedTime === slot
                           ? "active"
                           : ""
                       } tab-pill  rounded-pill px-3 py-2`}
@@ -994,7 +919,7 @@ const getDiscountedTotal = () => {
                       key={slot}
                        disabled={slot.disabled}
                       className={` ${
-                        selectedTime === slot.label
+                        selectedTime === slot
                           ? "active"
                           : ""
                       } tab-pill  rounded-pill px-3 py-2`}
@@ -1013,12 +938,9 @@ const getDiscountedTotal = () => {
                 </div>
               </div>
             </>
-          {/* )} */}
+          )}
 
-          </>
-       )}
-
-          {/* {dateTouched && (
+          {dateTouched && (
             <div className="mt-3">
               <div
                 className="alert alert-success d-flex align-items-center justify-content-between gap-3"
@@ -1031,6 +953,7 @@ const getDiscountedTotal = () => {
                     {selectedTime ? ` at ${selectedTime}` : " — Select a slot"}
                   </strong>
                 </div>
+                {/* Step 3: Edit icon */}
                 <button
                   className="btn  px-3 py-2"
                   onClick={() => setShowCalendar(true)}
@@ -1039,9 +962,9 @@ const getDiscountedTotal = () => {
                 </button>
               </div>
             </div>
-          )} */}
+          )}
 
-          {/* {selectedDate && selectedTime && !showAddressFields && (
+          {selectedDate && selectedTime && !showAddressFields && (
             <div className="text-end mt-3">
               <button
                 className="btn btn-danger px-4 py-2"
@@ -1055,8 +978,8 @@ const getDiscountedTotal = () => {
                 Continue
               </button>
             </div>
-          )} */}
-          {step === 2 && (
+          )}
+          {showAddressFields && (
             <div
               ref={addressRef}
               className="border-start border-3 border-danger ps-3 pt-3 mt-4"
@@ -1145,8 +1068,8 @@ const getDiscountedTotal = () => {
               </div>
 
               <BookingAddressDetails
-                  formData={formData}
-                  setFormData={setFormData} // ✅ now it exists
+                selectedSavedAddressID={selectedSavedAddressID}
+                handleSavedAddressChange={handleSavedAddressChange}
                 handlereInputChange={handlereInputChange}
                 savedAddresses={savedAddresses}
                 selectedState={selectedState}
@@ -1162,6 +1085,7 @@ const getDiscountedTotal = () => {
                 setAddressLine1={setAddressLine1}
                 setAddressLine2={setAddressLine2}
                 handleMapClick={handleMapClick}
+                formData={formData}
                 />
 
               <BookingVehicleDetails
@@ -1175,18 +1099,17 @@ const getDiscountedTotal = () => {
                 handlereInputChange={handlereInputChange}
               />
 
-              {/* <div className="row">
+              <div className="row">
                 <div className="text-end mt-3">
                   <button className="btn btn-danger" onClick={handleContinue}>
                     Continue
                   </button>
                 </div>
-              </div> */}
-
+              </div>
             </div>
           )}
 
-          {step === 3 && (
+          {showCheckout && (
             <div ref={paymentRef} className="mt-5">
               {/* Technician Note */}
               <div className="card shadow p-4 mb-4">
@@ -1252,33 +1175,17 @@ const getDiscountedTotal = () => {
                   />
                 </div>
 
-                <div className="text-end d-flex justify-content-end">
+                <div className="text-end">
                   <button
-                    className="tab tab-pill active btn-lg px-4 py-2"
+                    className="btn btn-success btn-lg px-4 py-2"
                     onClick={handleBookingSubmit}
                   >
                     Confirm Booking
                   </button>
                 </div>
               </div>
-
-              
             </div>
           )}
-
-
-          <div className="mt-4 d-flex justify-content-between mb-3">
-        {step > 1 && (
-          <button className="btn btn-secondary px-4 py-2" onClick={handleBack}>
-            Back
-          </button>
-        )}
-        {step < 3 && (
-          <button className="btn btn-primary ms-auto px-4 py-2" onClick={handleNext}>
-            Next
-          </button>
-        )}
-      </div>
           <SuccessFailureModal
             show={modal.show}
             type={modal.type}
@@ -1326,32 +1233,29 @@ const getDiscountedTotal = () => {
                     <strong className="text-primary">₹{totalAmount}</strong>
                   </div> */}
 
-                {(() => {
-  const originalTotal = getOriginalTotal();
-  const discountedTotal = getDiscountedTotal();
-  const gstAmount = discountedTotal * 0.18;
-  const finalTotal = discountedTotal + gstAmount;
-  const savings = couponApplied ? originalTotal - discountedTotal : 0;
+                 {(() => {
+                      const discountedTotal = getDiscountedTotal();
+                      const gstAmount = discountedTotal * 0.18;
+                      const finalTotal = discountedTotal + gstAmount;
 
-  return (
-    <div className="d-flex justify-content-between pt-2 border-top mt-2">
-      <strong>Total (incl. 18% GST)</strong>
-      <div className="text-end">
-        <strong className="text-primary">₹{finalTotal.toFixed(2)}</strong>
-        <div className="small text-secondary">
-          <div>Base: ₹{discountedTotal.toFixed(2)}</div>
-          <div>GST (18%): ₹{gstAmount.toFixed(2)}</div>
-          {/* {couponApplied && (
-            <div className="text-muted">
-              (Saved ₹{savings.toFixed(2)})
-            </div>
-          )} */}
-        </div>
-      </div>
-    </div>
-  );
-})()}
-
+                      return (
+                        <div className="d-flex justify-content-between pt-2 border-top mt-2">
+                          <strong>Total (incl. 18% GST)</strong>
+                          <div className="text-end">
+                            <strong className="text-primary">₹{finalTotal.toFixed(2)}</strong>
+                            <div className="small text-secondary">
+                              <div>Base: ₹{discountedTotal.toFixed(2)}</div>
+                              <div>GST (18%): ₹{gstAmount.toFixed(2)}</div>
+                              {couponApplied && (
+                                <div className="text-muted">
+                                  (Saved ₹{(totalAmount - discountedTotal).toFixed(2)})
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                 </div>
               )}

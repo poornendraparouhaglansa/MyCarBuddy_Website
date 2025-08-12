@@ -12,9 +12,9 @@ const ModelPopup = ({ models, selected, onSelect, onClose }) => {
         </button>
         <h5 className="popup-title mb-3">Choose Your Model</h5>
         <div className="brand-scroll-container">
-          <div className="row brand-grid">
+          <div className="row d-flex justify-content-center">
             {models.map((m) => (
-              <div key={m.id} className="col-6 col-sm-4 col-md-3 mb-3">
+              <div key={m.id} className="col-6 col-sm-4 col-md-2 mb-3">
                 <div
                   className={`card brand-card ${selected === m.name ? "selected" : ""}`}
                   onClick={() => onSelect(m.id)}

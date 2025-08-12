@@ -29,7 +29,7 @@ const ServicePage = () => {
       <ServiceAreaOneMultiImg />
 
       {/* Subscribe One */}
-      <SubscribeOne />
+      {/* <SubscribeOne /> */}
 
       {/* Footer Area One */}
       <FooterAreaOne />

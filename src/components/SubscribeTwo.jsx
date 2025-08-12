@@ -7,7 +7,7 @@ const SubscribeTwo = () => {
       <div className="footer-top-3">
         <div className="footer-logo">
           <Link to="/">
-            <img src="assets/img/logo-white.svg" alt="Fixturbo" />
+            <img src="/assets/img/logo-white.svg" alt="Fixturbo" />
           </Link>
         </div>
         <h3 className="footer-top-title text-white">

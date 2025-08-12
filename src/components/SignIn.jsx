@@ -3,14 +3,17 @@ import "./SignInModal.css";
 import axios from "axios";
 import { v4 as uuidv4 } from 'uuid';
 import { useAlert } from "../context/AlertContext";
+import CryptoJS from "crypto-js";
 
 const SignIn = ({ isVisible, onClose, onRegister }) => {
     const [identifier, setIdentifier] = useState("");
+    // const [isLoading, setIsLoading] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
     const [otp, setOtp] = useState("");
     const [loading, setLoading] = useState(false);
     const baseUrl = process.env.REACT_APP_CARBUDDY_BASE_URL;
-
+    const imageBaseURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
+    const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
     const { showAlert } = useAlert();
 
     const modalRef = useRef();
@@ -29,6 +32,15 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isVisible, onClose]);
 
+    useEffect(() => {
+    if (isVisible) {
+        // Reset form when modal opens
+        setOtpSent(false);
+        setIdentifier("");
+        setOtp("");
+    }
+}, [isVisible]);
+
     const getDeviceId = () => {
         let deviceId = localStorage.getItem("deviceId");
         if (!deviceId) {
@@ -42,10 +54,8 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
         e.preventDefault();
         if (!identifier) return;
         setLoading(true);
-        console.log("Sending OTP to:", identifier);
         try {
             const response = await axios.post(`${baseUrl}Auth/send-otp`, { loginId: identifier });
-            console.log("OTP sent response:", response.data);
             setOtpSent(true);
         } catch (error) {
             console.error("Error sending OTP:", error);
@@ -59,7 +69,6 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
         e.preventDefault();
         const deviceId = getDeviceId();
         setLoading(true);
-        console.log("Verifying OTP:", otp, "for", identifier);
         try {
             const response = await axios.post(`${baseUrl}Auth/verify-otp`, {
                 loginId: identifier,
@@ -67,18 +76,14 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
                 deviceToken: "web-token",
                 deviceId
             });
-            console.log("OTP verification response:", response.data);
+            // console.log("OTP verification response:", response.data);
+          
             localStorage.setItem("user", JSON.stringify({
-                id: response.data?.custID,
-                name: response.data?.name || null,
-                identifier,
-                token: response.data?.token
+            id: CryptoJS.AES.encrypt(response.data?.custID.toString(), secretKey).toString(),
+            name: response.data?.name || 'GUEST',
+            token: response.data?.token
             }));
-            const userCarKey = `selectedCar_${identifier}`;
-            const userCar = localStorage.getItem(userCarKey);
-            if (userCar) {
-                localStorage.setItem("selectedCarDetails", userCar);
-            }
+            getVehicleList(response.data?.custID);
             window.dispatchEvent(new Event("userProfileUpdated"));
             onClose();
         } catch (error) {
@@ -89,6 +94,55 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
         }
     };
 
+
+const getVehicleList = async () => {
+  try {
+    const userData = JSON.parse(localStorage.getItem("user"));
+    if (!userData || !userData.id || !userData.token) return;
+    const bytes = CryptoJS.AES.decrypt(userData.id, secretKey);
+    const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
+
+    const res = await axios.get(`${baseUrl}CustomerVehicles/CustId?CustId=${decryptedCustId}`, {
+      headers: {
+        Authorization: `Bearer ${userData.token}`,
+      },
+    });
+
+    const vehicleList = res.data;
+    console.log("Vehicle list:", vehicleList);
+
+    const primaryCar = vehicleList.find((car) => car.IsPrimary === true);
+
+    if (primaryCar) {
+      const selectedCarDetails = {
+        brand: {
+          id: primaryCar.BrandID,
+          name: primaryCar.BrandName,
+          logo: `${imageBaseURL}${primaryCar.BrandLogo}`,
+        },
+        model: {
+          id: primaryCar.ModelID,
+          name: primaryCar.ModelName,
+          logo: `${imageBaseURL}${primaryCar.VehicleImage}`,
+        },
+        fuel: {
+          id: primaryCar.FuelTypeID,
+          name: primaryCar.FuelTypeName,
+          logo: `${imageBaseURL}${primaryCar.FuelImage}`,
+        },
+        VehicleID: primaryCar.VehicleID,
+      };
+
+      localStorage.setItem("selectedCarDetails", JSON.stringify(selectedCarDetails));
+      window.dispatchEvent(new Event("userProfileUpdated"));
+    } else {
+      console.warn("No primary car found.");
+    }
+  } catch (err) {
+    console.error("Error fetching vehicle list:", err);
+  }
+};
+
     return (
         <div className={`sign-in-modal ${isVisible ? "visible" : "hidden"}`}>
             <div className="modal-content" ref={modalRef}>
@@ -96,16 +150,22 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
                 <h5 className="mb-4">Welcome Back</h5>
                 <form onSubmit={otpSent ? handleVerifyOTP : handleSendOTP}>
                     <div className="mb-3 text-start">
-                        <label className="form-label">Mobile Number or Email</label>
+                        <label className="form-label">Mobile Number</label>
                         <input
                             type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             className="form-control"
-                            placeholder="Enter mobile number or email"
+                            placeholder="Enter mobile number"
                             value={identifier}
-                            onChange={(e) => setIdentifier(e.target.value)}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, "");
+                                if (value.length <= 10) setIdentifier(value);
+                            }}
+                            maxLength={10}
                             required
                         />
-                    </div>
+                      </div>
 
                     {otpSent && (
                         <div className="mb-3 text-start">
@@ -122,12 +182,12 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
                     )}
 
                     <div className="text-center mb-3">
-                        <button type="submit" className="btn btn-primary btn-sm">
-                            {otpSent ? "Verify OTP" : "Send OTP"}
+                        <button type="submit" className={`btn btn-primary btn-sm ${loading ? "disabled" : ""}`}>
+                            {loading ? "Sending..." : otpSent ? "Verify OTP" : "Send OTP"   }
                         </button>
                     </div>
 
-                    <div className="text-center">
+                    {/* <div className="text-center">
                         <span>Don’t have an account?</span>{" "}
                         <button
                             type="button"
@@ -136,7 +196,7 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
                         >
                             Register
                         </button>
-                    </div>
+                    </div> */}
                 </form>
             </div>
         </div>

@@ -45,14 +45,19 @@ const CartPage = () => {
             <table className="table align-middle">
               <thead>
                 <tr>
+                  <th>SNO</th>
                   <th>Service</th>
                   <th>Price</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {cartItems.map((item) => (
+                {
+                cartItems.map((item) => (
                   <tr key={item.id}>
+                    <td>
+                      <span >{cartItems.indexOf(item) + 1}</span>
+                    </td>
                     <td>
                       <div className="d-flex align-items-center">
                         <img
@@ -67,16 +72,16 @@ const CartPage = () => {
                     <td>₹{item.price}</td>
                     <td>
                       <button
-                        className="btn btn-outline-danger btn-sm"
+                        className="btn btn-outline-danger btn-sm-icon"
                         onClick={() => removeFromCart(item.id)}
                       >
-                        Remove
+                        <i className="bi bi-trash" />
                       </button>
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td className="text-end fw-bold" colSpan={1}>
+                  <td className="text-end fw-bold" colSpan={2}>
                     Total
                   </td>
                   <td className="fw-bold text-success">₹{total}</td>
@@ -88,7 +93,7 @@ const CartPage = () => {
 
           {cartItems.length > 0 && (
             <div className="d-flex justify-content-end mt-4">
-              <button onClick={handleSelectSlot} className="btn btn-danger btn-lg">
+              <button onClick={handleSelectSlot} className="btn btn-danger btn-lg px-4 py-2">
                 Check Out
               </button>
             </div>

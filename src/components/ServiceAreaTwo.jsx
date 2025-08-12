@@ -10,8 +10,8 @@ const ServiceAreaTwo = () => {
     const fetchCategories = async () => {
       try {
         const response = await axios.get(`${BASE_URL}Category`);
-        if (response.data.status && Array.isArray(response.data.data)) {
-          const activeCategories = response.data.data.filter(cat => cat.IsActive);
+        if ( Array.isArray(response.data)) {
+          const activeCategories = response.data.filter(cat => cat.IsActive);
 
           const formatted = activeCategories.map((cat) => ({
             id: cat.CategoryID,
@@ -79,7 +79,7 @@ const ServiceAreaTwo = () => {
                     </div>
                     <div className="checklist style-white mb-50">
                       <div className="btn-wrap mt-20">
-                        <Link className="btn style4" to={`/service-details/${service.id}`}>
+                        <Link className="btn style4 px-4 py-2" to={`/service-details/${service.id}`}>
                           Read More <i className="fas fa-arrow-right ms-2" />
                         </Link>
                       </div>

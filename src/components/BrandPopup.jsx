@@ -14,7 +14,7 @@ const BrandPopup = ({ brands, selected, onSelect, onClose }) => {
         </button>
         <h5 className="popup-title mb-3">Choose Your Brand</h5>
         <div className="brand-scroll-container">
-          <div className="row brand-grid">
+          <div className="row d-flex justify-content-center">
             {brands.map((b) => (
               <div key={b.id} className="col-6 col-sm-3 col-md-2 mb-3">
                 <div
@@ -28,9 +28,6 @@ const BrandPopup = ({ brands, selected, onSelect, onClose }) => {
                     alt={b.name}
                     className="brand-logo p-3"
                   />
-                  {/* <div className="card-body text-center p-2">
-                    <h6 className="card-title mb-0">{b.name}</h6>
-                  </div> */}
                 </div>
               </div>
             ))}

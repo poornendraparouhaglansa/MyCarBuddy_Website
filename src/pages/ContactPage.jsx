@@ -29,7 +29,7 @@ const ContactPage = () => {
       <ContactArea />
 
       {/* Subscribe One */}
-      <SubscribeOne />
+      {/* <SubscribeOne /> */}
 
       {/* Footer Area One */}
       <FooterAreaOne />

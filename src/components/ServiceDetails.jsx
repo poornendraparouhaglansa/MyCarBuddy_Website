@@ -1,86 +1,136 @@
-import React from "react";
-import { Link, useParams } from "react-router-dom";
+import React , { useEffect , useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import HeaderOne from "./HeaderOne";
 import Breadcrumb from "./Breadcrumb";
 import FooterAreaOne from "./FooterAreaOne";
 import SubscribeOne from "./SubscribeOne";
-import servicetwo from '../../src/images/service-1-3.png';
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useCart } from "../context/CartContext";
+import ChooseCarModal from "./ChooseCarModal";
 
-export const services = [
-  {
-    id: 1,
-    title: "Regular Car Service",
-    duration: "Takes 4 hours",
-    price: 2399,
-    originalPrice: 3199,
-    includes: [
-      "AC Vent Cleaning",
-      "AC Gas (upto 400 gms)",
-      "AC Filter Cleaning",
-      "AC Inspection",
-      "Condenser Cleaning",
-    ],
-    image: servicetwo,
-    categoryId: 1,
-  },
-  {
-    id: 2,
-    title: "High Performance AC Service",
-    duration: "Takes 8 hours",
-    price: 3499,
-    originalPrice: 4999,
-    includes: [
-      "Dashboard Refitting",
-      "Leak Test",
-      "Full AC Cleaning",
-      "Gas Top-Up",
-    ],
-    image: servicetwo,
-    categoryId: 1,
-  },
-  {
-    id: 3,
-    title: "Regular AC Service",
-    duration: "Takes 4 hours",
-    price: 2399,
-    originalPrice: 3199,
-    includes: [
-      "AC Vent Cleaning",
-      "AC Gas (upto 400 gms)",
-      "AC Filter Cleaning",
-      "AC Inspection",
-      "Condenser Cleaning",
-    ],
-    image: servicetwo,
-    categoryId: 1,
-  },
-  {
-    id: 4,
-    title: "High Performance Car Service",
-    duration: "Takes 8 hours",
-    price: 3499,
-    originalPrice: 4999,
-    includes: [
-      "Dashboard Refitting",
-      "Leak Test",
-      "Full AC Cleaning",
-      "Gas Top-Up",
-    ],
-    image: servicetwo,
-    categoryId: 1,
-  },
-];
+const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
+const ImageURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
 
 
 const ServiceDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+    const { cartItems, addToCart } = useCart();
+  const [services, setServices] = React.useState([]);
+    const [selectedCar, setSelectedCar] = useState(null);
+      const [showCarModal, setShowCarModal] = useState(false);
+
+      const selectedCarDetails = JSON.parse(localStorage.getItem("selectedCarDetails"));
+  let brandId;
+  let modelId;
+  let fuelId;
+  if (selectedCarDetails) {
+    brandId = selectedCarDetails.brand?.id;
+    modelId = selectedCarDetails.model?.id;
+    fuelId = selectedCarDetails.fuel?.id;
+
+    console.log({ brandId, modelId, fuelId });
+  } else {
+    console.log("No car selected yet.");
+  }
+
+
+
+  useEffect(() => {
+    const loadSelectedCar = () => {
+      const saved = localStorage.getItem("selectedCarDetails");
+      if (saved) {
+        try {
+          setSelectedCar(JSON.parse(saved));
+        } catch (err) {
+          console.error("Error parsing selected car", err);
+        }
+      } else {
+        setSelectedCar(null);
+      }
+    };
+  
+    loadSelectedCar();
+  
+    // Listen to custom event triggered after login
+    const handleProfileUpdate = () => {
+      loadSelectedCar();
+    };
+  
+    window.addEventListener("userProfileUpdated", handleProfileUpdate);
+  
+    return () => {
+      window.removeEventListener("userProfileUpdated", handleProfileUpdate);
+    };
+  }, []);
+  
+
+  useEffect(() => {
+         const fetchPackages = async () => {
+      try {
+        const response = await axios.get(
+          `${BaseURL}PlanPackage/GetPlanPackagesByCategoryAndSubCategory`
+        );
+                 
+//         if (Array.isArray(response)) {
+//  console.log("Fetched packages:", );
+         const formatted = response.data
+  .filter(pkg => pkg.PackageID === parseInt(id))
+  .map(pkg => {
+    const hours = pkg.EstimatedDurationMinutes
+      ? (pkg.EstimatedDurationMinutes / 60).toFixed(1) // 1 decimal place
+      : null;
+
+    return {
+      id: pkg.PackageID,
+      title: pkg.PackageName,
+       banners: pkg.BannerImage
+      ? pkg.BannerImage.split(",").map(img => `${ImageURL}${img.trim()}`)
+      : [],
+      image: `${ImageURL}${pkg.PackageImage}`,
+      tag: "Featured Package",
+      duration: hours ? `${hours} Hrs` : "N/A",
+      price: pkg.Serv_Off_Price,
+      originalPrice: pkg.Serv_Reg_Price,
+      includes: pkg.IncludeNames
+        ? pkg.IncludeNames.split(",").map(i => i.trim())
+        : [],
+      BrandId: "",
+      ModelId: "",
+      isActive: pkg.IsActive,
+      EstimatedDurationMinutes: pkg.EstimatedDurationMinutes,
+      EstimatedDurationHours: hours, // Keep hours separately too if needed
+      Description: pkg.Description
+    };
+  });
+
+
+            setServices(formatted);
+          console.log("Fetched packages:", formatted);
+
+        // } else {
+        //   setPackages([]);
+        // }
+      } catch (err) {
+        console.error("Failed to fetch packages", err);
+      }
+    };
+
+    fetchPackages();
+  }, []);
+
+
+
   const service = services.find(s => s.id === parseInt(id));
 
   if (!service) {
-    return <div className="container mt-5"><h4>Service not found</h4></div>;
+    return '';
   }
 
   const categoryServices = services.filter(s => s.categoryId === service.categoryId && s.id !== service.id);
+
+  const isInCart = cartItems.some((i) => i.id === service.id);
 
   return (
     <>
@@ -93,27 +143,101 @@ const ServiceDetails = () => {
             <div className="col-lg-8">
               <div className="service-page-single">
                 <div className="page-img mb-4">
-                  <div className="d-flex">
-                    <div className="w-50">
-                      <img
-                        src={service.image}
-                        className="img-fluid rounded-start w-100 h-100"
-                        alt={service.title}
-                        style={{ objectFit: 'cover' }}
-                      />
+                  <div className="d-flex1">
+                    <div className="w-100">
+                     <div
+                          id="serviceCarousel"
+                          className="carousel slide mb-4"
+                          data-bs-ride="carousel"
+                          data-bs-interval="3000"  // 3 seconds
+                        >
+                          <div className="carousel-inner">
+                            {service.banners.map((img, idx) => (
+                              <div
+                                className={`carousel-item ${idx === 0 ? "active" : ""}`}
+                                key={idx}
+                              >
+                                <img
+                                  src={img}
+                                  className="d-block w-100 rounded"
+                                  alt={`${service.title} ${idx + 1}`}
+                                  style={{ objectFit: "cover", height: "400px" }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+
+                          <button
+                            className="carousel-control-prev"
+                            type="button"
+                            data-bs-target="#serviceCarousel"
+                            data-bs-slide="prev"
+                          >
+                            <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span className="visually-hidden">Previous</span>
+                          </button>
+
+                          <button
+                            className="carousel-control-next"
+                            type="button"
+                            data-bs-target="#serviceCarousel"
+                            data-bs-slide="next"
+                          >
+                            <span className="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span className="visually-hidden">Next</span>
+                          </button>
+                        </div>
+
                     </div>
 
                     <div className="w-50 d-flex flex-row justify-content-end gap-2">
-                      <i className="bi bi-clock-fill text-muted">  </i>
-                      <p className="mb-0 fw-regular text-muted"> {service.duration}</p>
+                      {/* <i className="bi bi-clock-fill text-muted">  </i> */}
+                      {/* <p className="mb-0 fw-regular text-muted"> {service.duration}</p> */}
                     </div>
                   </div>
+                  
 
                   <div className="d-flex justify-content-between align-items-center px-4 py-3" style={{ backgroundColor: '#f1f1f1' }}>
+
+                   {selectedCar ? (
+                      <>
                     <h5 className="mb-0 fw-bold text-dark">₹ {service.price}</h5>
-                    <button className="btn btn-danger fw-bold">
+                     {isInCart ? (
+                          <button
+                            className="btn style-border2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate("/cart");
+                            }}
+                          >
+                            ✔ View Cart
+                          </button>
+                        ) : (
+                          <button className="btn btn-danger fw-bold"  onClick={(e) => {
+                              e.stopPropagation();
+                              addToCart(service);
+                              toast.success("Service added to cart");
+                            }}>
                       + ADD TO CART
                     </button>
+                    
+                        )}
+                        </>
+                        ) : (
+                      <>
+                        <div className="text-muted fst-italic mb-2">Select your car to see price</div>
+                        <button
+                          className="btn style-border2 px-4 py-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowCarModal(true);
+                          }}
+                        >
+                          Choose Your Car
+                        </button>
+                      </>
+                    )}
+                    
                   </div>
                 </div>
 
@@ -122,9 +246,8 @@ const ServiceDetails = () => {
                 <div className="page-content">
                   <h2 className="page-title">{service.title}</h2>
                   <p className="text-muted mb-3">{service.duration}</p>
-                  <p>Web designing in a powerful way of just not an only professions, however, in a passion for our Company. We have to a tendency to believe the idea that smart looking of any websitet in on visitors.Web designing in a powerful way of just not an only profession Web designing in a powerful way of just not an only</p>
-                  <p className="mb-3">
-                    This service includes everything your car needs to stay in top shape. Below is the full list of included items:
+                 <p>
+                  {service.Description}
                   </p>
 
                   <h4 className="mt-4 mb-2">Included in this service:</h4>
@@ -137,7 +260,7 @@ const ServiceDetails = () => {
                     ))}
                   </ul>
 
-                  <h4 className="mt-1 mb-3">Customer Comments</h4>
+                  {/* <h4 className="mt-1 mb-3">Customer Comments</h4>
 
                   <div className="bg-light p-3 rounded mb-3">
                     <p className="mb-1 fw-semibold">Sourav Behuria</p>
@@ -169,7 +292,7 @@ const ServiceDetails = () => {
                       placeholder="Write your comment here..."
                     ></textarea>
                     <button className="btn btn-primary">Submit</button>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
@@ -202,8 +325,24 @@ const ServiceDetails = () => {
             </div>
           </div>
         </div>
+
+        <ChooseCarModal
+        isVisible={showCarModal}
+        onClose={() => {
+          setShowCarModal(false);
+          const saved = localStorage.getItem("selectedCarDetails");
+          if (saved) {
+            try {
+              setSelectedCar(JSON.parse(saved));
+            } catch (err) {
+              console.error("Error parsing selected car", err);
+            }
+          }
+        }}
+        onCarSaved={(car) => setSelectedCar(car)}
+      />
       </div>
-      <SubscribeOne />
+      {/* <SubscribeOne /> */}
       <FooterAreaOne />
     </>
   );

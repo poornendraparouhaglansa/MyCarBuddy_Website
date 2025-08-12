@@ -9,8 +9,14 @@ const FooterAreaOne = () => {
     >
       <div className="container">
         <div className="widget-area">
+          <div className="col-md-12 text-center">
+               <img src="/assets/img/MyCarBuddy-Logo1.png" alt="MyCarBuddy"  width={"300px"}/>
+          </div>
           <div className="row justify-content-between">
-            <div className="col-md-6 col-xl-auto">
+
+            
+
+            <div className="col-md-3 col-xl-auto">
               <div className="widget widget_nav_menu footer-widget">
                 <h3 className="widget_title">Company</h3>
                 <div className="menu-all-pages-container">
@@ -19,43 +25,29 @@ const FooterAreaOne = () => {
                       <Link to="/about">About</Link>
                     </li>
                     <li>
-                      <Link to="/team">Team</Link>
+                      <Link to="/terms">Services</Link>
                     </li>
                     <li>
-                      <Link to="/contact">Faq</Link>
-                    </li>
-                    <li>
-                      <Link to="/contact">Privacy Policy</Link>
+                      <Link to="/contact">Contact</Link>
                     </li>
                   </ul>
                 </div>
               </div>
             </div>
+
             <div className="col-md-6 col-xl-auto">
-              <div className="widget widget_nav_menu footer-widget">
-                <h3 className="widget_title">Services</h3>
-                <div className="menu-all-pages-container">
-                  <ul className="menu">
-                    <li>
-                      <Link to="/service">Mechanic Masters</Link>
-                    </li>
-                    <li>
-                      <Link to="/service">Speedy Auto Repair</Link>
-                    </li>
-                    <li>
-                      <Link to="/service">Mobile Car Repair</Link>
-                    </li>
-                    <li>
-                      <Link to="/service">Pro Auto Fix</Link>
-                    </li>
-                    <li>
-                      <Link to="/service">Precision Auto Works</Link>
-                    </li>
-                  </ul>
-                </div>
+              <div className="widget footer-widget widget-newsletter">
+                <h3 className="widget_title">About</h3>
+             
+                <p className="footer-text mb-50">
+                 At CarBuddy, we bring the car spa to your doorstep.
+No more waiting in queues or driving to a car wash center — we specialize in interior and exterior car washing right at your home, so you can relax while we make your car shine.
+                </p>
+                
               </div>
             </div>
-            <div className="col-md-6 col-xl-auto">
+
+            <div className="col-md-3 col-xl-auto">
               <div className="widget footer-widget">
                 <h3 className="widget_title">Contact</h3>
                 <div className="widget-contact">
@@ -71,27 +63,7 @@ const FooterAreaOne = () => {
                 </div>
               </div>
             </div>
-            <div className="col-md-6 col-xl-auto">
-              <div className="widget footer-widget widget-newsletter">
-                <h3 className="widget_title">Get In Touch</h3>
-                <p className="footer-text mb-50">
-                  Lorem Ipsum is simply is dumiomy is text Lorem Ipsum is simply
-                </p>
-                <form className="newsletter-form">
-                  <div className="form-group">
-                    <input
-                      className="form-control"
-                      type="email"
-                      placeholder="Your Email Address"
-                      required=""
-                    />
-                  </div>
-                  <button type="submit" className="btn">
-                    <i className="fas fa-arrow-right" />
-                  </button>
-                </form>
-              </div>
-            </div>
+            
           </div>
         </div>
       </div>
@@ -105,9 +77,9 @@ const FooterAreaOne = () => {
             </div>
             <div className="col-auto">
               <div className="footer-links">
-                <Link to="/contact">Tarms &amp; Condition</Link>
-                <Link to="/contact">Privacy Policy</Link>
-                <Link to="/contact">Contact Us</Link>
+                <Link to="/terms">Terms &amp; Condition</Link>
+                <Link to="/privacy">Privacy Policy</Link>
+                <Link to="/refund">Refund Policy</Link>
               </div>
             </div>
           </div>

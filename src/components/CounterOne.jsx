@@ -140,7 +140,7 @@ const CounterOne = () => {
                 </div>
                 <div className="call-media-wrap">
                   <div className="icon">
-                    <img src="assets/img/icon/phone-1.svg" alt="Fixturbo" />
+                    <img src="/assets/img/icon/phone-1.svg" alt="Fixturbo" />
                   </div>
                   <div className="media-body">
                     <h6 className="title text-white">Requesting A Call:</h6>

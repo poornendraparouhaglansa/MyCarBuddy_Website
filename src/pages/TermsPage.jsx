@@ -3,12 +3,10 @@ import HeaderOne from "../components/HeaderOne";
 
 import FooterAreaOne from "../components/FooterAreaOne";
 import Breadcrumb from "../components/Breadcrumb";
-import SubscribeOne from "../components/SubscribeOne";
-import ServiceDetails from "../components/ServiceDetails";
+import Terms from "../components/Terms";
 import Preloader from "../helper/Preloader";
-import ServiceCards from "../components/ServiceCards";
 
-const ServiceDetailsPage = () => {
+const TermsPage = () => {
   let [active, setActive] = useState(true);
   useEffect(() => {
     setTimeout(function () {
@@ -24,13 +22,10 @@ const ServiceDetailsPage = () => {
       <HeaderOne />
 
       {/* Breadcrumb */}
-      <Breadcrumb title={"Service Packages"} />
+      <Breadcrumb title={"Terms"} />
 
-      {/* Service Details */}
-      <ServiceCards />
-
-      {/* Subscribe One */}
-      {/* <SubscribeOne /> */}
+      {/* Contact Area */}
+      <Terms />
 
       {/* Footer Area One */}
       <FooterAreaOne />
@@ -38,4 +33,4 @@ const ServiceDetailsPage = () => {
   );
 };
 
-export default ServiceDetailsPage;
+export default TermsPage;
