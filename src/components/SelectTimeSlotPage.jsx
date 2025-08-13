@@ -10,24 +10,25 @@ import BookingVehicleDetails from "./BookingVehicleDetails";
 import BookingAddressDetails from "./BookingAddressDetails";
 import CryptoJS from "crypto-js";
 
-
-
 const SelectTimeSlotPage = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const token = user?.token || "";
   const { cartItems, clearCart } = useCart();
   cartItems.length === 0 && navigate("/cart");
-   const [step, setStep] = useState(1);
+  const [step, setStep] = useState(1);
   const baseUrl = process.env.REACT_APP_CARBUDDY_BASE_URL;
   const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
-  const location = JSON.parse(localStorage.getItem("location")) || '{"lat": 17.385044, "lng": 78.486671}';
+  const location =
+    JSON.parse(localStorage.getItem("location")) ||
+    '{"lat": 17.385044, "lng": 78.486671}';
   let decryptedCustId = null;
-  if(cartItems.length > 0){
-    const bytes = cartItems.length > 0 ? CryptoJS.AES.decrypt(user.id, secretKey) : null;
+  if (cartItems.length > 0) {
+    const bytes =
+      cartItems.length > 0 ? CryptoJS.AES.decrypt(user.id, secretKey) : null;
     decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
-  }  
-    
+  }
+
   const [showCouponPopup, setShowCouponPopup] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -43,7 +44,7 @@ const SelectTimeSlotPage = () => {
     addressLine2: "",
     technicianNote: "",
     couponApplied: false,
-    discountAmount: '', // example value
+    discountAmount: "", // example value
     appliedCouponCode: "",
     paymentMethod: "razorpay",
     savedAddresses: [],
@@ -53,15 +54,15 @@ const SelectTimeSlotPage = () => {
     },
     registrationNumber: "",
     yearOfPurchase: "",
-  engineType: "",
-  kilometerDriven: "",
-  transmissionType: "",
-   brandID: "",
-  modelID: "",
-  fuelTypeID: "",
-  VehicleID: "",
-  selectedSavedAddressID: "",
-});
+    engineType: "",
+    kilometerDriven: "",
+    transmissionType: "",
+    brandID: "",
+    modelID: "",
+    fuelTypeID: "",
+    VehicleID: "",
+    selectedSavedAddressID: "",
+  });
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState(null);
   const [showAddressFields, setShowAddressFields] = useState(false);
@@ -74,8 +75,8 @@ const SelectTimeSlotPage = () => {
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
 
-const [appliedCoupon, setAppliedCoupon] = useState(null); // Stores selected coupon
-const [couponApplied, setCouponApplied] = useState(false); // Tracks applied status
+  const [appliedCoupon, setAppliedCoupon] = useState(null); // Stores selected coupon
+  const [couponApplied, setCouponApplied] = useState(false); // Tracks applied status
   const [paymentMethod, setPaymentMethod] = useState("razorpay");
   const [modal, setModal] = useState({ show: false, type: "", message: "" });
   const addressRef = useRef(null);
@@ -83,89 +84,83 @@ const [couponApplied, setCouponApplied] = useState(false); // Tracks applied sta
 
   const [pincode, setPincode] = useState("");
 
-
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [registrationNumber, setRegistrationNumber] = useState("");
 
   // Saved Address
-  const [savedAddresses, setSavedAddresses] = useState([]); 
- 
+  const [savedAddresses, setSavedAddresses] = useState([]);
 
   const [showCalendar, setShowCalendar] = useState(true);
 
   const { showAlert } = useAlert();
 
-
-  
   const handleNext = () => {
     if (step === 1 && !selectedTime) {
       showAlert("Please select a time slot.");
       return;
     }
-    if (step === 2 ) {
-      if (!formData.fullName || !formData.phone || !formData.email)
-      {
-         showAlert("Please fill contact details.");
-          return;
+    if (step === 2) {
+      if (!formData.fullName || !formData.phone || !formData.email) {
+        showAlert("Please fill contact details.");
+        return;
       }
-     
 
-       if (!formData.CityID || !formData.StateID || !formData.addressLine1.trim()) {
-          showAlert("Please complete the address (state, city, and address).");
-          
-          return;
-        }
-        if (step === 3 && (!formData.registrationNumber || !formData.yearOfPurchase )) {
-          showAlert("Please enter car details.");
-          return;
-        }
+      if (
+        !formData.CityID ||
+        !formData.StateID ||
+        !formData.addressLine1.trim()
+      ) {
+        showAlert("Please complete the address (state, city, and address).");
 
-        if(!formData.selectedSavedAddressID)
-        {
-           handleContinue();
-        }
+        return;
+      }
+      if (
+        step === 3 &&
+        (!formData.registrationNumber || !formData.yearOfPurchase)
+      ) {
+        showAlert("Please enter car details.");
+        return;
+      }
 
+      if (!formData.selectedSavedAddressID) {
+        handleContinue();
+      }
     }
 
-    
     setStep((prev) => prev + 1);
   };
-
 
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
   };
 
+  useEffect(() => {
+    if (selectedDate) {
+      fetchTimeSlots(selectedDate);
+    }
+  }, [selectedDate]);
 
+  useEffect(() => {
+    fetchCustomerDetails();
+    const fetchStates = async () => {
+      try {
+        const response = await axios.get(`${baseUrl}State`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const activeStates = response.data.filter((s) => s.IsActive);
+        setStates(activeStates);
+      } catch (err) {
+        console.error("Error fetching states:", err);
+      }
+    };
 
-useEffect(() => {
-  if (selectedDate) {
-    fetchTimeSlots(selectedDate);
-  }
-}, [selectedDate]);
-
-    useEffect(() => {
-      fetchCustomerDetails();
-      const fetchStates = async () => {
-        try {
-          const response = await axios.get(`${baseUrl}State`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          const activeStates = response.data.filter((s) => s.IsActive);
-          setStates(activeStates);
-        } catch (err) {
-          console.error("Error fetching states:", err);
-        }
-      };
-
-      fetchStates();
+    fetchStates();
   }, []);
 
   useEffect(() => {
     const fetchCities = async () => {
-     
       try {
         const response = await axios.get(`${baseUrl}City`, {
           headers: {
@@ -182,18 +177,20 @@ useEffect(() => {
     };
 
     fetchCities();
-  }, [formData.StateID , selectedState]);
+  }, [formData.StateID, selectedState]);
 
-  
   useEffect(() => {
     // handleMapClick(formData.mapLocation.latitude, formData.mapLocation.longitude);
-    
+
     const car = localStorage.getItem("selectedCarDetails");
     if (car) {
-
-      if(JSON.parse(car).VehicleID){
+      if (JSON.parse(car).VehicleID) {
         try {
-            const res = axios.get(`${baseUrl}CustomerVehicles/CustVehicleId?CustVehicleId=${JSON.parse(car).VehicleID}`);
+          const res = axios.get(
+            `${baseUrl}CustomerVehicles/CustVehicleId?CustVehicleId=${
+              JSON.parse(car).VehicleID
+            }`
+          );
           res.then((response) => {
             setSelectedVehicle(response.data);
             console.log("Selected :", response.data[0].TransmissionType);
@@ -207,14 +204,14 @@ useEffect(() => {
               yearOfPurchase: response.data[0].YearOfPurchase,
               engineType: response.data[0].EngineType,
               kilometerDriven: response.data[0].KilometersDriven,
-              transmissionType: response.data[0].TransmissionType
+              transmissionType: response.data[0].TransmissionType,
             }));
           });
           console.log("Selected fon:", formData);
         } catch (error) {
           console.error("Error fetching vehicle details:", error);
         }
-      }else{
+      } else {
         setSelectedVehicle(JSON.parse(car));
         setFormData((prev) => ({
           ...prev,
@@ -222,7 +219,7 @@ useEffect(() => {
           modelID: JSON.parse(car).model.id,
           fuelTypeID: JSON.parse(car).fuel.id,
           VehicleID: JSON.parse(car).VehicleID ? JSON.parse(car).VehicleID : "",
-        }))
+        }));
       }
       // setSelectedVehicle(JSON.parse(car));
       // setFormData((prev) => ({
@@ -236,44 +233,39 @@ useEffect(() => {
     console.log("Selected Vehicle:", selectedVehicle);
   }, []);
 
-  
+  const handleMapClick = async (lat, lng) => {
+    const result = await reverseGeocode(lat, lng);
+    console.log("Reverse Geocode Result", result);
 
-const handleMapClick = async (lat, lng) => {
+    const stateName = result?.state?.toLowerCase?.();
+    const cityName = result?.city?.toLowerCase?.();
 
-  const result = await reverseGeocode(lat, lng);
-  console.log("Reverse Geocode Result", result);
+    const matchedState = states.find(
+      (s) => s.StateName?.replace(/\s+/g, "").toLowerCase() === stateName
+    );
+    const matchedCity = cities.find(
+      (c) => c.CityName?.replace(/\s+/g, "").toLowerCase() === cityName
+    );
 
-  const stateName = result?.state?.toLowerCase?.();
-  const cityName = result?.city?.toLowerCase?.();
+    if (!matchedState) {
+      // alert("Service is not available in your selected location.");
+      return;
+    }
 
-  const matchedState = states.find(
-    (s) => s.StateName?.replace(/\s+/g, '').toLowerCase() === stateName
-  );
-  const matchedCity = cities.find(
-    (c) => c.CityName?.replace(/\s+/g, '').toLowerCase() === cityName
-  );
+    setFormData((prev) => ({
+      ...prev,
+      StateID: matchedState?.StateID || "",
+      CityID: matchedCity?.CityID || "",
+      pincode: result?.postalCode || "",
+      addressLine1: result?.address || "",
+      mapLocation: { latitude: lat, longitude: lng },
+    }));
 
-   if (!matchedState) {
-    // alert("Service is not available in your selected location.");
-    return;
-  }
-
-  setFormData((prev) => ({
-    ...prev,
-    StateID: matchedState?.StateID || "",
-    CityID: matchedCity?.CityID || "",
-    pincode: result?.postalCode || "",
-    addressLine1: result?.address || "",
-    mapLocation: { latitude : lat, longitude : lng },
-  }));
-
-  if (matchedState) setSelectedState(matchedState.StateID);
-  if (matchedCity) setSelectedCity(matchedCity.CityID);
-  if (result?.postalCode) setPincode(result.postalCode);
-  if (result?.address) setAddressLine1(result.address);
-};
-
-
+    if (matchedState) setSelectedState(matchedState.StateID);
+    if (matchedCity) setSelectedCity(matchedCity.CityID);
+    if (result?.postalCode) setPincode(result.postalCode);
+    if (result?.address) setAddressLine1(result.address);
+  };
 
   const handleModalClose = () => {
     setModal({ show: false, type: "", message: "" });
@@ -303,173 +295,170 @@ const handleMapClick = async (lat, lng) => {
     return format(combinedDate, "yyyy-MM-dd");
   };
 
+  const handlereInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
 
-const handlereInputChange = (e) => {
-  const { name, value, type, checked } = e.target;
-  
-  if (name === "StateID") {
-   
-    // Reset addressLine1 when state is changed
+    if (name === "StateID") {
+      // Reset addressLine1 when state is changed
+      setFormData((prev) => {
+        return {
+          ...prev,
+          [name]: value,
+          addressLine1: "", // clear address
+          pincode: "",
+        };
+      });
+    }
+
     setFormData((prev) => {
-      return {
+      const updatedForm = {
         ...prev,
-        [name]: value,
-        addressLine1: "", // clear address
-        pincode: "",
+        [name]: type === "checkbox" ? checked : value, // ✅ correct handling
       };
-    });
-  }
 
-
-
-  setFormData((prev) => {
-    const updatedForm = {
-      ...prev,
-      [name]: type === "checkbox" ? checked : value, // ✅ correct handling
-    };
-
-
-      if(name === "CityID" || name === "pincode" || name === "addressLine1" || name === "mapLocation" || name === "StateID"){
+      if (
+        name === "CityID" ||
+        name === "pincode" ||
+        name === "addressLine1" ||
+        name === "mapLocation" ||
+        name === "StateID"
+      ) {
         updateMapFromAddress(updatedForm); // trigger map update
       }
-    return updatedForm;
-  });
-};
-
-const updateMapFromAddress = async (form) => {
-  const { addressLine1, pincode, CityID, StateID } = form;
-
- const state = states.find(s => s.StateID === parseInt(StateID));
-  const city = cities.find(c => c.CityID === parseInt(CityID));
- 
-
-  const fullAddress = `${addressLine1 || ""}, ${pincode || ""}, ${city?.CityName?.replace(/\s+/g, '').toLowerCase() || ""}, ${state?.StateName?.replace(/\s+/g, '').toLowerCase() || ""}`;
-
-
-  if (!fullAddress.trim()) return;
-  console.log(fullAddress);
-
-  try {
-    const res = await axios.get("https://maps.googleapis.com/maps/api/geocode/json", {
-      params: {
-        address: fullAddress,
-        key: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-      },
+      return updatedForm;
     });
+  };
 
-    if (res.data.results && res.data.results[0]) {
-      const { lat, lng } = res.data.results[0].geometry.location;
-      console.log("Geocoded coordinates:", res.data.results[0]);
-      setFormData((prev) => ({
-        ...prev,
-        mapLocation: { latitude: lat, longitude: lng },
-      }));  
-      // handleMapClick(lat, lng);
+  const updateMapFromAddress = async (form) => {
+    const { addressLine1, pincode, CityID, StateID } = form;
+
+    const state = states.find((s) => s.StateID === parseInt(StateID));
+    const city = cities.find((c) => c.CityID === parseInt(CityID));
+
+    const fullAddress = `${addressLine1 || ""}, ${pincode || ""}, ${
+      city?.CityName?.replace(/\s+/g, "").toLowerCase() || ""
+    }, ${state?.StateName?.replace(/\s+/g, "").toLowerCase() || ""}`;
+
+    if (!fullAddress.trim()) return;
+    console.log(fullAddress);
+
+    try {
+      const res = await axios.get(
+        "https://maps.googleapis.com/maps/api/geocode/json",
+        {
+          params: {
+            address: fullAddress,
+            key: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+          },
+        }
+      );
+
+      if (res.data.results && res.data.results[0]) {
+        const { lat, lng } = res.data.results[0].geometry.location;
+        console.log("Geocoded coordinates:", res.data.results[0]);
+        setFormData((prev) => ({
+          ...prev,
+          mapLocation: { latitude: lat, longitude: lng },
+        }));
+        // handleMapClick(lat, lng);
+      }
+    } catch (err) {
+      console.error("Geocoding failed:", err);
     }
-  } catch (err) {
-    console.error("Geocoding failed:", err);
-  }
-};
+  };
 
+  const fetchTimeSlots = async (selectedDate) => {
+    try {
+      const response = await axios.get(`${baseUrl}TimeSlot`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-const fetchTimeSlots = async (selectedDate) => {
-  try {
-    const response = await axios.get(`${baseUrl}TimeSlot`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const timeSlots = response.data;
 
-    const timeSlots = response.data;
+      // Filter active slots and sort by StartTime
+      const sortedSlots = (timeSlots || [])
+        .filter((slot) => slot?.Status === true)
+        .sort((a, b) => a.StartTime.localeCompare(b.StartTime));
 
-    // Filter active slots and sort by StartTime
-    const sortedSlots = (timeSlots || [])
-      .filter(slot => slot?.Status === true)
-      .sort((a, b) => a.StartTime.localeCompare(b.StartTime));
-
-    const categorized = {
-      morning: [],
-      afternoon: [],
-      evening: [],
-    };
-
-    const now = new Date();
-    const isToday =
-      selectedDate &&
-      new Date(selectedDate).toDateString() === now.toDateString();
-
-    sortedSlots.forEach(({ StartTime, EndTime }) => {
-      const [startHour, startMinute] = StartTime.split(":").map(Number);
-      const [endHour, endMinute] = EndTime.split(":").map(Number);
-
-      const startDate = new Date(selectedDate);
-      startDate.setHours(startHour, startMinute, 0, 0);
-
-      const endDate = new Date(selectedDate);
-      endDate.setHours(endHour, endMinute, 0, 0);
-
-      const isExpired = isToday && endDate <= now;
-
-      const timeFormat = (date) =>
-        date.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        });
-
-      const formatted = {
-        label: `${timeFormat(startDate)} - ${timeFormat(endDate)}`,
-        disabled: isExpired,
+      const categorized = {
+        morning: [],
+        afternoon: [],
+        evening: [],
       };
 
-      if (startHour < 12) {
-        categorized.morning.push(formatted);
-      } else if (startHour < 16) {
-        categorized.afternoon.push(formatted);
-      } else {
-        categorized.evening.push(formatted);
-      }
-    });
+      const now = new Date();
+      const isToday =
+        selectedDate &&
+        new Date(selectedDate).toDateString() === now.toDateString();
 
-    setMorningSlots(categorized.morning);
-    setAfternoonSlots(categorized.afternoon);
-    setEveningSlots(categorized.evening);
-  } catch (err) {
-    console.error("Error fetching time slots:", err);
-  }
-};
+      sortedSlots.forEach(({ StartTime, EndTime }) => {
+        const [startHour, startMinute] = StartTime.split(":").map(Number);
+        const [endHour, endMinute] = EndTime.split(":").map(Number);
 
+        const startDate = new Date(selectedDate);
+        startDate.setHours(startHour, startMinute, 0, 0);
 
-const fetchCustomerDetails = async () => {
-   
-    try {
-        const response = await axios.get(
-            `${baseUrl}Customer/Id?Id=${decryptedCustId}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
-        const customer = response.data[0] || {};
-        setFormData((prev) => ({
-            ...prev,
-            fullName: customer.FullName || "",
-            phone: customer.PhoneNumber || "",
-            email: customer.Email || "",
-        }));
+        const endDate = new Date(selectedDate);
+        endDate.setHours(endHour, endMinute, 0, 0);
 
+        const isExpired = isToday && endDate <= now;
+
+        const timeFormat = (date) =>
+          date.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          });
+
+        const formatted = {
+          label: `${timeFormat(startDate)} - ${timeFormat(endDate)}`,
+          disabled: isExpired,
+        };
+
+        if (startHour < 12) {
+          categorized.morning.push(formatted);
+        } else if (startHour < 16) {
+          categorized.afternoon.push(formatted);
+        } else {
+          categorized.evening.push(formatted);
+        }
+      });
+
+      setMorningSlots(categorized.morning);
+      setAfternoonSlots(categorized.afternoon);
+      setEveningSlots(categorized.evening);
     } catch (err) {
-        console.error("Error fetching customer details:", err);
+      console.error("Error fetching time slots:", err);
     }
-};
+  };
 
-
+  const fetchCustomerDetails = async () => {
+    try {
+      const response = await axios.get(
+        `${baseUrl}Customer/Id?Id=${decryptedCustId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const customer = response.data[0] || {};
+      setFormData((prev) => ({
+        ...prev,
+        fullName: customer.FullName || "",
+        phone: customer.PhoneNumber || "",
+        email: customer.Email || "",
+      }));
+    } catch (err) {
+      console.error("Error fetching customer details:", err);
+    }
+  };
 
   const handleContinue = async () => {
-
     const payload = {
       custID: decryptedCustId,
       addressLine1: formData.addressLine1,
-      addressLine2: '',
+      addressLine2: "",
       stateID: Number(formData.StateID),
       cityID: Number(formData.CityID),
       pincode: formData.pincode,
@@ -492,7 +481,7 @@ const fetchCustomerDetails = async () => {
 
         setFormData((prev) => ({
           ...prev,
-          selectedSavedAddressID: 'added',
+          selectedSavedAddressID: "added",
         }));
 
         // setShowCheckout(true);
@@ -508,9 +497,7 @@ const fetchCustomerDetails = async () => {
     }
   };
 
-
-
-  const loadRazorpay = (amount , data) => {
+  const loadRazorpay = (amount, data) => {
     const options = {
       key: process.env.REACT_APP_RAZORPAY_KEY,
       amount: amount * 100,
@@ -518,30 +505,33 @@ const fetchCustomerDetails = async () => {
       name: "MyCarBuddy",
       order_id: data.razorpay.orderID,
       description: "Payment for Car Services",
-      image: "/assets/img/logo-yellow-01.png",
+      image: "/assets/img/MyCarBuddy-Logo1.png",
       handler: function (response) {
         console.log("Payment success:", response);
         clearCart();
-        const res = axios.post(`${baseUrl}Bookings/confirm-Payment`, {
-          bookingID : data.bookingID,
-          amountPaid : amount,
-          razorpayPaymentId : response.razorpay_payment_id,
-          razorpaySignature : response.razorpay_signature,
-          razorpayOrderId : response.razorpay_order_id
-        }, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+        const res = axios.post(
+          `${baseUrl}Bookings/confirm-Payment`,
+          {
+            bookingID: data.bookingID,
+            amountPaid: amount,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+            razorpayOrderId: response.razorpay_order_id,
           },
-        });
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-        if(res.success){
+        if (res.success) {
           setModal({
             show: true,
             type: "success",
             message: "Payment was successful.",
           });
-        }
-        else{
+        } else {
           setModal({
             show: true,
             type: "error",
@@ -552,7 +542,7 @@ const fetchCustomerDetails = async () => {
         console.log(res);
       },
       theme: {
-        color: "#ff0101ff",
+        color: "#1890ae",
       },
       modal: {
         ondismiss: function () {
@@ -570,25 +560,27 @@ const fetchCustomerDetails = async () => {
   };
 
   const CreateOrderID = async (id) => {
-    try{
-      const response = await axios.post(`${baseUrl}Bookings/create-order`, {
-      BookingId : id
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      const response = await axios.post(
+        `${baseUrl}Bookings/create-order`,
+        {
+          BookingId: id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    if (response.status !== 200) {
-      console.error("Error creating order ID:", response.data);
-      return null;
-    }
-    }
-    catch(err){
+      if (response.status !== 200) {
+        console.error("Error creating order ID:", response.data);
+        return null;
+      }
+    } catch (err) {
       console.error("Error creating order ID:", err);
       return null;
     }
-
   };
 
   const handleBookingSubmit = async () => {
@@ -597,13 +589,12 @@ const fetchCustomerDetails = async () => {
     const bookingDateTime = getBookingDateTime();
     const packageIds = cartItems.map((item) => item.id).join(",");
     const packagePrice = cartItems.reduce((sum, item) => sum + item.price, 0);
-    const totalPrice = packagePrice - (couponApplied.discountAmount || 0);
 
     if (
-      ! decryptedCustId ||
-      !formData.StateID  ||
+      !decryptedCustId ||
+      !formData.StateID ||
       !formData.CityID ||
-      !formData.pincode  ||
+      !formData.pincode ||
       !formData.addressLine1 ||
       !selectedDate ||
       !selectedTime ||
@@ -612,30 +603,30 @@ const fetchCustomerDetails = async () => {
       showAlert("Please fill all required fields.");
       return;
     }
-    
 
-    // const formData = new FormData();
-    console.log("Form Data:", formData);
 
-    if(!formData.VehicleID){
-      const saveCarResponse = await axios.post(`${baseUrl}CustomerVehicles/InsertCustomerVehicle`, {
-        custID: decryptedCustId,
-        brandID: formData.brandID,
-        modelID: formData.modelID,
-        fuelTypeID: formData.fuelTypeID,
-        VehicleNumber: formData.registrationNumber,
-        yearOfPurchase: formData.yearOfPurchase,
-        engineType: formData.engineType,
-        kilometersDriven: formData.kilometerDriven,
-        transmissionType: formData.transmissionType,
-        CreatedBy: decryptedCustId,
-      });
+    if (!formData.VehicleID) {
+      const saveCarResponse = await axios.post(
+        `${baseUrl}CustomerVehicles/InsertCustomerVehicle`,
+        {
+          custID: decryptedCustId,
+          brandID: formData.brandID,
+          modelID: formData.modelID,
+          fuelTypeID: formData.fuelTypeID,
+          VehicleNumber: formData.registrationNumber,
+          yearOfPurchase: formData.yearOfPurchase,
+          engineType: formData.engineType,
+          kilometersDriven: formData.kilometerDriven,
+          transmissionType: formData.transmissionType,
+          CreatedBy: decryptedCustId,
+        }
+      );
       formData.VehicleID = saveCarResponse.data?.vehicleID;
-      let selectedCar = JSON.parse(localStorage.getItem("selectedCarDetails")) || {};
+      let selectedCar =
+        JSON.parse(localStorage.getItem("selectedCarDetails")) || {};
       selectedCar.VehicleID = formData.VehicleID;
       localStorage.setItem("selectedCarDetails", JSON.stringify(selectedCar));
     }
-
 
     if (user?.name === "GUEST") {
       try {
@@ -644,7 +635,7 @@ const fetchCustomerDetails = async () => {
         formDataToSend.append("FullName", formData.fullName);
         formDataToSend.append("PhoneNumber", formData.phone);
         formDataToSend.append("Email", formData.email);
-        formDataToSend.append("ProfileImageFile", '');
+        formDataToSend.append("ProfileImageFile", "");
         formDataToSend.append("IsActive", true);
 
         await axios.post(`${baseUrl}Customer/update-customer`, formDataToSend, {
@@ -665,15 +656,21 @@ const fetchCustomerDetails = async () => {
     form.append("CustPhoneNumber", formData.phone);
     form.append("CustEmail", formData.email);
     form.append("IsOthers", formData.isBookingForOthers);
-    form.append("OthersFullName", formData.isBookingForOthers ? formData.othersFullName : "");
-    form.append("OthersPhoneNumber", formData.isBookingForOthers ? formData.othersPhoneNumber : "");
+    form.append(
+      "OthersFullName",
+      formData.isBookingForOthers ? formData.othersFullName : ""
+    );
+    form.append(
+      "OthersPhoneNumber",
+      formData.isBookingForOthers ? formData.othersPhoneNumber : ""
+    );
 
     form.append("VechicleID", formData.VehicleID);
     form.append("BookingDate", bookingDateTime);
     form.append("TimeSlot", selectedTime);
     form.append("PackageIds", packageIds);
     form.append("PackagePrice", packagePrice);
-    form.append("TotalPrice", totalPrice);
+    form.append("TotalPrice", totalAmount);
     form.append("PaymentMethod", paymentMethod);
     form.append("BookingFrom", "web");
 
@@ -688,18 +685,12 @@ const fetchCustomerDetails = async () => {
     form.append("CouponCode", couponApplied ? formData.appliedCouponCode : "");
     form.append("DiscountAmount", getOriginalTotal() - getDiscountedTotal());
 
-
-
     try {
-      const res = await axios.post(
-        `${baseUrl}Bookings/insert-booking`,
-        form,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await axios.post(`${baseUrl}Bookings/insert-booking`, form, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (res.status === 200 || res.status === 201) {
         showAlert(
@@ -710,10 +701,10 @@ const fetchCustomerDetails = async () => {
         );
 
         if (paymentMethod === "razorpay") {
-          const amountToPay = getDiscountedTotal();
-          loadRazorpay(amountToPay, res.data);
+          const finalTotal = getFinalTotal();
+          loadRazorpay(finalTotal, res.data);
         } else {
-            clearCart();
+          clearCart();
           navigate("/profile?tab=mybookings");
         }
       } else {
@@ -759,100 +750,76 @@ const fetchCustomerDetails = async () => {
   };
 
 
-  // const handleSavedAddressChange = (e) => {
-  //   const id = e.target.value;
-  //   setSelectedSavedAddressID(id);
-
-  //   const selected = savedAddresses.find((a) => a.id === id);
-  //   if (selected) {
-  //     setAddressLine1(selected.addressLine1);
-  //     setAddressLine2(selected.addressLine2);
-  //     setSelectedState(selected.stateID);
-  //     setSelectedCity(selected.cityID);
-  //     setPincode(selected.pincode);
-  //   }
-  // };
-
-
   const [couponList, setCouponList] = useState([]);
 
-useEffect(() => {
-  const fetchCoupons = async () => {
-    try {
-      const response = await axios.get(`${baseUrl}Coupons`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const response = await axios.get(`${baseUrl}Coupons`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      const now = new Date();
+        const now = new Date();
 
-      const formatted = response.data
-        .filter(coupon => {
-          const from = new Date(coupon.ValidFrom);
-          const till = new Date(coupon.ValidTill);
-          return (
-            coupon.Status &&
-            from <= now && now <= till
-          );
-        })
-        .map(coupon => ({
-          id: coupon.CouponID,
-          Code: coupon.Code,
-          Description: coupon.Description,
-          DiscountValue: coupon.DiscountValue,
-          minAmount: coupon.MinBookingAmount,
-          validTill: new Date(coupon.ValidTill),
-          DiscountType: coupon.DiscountType,
-        }));
+        const formatted = response.data
+          .filter((coupon) => {
+            const from = new Date(coupon.ValidFrom);
+            const till = new Date(coupon.ValidTill);
+            return coupon.Status && from <= now && now <= till;
+          })
+          .map((coupon) => ({
+            id: coupon.CouponID,
+            Code: coupon.Code,
+            Description: coupon.Description,
+            DiscountValue: coupon.DiscountValue,
+            minAmount: coupon.MinBookingAmount,
+            validTill: new Date(coupon.ValidTill),
+            DiscountType: coupon.DiscountType,
+            MaxDisAmount: coupon.MaxDisAmount,
+            MinBookingAmount: coupon.MinBookingAmount,
+          }));
 
-      setCouponList(formatted);
-    } catch (err) {
-      console.error("Error fetching coupons:", err);
+        setCouponList(formatted);
+      } catch (err) {
+        console.error("Error fetching coupons:", err);
+      }
+    };
+
+    fetchCoupons();
+  }, []);
+
+
+  const handleApplyCoupon = (coupon) => {
+    const minAmount = coupon.MinBookingAmount || 0;
+    if (totalAmount < minAmount) {
+      alert(`This coupon requires a minimum booking amount of ₹${minAmount}`);
+      return;
     }
+
+    setAppliedCoupon(coupon);
+    setCouponApplied(true);
+    setShowCouponPopup(false);
+    getFinalTotal();
   };
 
-  fetchCoupons();
-}, []);
+  const getOriginalTotal = () => totalAmount; // before discount
 
-
-// const handleSelectCoupon = (coupon) => {
-//   const minAmount = coupon.MinBookingAmount || 0;
-
-//   if (totalAmount < minAmount) {
-//     alert(`This coupon requires a minimum booking amount of ₹${minAmount}`);
-//     return;
-//   }
-
-//   setAppliedCouponCode(coupon.Code);
-//   setDiscountAmount(coupon.DiscountValue);
-//   setCouponApplied(true);
-//   setShowCouponPopup(false);
-// };
-
-const handleApplyCoupon = (coupon) => {
-  console.log(coupon);
-  const minAmount = coupon.MinBookingAmount || 0;
-
-  if (totalAmount < minAmount) {
-    alert(`This coupon requires a minimum booking amount of ₹${minAmount}`);
-    return;
-  }
-
-  setAppliedCoupon(coupon);
-  setCouponApplied(true);
-  setShowCouponPopup(false);
-};
-
-const getOriginalTotal = () => totalAmount; // before discount
-
-const getDiscountedTotal = () => {
+ const getDiscountedTotal = () => {
   let total = getOriginalTotal();
 
   if (appliedCoupon) {
     if (appliedCoupon.DiscountType === "percentage") {
-      total -= (total * appliedCoupon.DiscountValue) / 100;
-    } else if (appliedCoupon.DiscountType === "FixedAmount") {
+      let discount = (total * appliedCoupon.DiscountValue) / 100;
+
+      // Apply MaxDisAmount cap if present
+      if (appliedCoupon.MaxDisAmount && discount > appliedCoupon.MaxDisAmount) {
+        discount = appliedCoupon.MaxDisAmount;
+      }
+
+      total -= discount;
+    } else {
       total -= appliedCoupon.DiscountValue;
     }
   }
@@ -860,76 +827,47 @@ const getDiscountedTotal = () => {
   return Math.max(total, 0); // prevent negative total
 };
 
-// const getDiscountedTotal = () => {
-//   if (!couponApplied) return totalAmount;
+  const getFinalTotal = () => {
+    const originalTotal = getOriginalTotal();
+    const discountedTotal = getDiscountedTotal();
+    const taxAmount = originalTotal * 0.18;
 
-//   const isPercentage = appliedCoupon.DiscountType === "percentage";
-//   const minAmount = appliedCoupon.MinBookingAmount || 0;
-
-//   if (totalAmount < minAmount) {
-//     // Do not apply coupon if total < minimum
-//     return totalAmount;
-//   }
-
-//   let discount = 0;
-
-//   if (isPercentage) {
-//     const percentage = parseFloat(appliedCoupon.DiscountValue) || 0;
-//     discount = (totalAmount * percentage) / 100;
-
-//     // Optional: Max discount cap
-//     if (appliedCoupon.MaxDisAmount && discount > appliedCoupon.MaxDisAmount) {
-//       discount = appliedCoupon.MaxDisAmount;
-//     }
-//   } else {
-//     discount = appliedCoupon.DiscountValue || 0;
-//   }
-
-//   setFormData((prev) => ({
-//      ...prev,
-//      appliedCouponCode: appliedCoupon.Code,
-//   }));
-
-//   return Math.max(0, totalAmount - discount);
-// };
-
+    return discountedTotal + taxAmount;
+  };
 
   return (
     <div className="container py-4">
       <div className="row">
-
-        
         {/* Left: Time Slot Selection */}
         <div className="col-md-8 border-end left-scrollable">
-
-           <div className="mb-4">
-        <div className="progress">
-          <div
-            className="progress-bar"
-            role="progressbar"
-            style={{ width: `${(step / 3) * 100}%` }}
-          ></div>
-        </div>
-        <p className="text-center mt-2">Step {step} of 3</p>
-      </div>
-       {step === 1 && (
-         <>
-          <h5>Select Date and Time</h5>
-
-          {/* {showCalendar && ( */}
+          <div className="mb-4">
+            <div className="progress">
+              <div
+                className="progress-bar"
+                role="progressbar"
+                style={{ width: `${(step / 3) * 100}%` }}
+              ></div>
+            </div>
+            <p className="text-center mt-2">Step {step} of 3</p>
+          </div>
+          {step === 1 && (
             <>
-              <WeeklyCalendar
-                selectedDate={selectedDate}
-                onDateSelect={(date) => {
-                  setSelectedDate(date);
-                  fetchTimeSlots(date);
-                  setSelectedTime("");
-                  setDateTouched(true);
-                }}
-              />
-              {/* )} */}
+              <h5>Select Date and Time</h5>
 
-              <div className="mb-3">
+              {/* {showCalendar && ( */}
+              <>
+                <WeeklyCalendar
+                  selectedDate={selectedDate}
+                  onDateSelect={(date) => {
+                    setSelectedDate(date);
+                    fetchTimeSlots(date);
+                    setSelectedTime("");
+                    setDateTouched(true);
+                  }}
+                />
+                {/* )} */}
+
+                <div className="mb-3">
                   <>
                     <strong>🌅 Morning</strong>
                     <div className="d-flex gap-2 mt-2 flex-wrap">
@@ -938,15 +876,15 @@ const getDiscountedTotal = () => {
                           key={i}
                           disabled={slot.disabled}
                           className={` ${
-                            selectedTime === slot.label
-                              ? "active"
-                              : ""
+                            selectedTime === slot.label ? "active" : ""
                           } tab-pill  rounded-pill px-3 py-2`}
                           onClick={() => {
-                                  if (!selectedDate) {
-                                    showAlert("Please select a date before choosing a time slot.");
-                                    return;
-                                  }
+                            if (!selectedDate) {
+                              showAlert(
+                                "Please select a date before choosing a time slot."
+                              );
+                              return;
+                            }
 
                             setSelectedTime(slot.label);
                             setShowCalendar(false); // hide calendar after selecting time
@@ -957,105 +895,66 @@ const getDiscountedTotal = () => {
                       ))}
                     </div>
                   </>
-              </div>
-
-              <div className="mb-3">
-                <strong>🌤️ Afternoon</strong>
-                <div className="d-flex gap-2 mt-2 flex-wrap">
-                  {afternoonSlots.map((slot,i) => (
-                    <button
-                      key={i}
-                       disabled={slot.disabled}
-                      className={` ${
-                        selectedTime === slot.label
-                          ? "active"
-                          : ""
-                      } tab-pill  rounded-pill px-3 py-2`}
-                      onClick={() => {
-                         if (!selectedDate) {
-                                    showAlert("Please select a date before choosing a time slot.");
-                                    return;
-                                  }
-                        setSelectedTime(slot.label);
-                        setShowCalendar(false); // hide calendar after selecting time
-                      }}
-                    >
-                      {slot.label}
-                    </button>
-                  ))}
                 </div>
-              </div>
 
-              <div className="mb-3">
-                <strong>🌇 Evening</strong>
-                <div className="d-flex gap-2 mt-2 flex-wrap">
-                  {eveningSlots.map((slot) => (
-                    <button
-                      key={slot}
-                       disabled={slot.disabled}
-                      className={` ${
-                        selectedTime === slot.label
-                          ? "active"
-                          : ""
-                      } tab-pill  rounded-pill px-3 py-2`}
-                      onClick={() => {
-                         if (!selectedDate) {
-                                    showAlert("Please select a date before choosing a time slot.");
-                                    return;
-                                  }
-                        setSelectedTime(slot.label);
-                        setShowCalendar(false); // hide calendar after selecting time
-                      }}
-                    >
-                      {slot.label}
-                    </button>
-                  ))}
+                <div className="mb-3">
+                  <strong>🌤️ Afternoon</strong>
+                  <div className="d-flex gap-2 mt-2 flex-wrap">
+                    {afternoonSlots.map((slot, i) => (
+                      <button
+                        key={i}
+                        disabled={slot.disabled}
+                        className={` ${
+                          selectedTime === slot.label ? "active" : ""
+                        } tab-pill  rounded-pill px-3 py-2`}
+                        onClick={() => {
+                          if (!selectedDate) {
+                            showAlert(
+                              "Please select a date before choosing a time slot."
+                            );
+                            return;
+                          }
+                          setSelectedTime(slot.label);
+                          setShowCalendar(false); // hide calendar after selecting time
+                        }}
+                      >
+                        {slot.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+
+                <div className="mb-3">
+                  <strong>🌇 Evening</strong>
+                  <div className="d-flex gap-2 mt-2 flex-wrap">
+                    {eveningSlots.map((slot) => (
+                      <button
+                        key={slot}
+                        disabled={slot.disabled}
+                        className={` ${
+                          selectedTime === slot.label ? "active" : ""
+                        } tab-pill  rounded-pill px-3 py-2`}
+                        onClick={() => {
+                          if (!selectedDate) {
+                            showAlert(
+                              "Please select a date before choosing a time slot."
+                            );
+                            return;
+                          }
+                          setSelectedTime(slot.label);
+                          setShowCalendar(false); // hide calendar after selecting time
+                        }}
+                      >
+                        {slot.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+              {/* )} */}
             </>
-          {/* )} */}
+          )}
 
-          </>
-       )}
-
-          {/* {dateTouched && (
-            <div className="mt-3">
-              <div
-                className="alert alert-success d-flex align-items-center justify-content-between gap-3"
-                role="alert"
-              >
-                <div className="d-flex align-items-center gap-3">
-                  <i className="bi bi-calendar-event fs-5 text-primary" />
-                  <strong>
-                    You selected: {format(selectedDate, "EEEE, dd MMMM")}
-                    {selectedTime ? ` at ${selectedTime}` : " — Select a slot"}
-                  </strong>
-                </div>
-                <button
-                  className="btn  px-3 py-2"
-                  onClick={() => setShowCalendar(true)}
-                >
-                  <i className="bi bi-pencil-square" />
-                </button>
-              </div>
-            </div>
-          )} */}
-
-          {/* {selectedDate && selectedTime && !showAddressFields && (
-            <div className="text-end mt-3">
-              <button
-                className="btn btn-danger px-4 py-2"
-                onClick={() => {
-                  setShowAddressFields(true);
-                  setTimeout(() => {
-                    addressRef.current?.scrollIntoView({ behavior: "smooth" });
-                  }, 100);
-                }}
-              >
-                Continue
-              </button>
-            </div>
-          )} */}
           {step === 2 && (
             <div
               ref={addressRef}
@@ -1091,7 +990,7 @@ const getDiscountedTotal = () => {
                   <div className="col-md-4 mb-3">
                     <input
                       type="email"
-                    name="email"
+                      name="email"
                       className="form-control"
                       placeholder="Email Address"
                       value={formData.email}
@@ -1145,16 +1044,16 @@ const getDiscountedTotal = () => {
               </div>
 
               <BookingAddressDetails
-                  formData={formData}
-                  setFormData={setFormData} // ✅ now it exists
+                formData={formData}
+                setFormData={setFormData} // ✅ now it exists
                 handlereInputChange={handlereInputChange}
                 savedAddresses={savedAddresses}
                 selectedState={selectedState}
                 selectedCity={selectedCity}
                 states={states}
                 cities={cities}
-                setSelectedState={setSelectedState}   // ✅ Add this
-                setSelectedCity={setSelectedCity}     // ✅ Add this
+                setSelectedState={setSelectedState} // ✅ Add this
+                setSelectedCity={setSelectedCity} // ✅ Add this
                 pincode={formData.pincode}
                 setPincode={setPincode}
                 addressLine1={formData.addressLine1}
@@ -1162,7 +1061,7 @@ const getDiscountedTotal = () => {
                 setAddressLine1={setAddressLine1}
                 setAddressLine2={setAddressLine2}
                 handleMapClick={handleMapClick}
-                />
+              />
 
               <BookingVehicleDetails
                 vehicle={selectedVehicle}
@@ -1171,17 +1070,10 @@ const getDiscountedTotal = () => {
                 setRegistrationNumber={setRegistrationNumber}
                 allowCarSelection={true}
                 formData={formData}
-                setFormData={setFormData} 
+                setFormData={setFormData}
                 handlereInputChange={handlereInputChange}
               />
 
-              {/* <div className="row">
-                <div className="text-end mt-3">
-                  <button className="btn btn-danger" onClick={handleContinue}>
-                    Continue
-                  </button>
-                </div>
-              </div> */}
 
             </div>
           )}
@@ -1261,24 +1153,27 @@ const getDiscountedTotal = () => {
                   </button>
                 </div>
               </div>
-
-              
             </div>
           )}
 
-
           <div className="mt-4 d-flex justify-content-between mb-3">
-        {step > 1 && (
-          <button className="btn btn-secondary px-4 py-2" onClick={handleBack}>
-            Back
-          </button>
-        )}
-        {step < 3 && (
-          <button className="btn btn-primary ms-auto px-4 py-2" onClick={handleNext}>
-            Next
-          </button>
-        )}
-      </div>
+            {step > 1 && (
+              <button
+                className="btn btn-secondary px-4 py-2"
+                onClick={handleBack}
+              >
+                Back
+              </button>
+            )}
+            {step < 3 && (
+              <button
+                className="btn btn-primary ms-auto px-4 py-2"
+                onClick={handleNext}
+              >
+                Next
+              </button>
+            )}
+          </div>
           <SuccessFailureModal
             show={modal.show}
             type={modal.type}
@@ -1321,136 +1216,150 @@ const getDiscountedTotal = () => {
                       </div>
                     </div>
                   ))}
-                  {/* <div className="d-flex justify-content-between pt-2 border-top mt-2">
-                    <strong>Total</strong>
-                    <strong className="text-primary">₹{totalAmount}</strong>
-                  </div> */}
-
-                {(() => {
-  const originalTotal = getOriginalTotal();
-  const discountedTotal = getDiscountedTotal();
-  const gstAmount = discountedTotal * 0.18;
-  const finalTotal = discountedTotal + gstAmount;
-  const savings = couponApplied ? originalTotal - discountedTotal : 0;
-
-  return (
-    <div className="d-flex justify-content-between pt-2 border-top mt-2">
-      <strong>Total (incl. 18% GST)</strong>
-      <div className="text-end">
-        <strong className="text-primary">₹{finalTotal.toFixed(2)}</strong>
-        <div className="small text-secondary">
-          <div>Base: ₹{discountedTotal.toFixed(2)}</div>
-          <div>GST (18%): ₹{gstAmount.toFixed(2)}</div>
-          {/* {couponApplied && (
-            <div className="text-muted">
-              (Saved ₹{savings.toFixed(2)})
-            </div>
-          )} */}
-        </div>
-      </div>
-    </div>
-  );
-})()}
 
 
+                  {(() => {
+                    const originalTotal = getOriginalTotal();
+                    const discountedTotal = getDiscountedTotal();
+                    const gstAmount = originalTotal * 0.18;
+                    const finalTotal = getFinalTotal();
+                    const savings = couponApplied
+                      ? originalTotal - discountedTotal
+                      : 0;
+
+                    return (
+                      <div className="d-flex justify-content-between pt-2 border-top mt-2">
+                        <strong>Total (incl. 18% GST)</strong>
+                        <div className="text-end">
+                          <strong className="text-primary">
+                            ₹{finalTotal.toFixed(2)}
+                          </strong>
+                          <div className="small text-secondary">
+                            <div>Base: ₹{getOriginalTotal().toFixed(2)}</div>
+                            <div>GST (18%): ₹{gstAmount.toFixed(2)}</div>
+                            {couponApplied && (
+                              <div className="text-muted">
+                                (Saved ₹{savings.toFixed(2)})
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
 
-
             {/* Coupon Section */}
-           <div className="card p-3 mt-3">
+            <div className="card p-3 mt-3">
               <h6 className="text-teal fw-semibold mb-3">Get Discount</h6>
 
-                      {!couponApplied ? (
-                        <>
-                          <div className="">
-                            <div className="">
-                              <button className="btn  btn-outline-primary  px-3 py-2" onClick={() => setShowCouponPopup(true)}>
-                                View Coupons
-                              </button>
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="d-flex justify-content-between align-items-center">
-                            <div className="d-flex align-items-center gap-2">
-                              <i className="bi bi-tag-fill text-teal bg-light rounded-circle p-2"></i>
-                              <div>
-                                <div className="fw-medium">
-                                  Hurray! You Saved ₹{(totalAmount - getDiscountedTotal()).toFixed(2)}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-end">
-                              <span className="text-primary fw-bold">{appliedCoupon.Code}</span><br />
-                              <span className="text-muted">Applied</span><br />
-                              <button
-                                className="btn btn-outline-danger mt-1 px-2 py-1"
-                                onClick={() => {
-                                  setAppliedCoupon(null);
-                                  setCouponApplied(false);
-                                }}
-                              >
-                                Unapply
-                              </button>
-                            </div>
-                          </div>
-
-                      )}
-                    </div>
-
-                    {showCouponPopup && (
-                      <div
-                        className="position-absolute bottom-0 start-0 end-0 bg-white border-top shadow p-3"
-                        style={{ zIndex: 1050, maxHeight: "60vh", overflowY: "auto" }}
+              {!couponApplied ? (
+                <>
+                  <div className="">
+                    <div className="">
+                      <button
+                        className="btn  btn-outline-primary  px-3 py-2"
+                        onClick={() => setShowCouponPopup(true)}
                       >
-                        <div className="d-flex justify-content-between align-items-center mb-3">
-                          <h6 className="mb-0">Available Coupons</h6>
+                        View Coupons
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="d-flex justify-content-between align-items-center">
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="bi bi-tag-fill text-teal bg-light rounded-circle p-2"></i>
+                    <div>
+                      <div className="fw-medium">
+                        Hurray! You Saved ₹
+                        {(totalAmount - getDiscountedTotal()).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-end">
+                    <span className="text-primary fw-bold">
+                      {appliedCoupon.Code}
+                    </span>
+                    <br />
+                    <span className="text-muted">Applied</span>
+                    <br />
+                    <button
+                      className="btn btn-outline-danger mt-1 px-2 py-1"
+                      onClick={() => {
+                        setAppliedCoupon(null);
+                        setCouponApplied(false);
+                      }}
+                    >
+                      Unapply
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
-                          <i className="bi bi-x-lg" onClick={() => setShowCouponPopup(false)}></i>
-                          {/* <button className="btn btn-sm btn-outline-secondary" >
+            {showCouponPopup && (
+              <div
+                className="position-absolute bottom-0 start-0 end-0 bg-white border-top shadow p-3"
+                style={{ zIndex: 1050, maxHeight: "60vh", overflowY: "auto" }}
+              >
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6 className="mb-0">Available Coupons</h6>
+
+                  <i
+                    className="bi bi-x-lg"
+                    onClick={() => setShowCouponPopup(false)}
+                  ></i>
+                  {/* <button className="btn btn-sm btn-outline-secondary" >
                           
                           </button> */}
+                </div>
+
+                {couponList.map((coupon) => {
+                  const daysLeft = Math.ceil(
+                    (coupon.validTill - new Date()) / (1000 * 60 * 60 * 24)
+                  );
+
+                  return (
+                    <div
+                      key={coupon.id}
+                      className="border rounded p-3 mb-2 d-flex justify-content-between align-items-start flex-wrap"
+                    >
+                      <div>
+                        <div className="fw-bold">{coupon.Code}</div>
+                        <div className="small text-muted">
+                          {coupon.Description}
                         </div>
 
-                                  {couponList.map((coupon) => {
-                      const daysLeft = Math.ceil((coupon.validTill - new Date()) / (1000 * 60 * 60 * 24));
-
-                      return (
-                        <div
-                          key={coupon.id}
-                          className="border rounded p-3 mb-2 d-flex justify-content-between align-items-start flex-wrap"
-                        >
-                          <div>
-                            <div className="fw-bold">{coupon.Code}</div>
-                            <div className="small text-muted">{coupon.Description}</div>
-
-                            {/* ✅ Min booking amount note */}
-                            {/* {coupon.MinBookingAmount && (
+                        {/* ✅ Min booking amount note */}
+                        {/* {coupon.MinBookingAmount && (
                               <div className="small text-danger mt-1">
                                 Requires minimum booking of ₹{coupon.MinBookingAmount}
                               </div>
                             )} */}
 
-                            {/* 🏷️ Expiring soon */}
-                            {daysLeft <= 3 && (
-                              <span className="badge bg-warning text-dark mt-2">Expiring Soon</span>
-                            )}
-                          </div>
+                        {/* 🏷️ Expiring soon */}
+                        {daysLeft <= 3 && (
+                          <span className="badge bg-warning text-dark mt-2">
+                            Expiring Soon
+                          </span>
+                        )}
+                      </div>
 
-                          <button
-                            className="btn btn-primary mt-2 px-3 py-1"
-                            onClick={() => handleApplyCoupon(coupon)}
-                          >
-                            Apply
-                          </button>
-                        </div>
-                      );
-                    })}
-
-                </div>
-              )}
+                      <button
+                        className="btn btn-primary mt-2 px-3 py-1"
+                        onClick={() => handleApplyCoupon(coupon)}
+                        disabled={totalAmount < (coupon.MinBookingAmount || 0)}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

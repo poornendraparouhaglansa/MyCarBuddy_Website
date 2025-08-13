@@ -27,6 +27,7 @@ import MyBookingsPage from "./pages/MyBookingsPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import RefundPage from "./pages/RefundPage";
+import ServiceInDetailsPage from "./pages/ServiceInDetailsPage";
 
 function App() {
   return (
@@ -39,7 +40,7 @@ function App() {
           <Route exact path="/about" element={<AboutPage />} />
           <Route exact path="/service" element={<ServicePage />} />
           <Route exact path="/service-details/:categoryId" element={<ServiceDetailsPage />} />
-          <Route path="/servicedetails/:id" element={<ServiceDetails />} />
+          <Route path="/servicedetails/:id" element={<ServiceInDetailsPage />} />
           <Route exact path="/project" element={<ProjectPage />} />
           <Route exact path="/project-details" element={<ProjectDetailsPage />} />
           <Route exact path="/blog" element={<BlogPage />} />

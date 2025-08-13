@@ -3,6 +3,7 @@ import Car from "../images/car.avif";
 import axios from "axios";
 import BrandPopup from "./BrandPopup"; 
 import CryptoJS from "crypto-js";
+import { useAlert } from "../context/AlertContext";
 
 const MyCarList = () => {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -11,7 +12,7 @@ const MyCarList = () => {
   const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
   const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
   const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
-
+  const { showAlert } = useAlert();
   const [primaryCarId, setPrimaryCarId] = useState(1);
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewCar, setViewCar] = useState(null); 
@@ -149,7 +150,7 @@ const MyCarList = () => {
           }
   
         );
-        const updatedVehicles = carList.map((car) => ({
+        const updatedVehicles = carList.filter((car) => car.IsActive === true).map((car) => ({
           ...car,
           IsPrimary: car.VehicleID === id,
         }));
@@ -184,6 +185,28 @@ const MyCarList = () => {
       }
     }; 
 
+
+    const handleDelete = async (id) => {
+  if (!window.confirm("Are you sure you want to delete this address?")) return;
+
+  try {
+    await axios.delete(
+      `${process.env.REACT_APP_CARBUDDY_BASE_URL}CustomerVehicles/CustomerVehicleID?custvehicleid=${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    // Remove deleted address from UI
+    setCarList((prev) => prev.filter((car) => car.VehicleID !== id));
+  } catch (error) {
+     showAlert(error.response?.data?.message || "Something went wrong while deleting address.");
+  }
+};
+
+
   // 📍 View mode
   if (viewCar) {
     return (
@@ -215,16 +238,6 @@ const MyCarList = () => {
                     />
                      <h5 className="text-center mb-0">{viewCar.FuelTypeName}</h5>
                 </div>
-                 {/* <div className="d-flex justify-content-center align-items-center gap-2">
-                    <img
-                    src={`${IMAGE_BASE_URL}${viewCar.BrandLogo}`}
-                    alt={viewCar.FuelTypeName}
-                     className="img-fluid rounded"
-                    style={{ maxWidth: "20px", objectFit: "contain" }}
-                    />
-                     <h5 className="text-center mb-0">{viewCar.BrandName}</h5>
-                </div>
-                 */}
             </div>
 
             <div>
@@ -354,21 +367,22 @@ const MyCarList = () => {
             <div className="col-md-4" key={car.VehicleID}>
                 
               <div className={`border rounded shadow-sm h-100 p-3 d-flex flex-column ${isPrimary ? "border-primary" : ""}`}>
-                 <div className="d-flex justify-content-center mb-3">
+                 <div className="d-flex justify-content-end mb-3">
                         {/* <i className={`bi ${isPrimary ? "bi-star-fill text-warning" : "bi-star"} fs-5 cursor-pointer`} title="Toggle Primary" role="button"  /> */}
-                        <span className={`${car.IsPrimary ? "tab-pill active" : "tab-pill "}  px-2 py-0`}   onClick={() => handleSetPrimary(car.VehicleID)} style={{ lineHeight: "1.5", fontSize: "13px"}}>Primary</span>
+                        <span className={`${car.IsPrimary ? "tab-pill tab-green text-white" : "tab-pill "}  px-2 py-0`}   onClick={() => handleSetPrimary(car.VehicleID)} style={{ lineHeight: "1.5", fontSize: "13px"}}>Primary</span>
                        
                 </div> 
                 <div className="row">
-                    <div className="col-md-6 text-center mb-3"> 
+                    <div className="col-md-7 text-center mb-3"> 
                         <img src={`${IMAGE_BASE_URL}${car.VehicleImage}`} alt={car.modelName} className="mb-3 rounded w-100"  />
+                        <span className="text-muted border-car py-1 px-2">{car.VehicleNumber}</span>
                     </div>
-                    <div className="col-md-6">
-                        <div className="text-muted small mb-2"><b>Model : </b>{car.ModelName}</div>
-                        <div className="text-muted small mb-2"><b>FuelType : </b>{car.FuelTypeName}</div>
-                       <div className="text-end">
+                    <div className="col-md-5">
+                        <div className="text-muted small mb-2">{car.ModelName}</div>
+                        <div className="text-muted small mb-2">{car.FuelTypeName}</div>
+                       <div className="text-end mt-4">
                         <i className="bi bi-eye text-primary fs-5 cursor-pointer" title="View" role="button" onClick={() => setViewCar(car)} />
-                         <i className="bi bi-trash text-danger fs-5 cursor-pointer" title="Delete" role="button" onClick={() => alert("Delete Car Coming Soon")} />
+                         <i className="bi bi-trash text-danger fs-5 cursor-pointer" title="Delete" role="button" onClick={() => handleDelete(car.VehicleID)} />
                         
                         </div>
                     </div>

@@ -20,6 +20,7 @@ const ServiceDetails = () => {
   const [services, setServices] = React.useState([]);
     const [selectedCar, setSelectedCar] = useState(null);
       const [showCarModal, setShowCarModal] = useState(false);
+      const [allServices, setAllServices] = useState([]);
 
       const selectedCarDetails = JSON.parse(localStorage.getItem("selectedCarDetails"));
   let brandId;
@@ -75,11 +76,13 @@ const ServiceDetails = () => {
                  
 //         if (Array.isArray(response)) {
 //  console.log("Fetched packages:", );
+setAllServices(response.data);
+
          const formatted = response.data
   .filter(pkg => pkg.PackageID === parseInt(id))
   .map(pkg => {
     const hours = pkg.EstimatedDurationMinutes
-      ? (pkg.EstimatedDurationMinutes / 60).toFixed(1) // 1 decimal place
+      ? pkg.EstimatedDurationMinutes // 1 decimal place
       : null;
 
     return {
@@ -90,7 +93,7 @@ const ServiceDetails = () => {
       : [],
       image: `${ImageURL}${pkg.PackageImage}`,
       tag: "Featured Package",
-      duration: hours ? `${hours} Hrs` : "N/A",
+      duration: pkg.EstimatedDurationMinutes ? `${pkg.EstimatedDurationMinutes} ` : "N/A",
       price: pkg.Serv_Off_Price,
       originalPrice: pkg.Serv_Reg_Price,
       includes: pkg.IncludeNames
@@ -101,13 +104,14 @@ const ServiceDetails = () => {
       isActive: pkg.IsActive,
       EstimatedDurationMinutes: pkg.EstimatedDurationMinutes,
       EstimatedDurationHours: hours, // Keep hours separately too if needed
-      Description: pkg.Description
+      Description: pkg.Description,
+      categoryId: pkg.CategoryID,
     };
   });
 
 
             setServices(formatted);
-          console.log("Fetched packages:", formatted);
+        
 
         // } else {
         //   setPackages([]);
@@ -118,7 +122,7 @@ const ServiceDetails = () => {
     };
 
     fetchPackages();
-  }, []);
+  }, [id]);
 
 
 
@@ -128,14 +132,13 @@ const ServiceDetails = () => {
     return '';
   }
 
-  const categoryServices = services.filter(s => s.categoryId === service.categoryId && s.id !== service.id);
+  const categoryServices = allServices.filter(s => s.CategoryID === service.categoryId && s.PackageID !== service.id);
+  console.log(categoryServices);
 
   const isInCart = cartItems.some((i) => i.id === service.id);
 
   return (
     <>
-      <HeaderOne />
-      <Breadcrumb title={"Service Details"} />
       <div className="service-details-area py-5">
         <div className="container">
           <div className="row gx-5 flex-row">
@@ -305,8 +308,8 @@ const ServiceDetails = () => {
                   <ul className="list-group">
                     {categoryServices.map(s => (
                       <li key={s.id} className="list-group-item d-flex justify-content-between align-items-center">
-                        <Link to={`/servicedetails/${s.id}`}>{s.title}</Link>
-                        <span className="badge bg-success">₹{s.price}</span>
+                        <Link to={`/servicedetails/${s.PackageID}`}>{s.PackageName}</Link>
+                        {/* <span className="badge bg-success">₹{s.price}</span> */}
                       </li>
                     ))}
                   </ul>
@@ -343,7 +346,6 @@ const ServiceDetails = () => {
       />
       </div>
       {/* <SubscribeOne /> */}
-      <FooterAreaOne />
     </>
   );
 };

@@ -273,3 +273,88 @@ button[disabled]{
 .progress-bar{
   background-color: #116d6e !important;
 }
+.carousel-control-next, .carousel-control-prev {
+    background: none;
+    border: none;
+}
+.carousel-control-next-icon::after, .carousel-control-prev-icon::after {
+    background: red;
+}
+
+.timeline-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin: 20px 0;
+  position: relative;
+}
+
+.timeline-step {
+  text-align: center;
+  position: relative;
+  flex: 1;
+}
+
+.timeline-step .circle {
+  width: 30px;
+  height: 30px;
+  background: #ddd;
+  border-radius: 50%;
+  margin: 0 auto;
+  line-height: 30px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #555;
+  z-index: 1;
+  position: relative;
+}
+
+.timeline-step.completed .circle {
+  background: #28a745;
+  color: white;
+}
+
+.timeline-step .label {
+  font-size: 12px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.timeline-step .date {
+  font-size: 11px;
+  color: gray;
+}
+
+.timeline-step .line {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: #ddd;
+  z-index: 0;
+}
+
+.timeline-step.completed ~ .line {
+  background: #28a745;
+}
+.btn-yellow{
+  background-color: #ea8f0b !important;
+}
+
+.tab-green , .bg-green{
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+}
+.border-car{
+ border: 2px solid #e5e7e6 !important;
+font-size: 12px;
+  
+}
+
+@media screen and (max-width: 768px) {
+  .timeline-container  {
+    overflow: auto;
+  }
+  
+}

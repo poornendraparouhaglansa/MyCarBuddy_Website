@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./ProfileModal.css";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
 const ProfileModal = ({ isVisible, onClose, onRegister }) => {
     const [user, setUser] = useState(null);
     const modalRef = useRef();
     const navigation = useNavigate();
+    const { clearCart } = useCart();
 
     useEffect(() => {
         const saved = localStorage.getItem("user");
@@ -25,6 +27,7 @@ const ProfileModal = ({ isVisible, onClose, onRegister }) => {
         setUser(null);
         onClose();
         navigation('/');
+        clearCart();
         window.location.reload();        
     };
 

@@ -91,8 +91,8 @@ const MainProfile = () => {
 
   const tabs = [
     { key: "profile", label: "👤 Profile" },
-    { key: "addresses", label: "🏠 Addresses" },
     { key: "mybookings", label: "📅 My Bookings" },
+    { key: "addresses", label: "🏠 Addresses" },
     { key: "mycars", label: "🚗 My Car List" },
     { key: "logout", label: "🚪 Log Out" },
   ];

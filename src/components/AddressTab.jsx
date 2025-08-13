@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import CryptoJS from "crypto-js";
+import { useAlert } from "../context/AlertContext";
 
 const AddressTab = ({ custID = 0 }) => {
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
+    const { showAlert } = useAlert();
        const user = JSON.parse(localStorage.getItem("user")) || {};
      const token = user?.token || "";
       const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
@@ -64,7 +66,28 @@ const AddressTab = ({ custID = 0 }) => {
     } catch (error) {
       console.error("Error setting primary address:", error);
     }
-  };    
+  };   
+  
+  const handleDelete = async (id) => {
+  if (!window.confirm("Are you sure you want to delete this address?")) return;
+
+  try {
+    await axios.delete(
+      `${BaseURL}CustomerAddresses/addressid?addressid=${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    // Remove deleted address from UI
+    setAddresses((prev) => prev.filter((addr) => addr.id !== id));
+  } catch (error) {
+    showAlert(error.response?.data?.message || "Something went wrong while deleting address.");
+  }
+};
+
 
   const handleBack = () => {
     setSelectedAddress(null);
@@ -93,19 +116,19 @@ const AddressTab = ({ custID = 0 }) => {
                     </div>
                     <div className="text-end">
                         <i
-                           className={`bi ${addr.isPrimary ? "bi-star-fill bg-warning text-white" : "bi-star"} fs-6 me-2 p-1 rounded-circle`}
+                           className={`bi ${addr.isPrimary ? "bi-star-fill bg-green text-white" : "bi-star"} fs-8 me-2 p-1 rounded-circle`}
                           role="button"
                           onClick={() => handleSetPrimary(addr.id)}
                           title="Set as Primary"
                         ></i>
                       <i
-                        className="bi bi-eye text-primary fs-5 me-2"
+                        className="bi bi-eye text-primary fs-8 me-2 p-1"
                         role="button"
                         onClick={() => setSelectedAddress(addr)}
                         title="View"
                       ></i>
                       {/* <i className="bi bi-pencil text-secondary fs-5 me-2" role="button" title="Edit"></i> */}
-                      <i className="bi bi-trash text-danger fs-5" role="button" title="Delete"></i>
+                      <i className="bi bi-trash text-danger fs-8 p-1" role="button" title="Delete"  onClick={() => handleDelete(addr.id)}></i>
                     </div>
                   </div>
                   <hr />

@@ -6,7 +6,7 @@ const ContactArea = () => {
       <div className="contact-area space">
         <div className="container">
           <div className="row gy-4 justify-content-center">
-            <div className="col-xxl-3 col-lg-4 col-md-6">
+            <div className=" col-lg-4 col-md-6">
               <div className="contact-info">
                 <div className="contact-info_icon">
                   <i className="fas fa-map-marker-alt" />
@@ -18,7 +18,7 @@ const ContactArea = () => {
                 <p className="contact-info_text">Mirpur Dhaka,Bangladesh</p>
               </div>
             </div>
-            <div className="col-xxl-3 col-lg-4 col-md-6">
+            <div className=" col-lg-4 col-md-6">
               <div className="contact-info">
                 <div className="contact-info_icon">
                   <i className="fas fa-phone-alt" />
@@ -32,7 +32,7 @@ const ContactArea = () => {
                 </p>
               </div>
             </div>
-            <div className="col-xxl-3 col-lg-4 col-md-6">
+            {/* <div className="col-xxl-3 col-lg-4 col-md-6">
               <div className="contact-info">
                 <div className="contact-info_icon">
                   <i className="fas fa-clock" />
@@ -41,8 +41,8 @@ const ContactArea = () => {
                 <p className="contact-info_text">Sun-10AM To 5PM</p>
                 <p className="contact-info_text">Thurs-9AM To 8PM</p>
               </div>
-            </div>
-            <div className="col-xxl-3 col-lg-4 col-md-6">
+            </div> */}
+            <div className=" col-lg-4 col-md-6">
               <div className="contact-info">
                 <div className="contact-info_icon">
                   <i className="fas fa-envelope" />
@@ -69,11 +69,13 @@ const ContactArea = () => {
               allowFullScreen=""
               loading="lazy"
               title="address"
+              height={"250"}
+              width={"100%"}
             />
           </div>
         </div>
       </div>
-      <div className="space-bottom">
+      <div className="space-bottom d-none">
         <div className="container">
           <div className="row flex-row-reverse">
             <div className="col-lg-6 text-lg-end">
