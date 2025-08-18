@@ -44,9 +44,9 @@ const SelectTimeSlotPage = () => {
     addressLine2: "",
     technicianNote: "",
     couponApplied: false,
-    discountAmount: "", // example value
+    CouponAmount: "", // example value
     appliedCouponCode: "",
-    paymentMethod: "razorpay",
+    paymentMethod: "COS",
     savedAddresses: [],
     mapLocation: {
       latitude: location.latitude, // Default to Hyderabad
@@ -77,7 +77,7 @@ const SelectTimeSlotPage = () => {
 
   const [appliedCoupon, setAppliedCoupon] = useState(null); // Stores selected coupon
   const [couponApplied, setCouponApplied] = useState(false); // Tracks applied status
-  const [paymentMethod, setPaymentMethod] = useState("razorpay");
+  const [paymentMethod, setPaymentMethod] = useState("COS");
   const [modal, setModal] = useState({ show: false, type: "", message: "" });
   const addressRef = useRef(null);
   const paymentRef = useRef(null);
@@ -683,7 +683,7 @@ const SelectTimeSlotPage = () => {
     form.append("Latitude", formData.mapLocation.latitude);
     form.append("Notes", formData.technicianNote);
     form.append("CouponCode", couponApplied ? formData.appliedCouponCode : "");
-    form.append("DiscountAmount", getOriginalTotal() - getDiscountedTotal());
+    form.append("CouponAmount", getOriginalTotal() - getDiscountedTotal());
 
     try {
       const res = await axios.post(`${baseUrl}Bookings/insert-booking`, form, {
@@ -830,7 +830,7 @@ const SelectTimeSlotPage = () => {
   const getFinalTotal = () => {
     const originalTotal = getOriginalTotal();
     const discountedTotal = getDiscountedTotal();
-    const taxAmount = originalTotal * 0.18;
+    const taxAmount = discountedTotal * 0.18;
 
     return discountedTotal + taxAmount;
   };
@@ -1100,7 +1100,7 @@ const SelectTimeSlotPage = () => {
                 <h5 className="mb-3">Select Payment Method</h5>
                 <div className="form-check mb-2">
                   <input
-                    className="form-check-input"
+                    className="form-check-input d-none"
                     type="radio"
                     name="payment"
                     id="razorpay"
@@ -1221,7 +1221,7 @@ const SelectTimeSlotPage = () => {
                   {(() => {
                     const originalTotal = getOriginalTotal();
                     const discountedTotal = getDiscountedTotal();
-                    const gstAmount = originalTotal * 0.18;
+                    const gstAmount = discountedTotal * 0.18;
                     const finalTotal = getFinalTotal();
                     const savings = couponApplied
                       ? originalTotal - discountedTotal

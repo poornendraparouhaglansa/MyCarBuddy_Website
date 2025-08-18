@@ -39,7 +39,7 @@ const FooterAreaOne = () => {
               <div className="widget footer-widget widget-newsletter">
                 <h3 className="widget_title">About</h3>
              
-                <p className="footer-text mb-50">
+                <p className="footer-text ">
                  At CarBuddy, we bring the car spa to your doorstep.
 No more waiting in queues or driving to a car wash center — we specialize in interior and exterior car washing right at your home, so you can relax while we make your car shine.
                 </p>
