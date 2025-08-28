@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import CryptoJS from "crypto-js";
 
 const BookingVehicleDetails = ({
   vehicle,
@@ -12,6 +13,7 @@ const BookingVehicleDetails = ({
 }) => {
   const [savedCars, setSavedCars] = useState([]);
   const [errors, setErrors] = useState({}); // ✅ Validation errors
+  const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
 
   const handleCarSelect = (e) => {
     const selectedId = e.target.value;
@@ -77,32 +79,6 @@ const BookingVehicleDetails = ({
     console.log("Vehicle loaded from localStorage:", localVehicle);
   }, []);
 
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    const token = user?.token;
-
-    const fetchSavedCars = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.REACT_APP_CARBUDDY_BASE_URL}CustomerVehicles/GetCustomerVehicleByCustID/${user?.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const data = await res.json();
-        setSavedCars(data);
-      } catch (err) {
-        console.error("Failed to load saved cars", err);
-      }
-    };
-
-    if (allowCarSelection) {
-      fetchSavedCars();
-    }
-  }, [allowCarSelection]);
-
   if (!vehicle) return null;
 
   return (
@@ -134,23 +110,29 @@ const BookingVehicleDetails = ({
           <div className="row">
             {/* Registration Number */}
             <div className="col-md-6 mb-3">
-              <label className="form-label fw-semibold">Registration Number</label>
-              <input
-                type="text"
-                name="registrationNumber"
-                className={`form-control ${errors.registrationNumber ? "is-invalid" : ""}`}
-                placeholder="Enter Registration Number"
-                value={formData.registrationNumber || registrationNumber || ""}
-                onChange={handleChangeWithValidation}
-              />
-              {errors.registrationNumber && (
-                <div className="invalid-feedback">{errors.registrationNumber}</div>
-              )}
-            </div>
+                <label className="form-label fw-semibold">
+                  Registration Number <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="registrationNumber"
+                  className={`form-control ${errors.registrationNumber ? "is-invalid" : ""}`}
+                  placeholder="Enter Registration Number"
+                  value={formData.registrationNumber || registrationNumber || ""}
+                  onChange={(e) => {
+                    const upperValue = e.target.value.toUpperCase();
+                    handleChangeWithValidation({ target: { name: "registrationNumber", value: upperValue } });
+                  }}
+                  style={{ textTransform: "uppercase" }}
+                />
+                {errors.registrationNumber && (
+                  <div className="invalid-feedback">{errors.registrationNumber}</div>
+                )}
+              </div>
 
             {/* Year of Purchase */}
             <div className="col-md-6 mb-3">
-              <label className="form-label fw-semibold">Year of Purchase</label>
+              <label className="form-label fw-semibold">Year of Purchase <span className="text-danger">*</span></label>
               <input
                 type="text"
                 name="yearOfPurchase"

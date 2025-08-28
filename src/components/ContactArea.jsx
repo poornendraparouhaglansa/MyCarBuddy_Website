@@ -13,9 +13,9 @@ const ContactArea = () => {
                 </div>
                 <h6 className="contact-info_title">Address</h6>
                 <p className="contact-info_text">
-                  6391 Elgin St. Celina, Delaware
+                  Unit # B1, Second Floor Spaces & More Business Park, Madhapur #3 D.No# 1-89/A/8, C/2,
                 </p>
-                <p className="contact-info_text">Mirpur Dhaka,Bangladesh</p>
+                <p className="contact-info_text"> Vittal Rao Nagar Rd, Madhapur, Telangana 500081 </p>
               </div>
             </div>
             <div className=" col-lg-4 col-md-6">
@@ -25,10 +25,10 @@ const ContactArea = () => {
                 </div>
                 <h6 className="contact-info_title">Phone Number</h6>
                 <p className="contact-info_text">
-                  <a href="tel:6295550129">(629) 555-0129</a>
+                  <a href="tel:9885653865">+91 98856 53865</a>
                 </p>
                 <p className="contact-info_text">
-                  <a href="tel:01254693326">01254693326</a>
+                  {/* <a href="tel:01254693326">01254693326</a> */}
                 </p>
               </div>
             </div>
@@ -49,12 +49,12 @@ const ContactArea = () => {
                 </div>
                 <h6 className="contact-info_title">E-mail</h6>
                 <p className="contact-info_text">
-                  <a href="mailto:michael.mitc@example.com">
-                    michael.mitc@example.com
+                  <a href="mailto:info@glansa.com">
+                    info@glansa.com
                   </a>
                 </p>
                 <p className="contact-info_text">
-                  <a href="mailto:nafiz 0121@gmail.com">nafiz 0121@gmail.com</a>
+                  {/* <a href="mailto:nafiz 0121@gmail.com">nafiz 0121@gmail.com</a> */}
                 </p>
               </div>
             </div>
@@ -65,7 +65,7 @@ const ContactArea = () => {
         <div className="container">
           <div className="map-sec">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3644.7310056272386!2d89.2286059153658!3d24.00527418490799!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39fe9b97badc6151%3A0x30b048c9fb2129bc!2s!5e0!3m2!1sen!2sbd!4v1651028958211!5m2!1sen!2sbd"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d60902.88409628053!2d78.31117294863282!3d17.439109100000007!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb9a3e6c6874dd%3A0x7abfee772aee3875!2sGlansa%20Solutions!5e0!3m2!1sen!2sin!4v1756129461537!5m2!1sen!2sin"
               allowFullScreen=""
               loading="lazy"
               title="address"
@@ -83,7 +83,7 @@ const ContactArea = () => {
                 <div className="about-counter-grid jump">
                   <img
                     src="assets/img/icon/faq2-counter-icon-1.svg"
-                    alt="Fixturbo"
+                    alt="MyCarBuddy"
                   />
                   <div className="media-right">
                     <h3 className="about-counter">
@@ -92,7 +92,7 @@ const ContactArea = () => {
                     <h4 className="about-counter-text">Services we provide</h4>
                   </div>
                 </div>
-                <img src="assets/img/normal/faq-thumb-2-1.png" alt="Fixturbo" />
+                <img src="assets/img/normal/faq-thumb-2-1.png" alt="MyCarBuddy" />
               </div>
             </div>
             <div className="col-lg-6">

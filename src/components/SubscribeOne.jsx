@@ -20,21 +20,21 @@ const SubscribeOne = () => {
           <div className="media-body">
             <h6 className="title text-white">Requesting A Call:</h6>
             <h4 className="link">
-              <a className="text-white" href="tel:6295550129">
-                (629) 555-0129
+              <a className="text-white" href="tel:9885653865">
+                +91 98856 53865
               </a>
             </h4>
           </div>
         </div>
         <div className="social-btn">
-          <a href="https://facebook.com/">
+          <a href="https://www.facebook.com/people/Mycarbuddyin/61578291056729/?sk=about_details" target="_blank">
             <i className="fab fa-facebook-f" />
           </a>
-          <a href="https://twitter.com/">
-            <i className="fab fa-twitter" />
-          </a>
-          <a href="https://instagram.com/">
+          <a href="https://www.instagram.com/mycarbuddy.in/" target="_blank">
             <i className="fab fa-instagram" />
+          </a>
+           <a href="https://www.linkedin.com/company/mycarbuddy/" target="_blank">
+            <i className="fab fa-linkedin" />
           </a>
         </div>
       </div>

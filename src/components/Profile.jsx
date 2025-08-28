@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import CryptoJS from "crypto-js";
+import { useAlert } from "../context/AlertContext";
+import { useNavigate } from "react-router-dom";
 
 
 const ImageURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
@@ -14,7 +16,8 @@ const Profile = () => {
     ProfileImage: "",
   });
   const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
-
+    const { showAlert } = useAlert()
+    const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const userdata = JSON.parse(localStorage.getItem("user")) || {};
   const token = userdata?.token || "";
@@ -87,7 +90,9 @@ const Profile = () => {
     const updatedData = await res.json();
     window.dispatchEvent(new Event("userProfileUpdated"));
     setEditing(false);
-    alert("Profile updated successfully!");
+    showAlert("success", "Profile updated successfully!", 3000, "success");
+    //reload the page
+    window.location.reload();
   } catch (err) {
     console.error("Save failed:", err);
     alert("Error updating profile");
@@ -126,13 +131,19 @@ const Profile = () => {
             <div className="text-center mb-4">
               {user.ProfileImage && (
                <img
-                    src={user?.ProfileImage ? `${ImageURL}${user.ProfileImage}` : "/assets/img/avatar.png"}
+                    src={
+                      user?.ProfileImage?.startsWith("data:")
+                        ? user.ProfileImage // base64 preview
+                        : user?.ProfileImage
+                        ? `${ImageURL}${user.ProfileImage}` // saved image from server
+                        : "/assets/img/avatar.png" // fallback
+                    }
                     alt="Profile"
                     className="rounded-circle border"
-                     style={{ width: "150px", height: "150px", objectFit: "cover" }}
+                    style={{ width: "150px", height: "150px", objectFit: "cover" }}
                     onError={(e) => {
-                      e.target.onerror = null; // prevent infinite loop
-                      e.target.src = "/assets/img/avatar.png"; // fallback to default
+                      e.target.onerror = null;
+                      e.target.src = "/assets/img/avatar.png";
                     }}
                   />
               ) || (
@@ -143,14 +154,6 @@ const Profile = () => {
                 />
               )}
               
-
-              {/* <img
-                src={user.ProfileImage || "/assets/img/avatar.png"}
-                alt="Profile"
-                className="rounded-circle border"
-                width={100}
-                height={100}
-              /> */}
               {editing && (
                 <div className="mt-2">
                   <input
@@ -191,7 +194,7 @@ const Profile = () => {
                   type="email"
                     className="form-control"
                     name="Email"
-                    value={user.Email}
+                    value={user.Email === 'null' ? "" : user.Email}
                     onChange={handleInputChange}
                     readOnly={!editing}
                 />
@@ -213,7 +216,7 @@ const Profile = () => {
 
 
             {editing && (
-              <button className="btn btn-success w-100" onClick={handleSave}>
+              <button className="btn btn-success w-100 px-4 py-2" onClick={handleSave}>
                 Save Profile
               </button>
             )}

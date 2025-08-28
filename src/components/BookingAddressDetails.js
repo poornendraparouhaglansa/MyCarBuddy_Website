@@ -7,6 +7,7 @@ import {
   useJsApiLoader,
   StandaloneSearchBox
 } from "@react-google-maps/api";
+import Select from "react-select";
 
 const libraries = ["places"];
 const containerStyle = {
@@ -37,10 +38,20 @@ const BookingAddressDetails = ({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries,
   });
+
+  const cityOptions = cities.map((city) => ({
+  value: city.CityID,
+  label: city.CityName,
+}));
+
+console.log(cityOptions,'cityOptions');
+
   
 
   // Fetch saved addresses
   useEffect(() => {
+    console.log(formData.mapLocation.latitude,'sdfsd');
+    console.log(formData.mapLocation.longitude,'sdfsd');
     const fetchAddresses = async () => {
       try {
         const response = await axios.get(
@@ -50,20 +61,25 @@ const BookingAddressDetails = ({
           }
         );
 
-        const formatted = response.data.map((addr) => ({
-          id: addr.AddressID,
-          address1: addr.AddressLine1,
-          address2: `${addr.AddressLine2 || ""}, ${addr.Pincode}`,
-          pincode: addr.Pincode,
-          stateId: addr.StateID,
-          stateName: addr.StateName,
-          cityId: addr.CityID,
-          cityName: addr.CityName,
-          lat: addr.Latitude,
-          lng: addr.Longitude,
-        }));
+        if(response.data.length > 0){
+          const formatted = response.data.map((addr) => ({
+              id: addr.AddressID,
+              address1: addr.AddressLine1,
+              address2: `${addr.AddressLine2 || ""}, ${addr.Pincode}`,
+              pincode: addr.Pincode,
+              stateId: addr.StateID,
+              stateName: addr.StateName,
+              cityId: addr.CityID,
+              cityName: addr.CityName,
+              lat: addr.Latitude,
+              lng: addr.Longitude,
+            }));
+          setSavedAddresses(formatted);
+        }
 
-        setSavedAddresses(formatted);
+       
+
+      
       } catch (error) {
         console.error("Error fetching addresses:", error);
       }
@@ -127,7 +143,36 @@ const BookingAddressDetails = ({
       {/* Map Search + Map */}
       {isLoaded && (
         <>
-          <div className="mb-3">
+         
+          <GoogleMap
+            mapContainerStyle={containerStyle}
+            center={{
+                lat: formData.mapLocation.latitude
+                  ? parseFloat(formData.mapLocation.latitude)
+                  : 17.385044,
+                lng: formData.mapLocation.longitude
+                  ? parseFloat(formData.mapLocation.longitude)
+                  : 78.486671,
+              }}
+            zoom={15}
+            onClick={(e) => {
+              if (!e || !e.latLng) return;
+              handleMapClick(e.latLng.lat(), e.latLng.lng());
+            }}
+          >
+            <Marker
+              position={{
+                  lat: formData.mapLocation.latitude
+                    ? parseFloat(formData.mapLocation.latitude)
+                    : 17.385044,
+                  lng: formData.mapLocation.longitude
+                    ? parseFloat(formData.mapLocation.longitude)
+                    : 78.486671,
+                }}
+            />
+          </GoogleMap>
+
+           <div className="mb-3 mt-3">
             <StandaloneSearchBox
               onLoad={(ref) => setSearchBox(ref)}
               onPlacesChanged={onPlacesChanged}
@@ -140,52 +185,41 @@ const BookingAddressDetails = ({
             </StandaloneSearchBox>
           </div>
 
-          <GoogleMap
-            mapContainerStyle={containerStyle}
-            center={{
-              lat: formData.mapLocation.latitude,
-              lng: formData.mapLocation.longitude,
-            }}
-            zoom={15}
-            onClick={(e) => {
-              if (!e || !e.latLng) return;
-              handleMapClick(e.latLng.lat(), e.latLng.lng());
-            }}
-          >
-            <Marker
-              position={{
-                lat: formData.mapLocation.latitude,
-                lng: formData.mapLocation.longitude,
-              }}
-            />
-          </GoogleMap>
         </>
       )}
 
       {/* Saved Address Dropdown */}
-      <div className="mb-3">
-        <label className="form-label fw-semibold">Choose Saved Address</label>
         {savedAddresses.length > 0 ? (
-          <select
-            className="form-select"
-            value={formData.selectedSavedAddressID}
-            onChange={handleSavedAddressChange}
-          >
-            <option value="">Select Saved Address</option>
-            {savedAddresses.map((addr) => (
-              <option key={addr.id} value={addr.id}>
-                {addr.address1}, {addr.cityName}, {addr.stateName}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <div className="text-muted">No addresses are there</div>
-        )}
-      </div>
+     <div className="mb-3">
+  <label className="form-label fw-semibold">Choose Saved Address</label>
+
+    <select
+      className="form-select"
+      value={formData.selectedSavedAddressID}
+      onChange={handleSavedAddressChange}
+      style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+    >
+      <option value="">Select Saved Address</option>
+      {savedAddresses.map((addr) => {
+        const fullAddress = `${addr.address1}, ${addr.cityName}, ${addr.stateName}`;
+        const truncated = fullAddress.length > 30 ? fullAddress.slice(0, 30) + "..." : fullAddress;
+        return (
+          <option key={addr.id} value={addr.id} title={fullAddress}>
+            {truncated}
+          </option>
+        );
+      })}
+    </select>
+
+</div>
+  ) : (
+    ""
+  )}
 
       {/* Form Fields */}
       <div className="row">
         <div className="col-md-6 mb-3">
+          <label className="form-label fw-semibold">State <span className="text-danger">*</span></label>
           <select
             className="form-select"
             name="StateID"
@@ -201,32 +235,54 @@ const BookingAddressDetails = ({
           </select>
         </div>
         <div className="col-md-6 mb-3">
-          <select
-            className="form-select"
-            name="CityID"
-            value={formData.CityID}
+          <label className="form-label fw-semibold">City <span className="text-danger">*</span></label>
+          <input
+            type="text"
+            name="CityName"
+            className="form-control"
+            placeholder="City"
+            value={formData.CityName}
             onChange={handlereInputChange}
-            disabled={!formData.StateID}
-          >
-            <option value="">Select City</option>
-            {cities.map((city) => (
-              <option key={city.CityID} value={city.CityID}>
-                {city.CityName}
-              </option>
-            ))}
-          </select>
+            // disabled={!formData.StateID}
+          />
+          <input type="hidden" name="CityID" value={formData.CityID} />
+          {/* <Select
+            classNamePrefix="select"
+            isSearchable
+            placeholder="Select City"
+            options={cities.map((c) => ({ value: c.CityID, label: c.CityName }))}
+            value={
+              cities.find((c) => c.CityID === formData.CityID)
+                ? { value: formData.CityID, label: cities.find((c) => c.CityID === formData.CityID).CityName }
+                : null
+            }
+            onChange={(option) =>
+              handlereInputChange({
+                target: { name: "CityID", value: option ? option.value : "" },
+              })
+            }
+            isDisabled={!formData.StateID}
+          /> */}
         </div>
         <div className="col-md-6 mb-3">
+          <label className="form-label fw-semibold">Pincode <span className="text-danger">*</span></label>
           <input
             type="text"
             name="pincode"
             className="form-control"
             placeholder="Pincode"
             value={formData.pincode}
-            onChange={handlereInputChange}
+            maxLength={6} // Restricts to 6 characters
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, ""); // Allow only numbers
+              if (value.length <= 6) {
+                handlereInputChange({ target: { name: "pincode", value } });
+              }
+            }}
           />
         </div>
         <div className="col-md-12 mb-3">
+          <label className="form-label fw-semibold">Address <span className="text-danger">*</span></label>
           <textarea
             className="form-control"
             name="addressLine1"

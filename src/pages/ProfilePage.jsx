@@ -29,7 +29,7 @@ const ProfilePage = () => {
       <MainProfile />
 
       {/* Subscribe One */}
-      <SubscribeOne />
+      {/* <SubscribeOne /> */}
 
       {/* Footer Area One */}
       <FooterAreaOne />

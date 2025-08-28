@@ -10,7 +10,7 @@ const FaqAreaTwo = () => {
           {/* Counter & Image Section */}
           <div className="col-xl-6">
             <div className="faq-thumb2 mb-xl-0 mb-50">
-              <div className="about-counter-grid jump">
+              {/* <div className="about-counter-grid jump">
                 <img
                   src="assets/img/icon/faq2-counter-icon-1.svg"
                   alt="Car Service"
@@ -29,7 +29,7 @@ const FaqAreaTwo = () => {
                   </h3>
                   <h4 className="about-counter-text">Cars Washed</h4>
                 </div>
-              </div>
+              </div> */}
                  <img src="assets/img/normal/faq-thumb-2-1.png" alt="Fixturbo"/>
             </div>
           </div>

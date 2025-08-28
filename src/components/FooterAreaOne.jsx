@@ -1,14 +1,17 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Chatbot from "./Chatbot";
 
 const FooterAreaOne = () => {
   return (
     <footer
-      className="footer-wrapper footer-layout1"
-      style={{ backgroundImage: "url(assets/img/bg/footer-bg1-1.png)" }}
+      className="footer-wrapper footer-layout1 "
+      // style={{ backgroundImage: "url(assets/img/bg/footer-bg1-1.png)" }}
+      style={{ backgroundColor: "url(assets/img/bg/footer-top-bg1-1.png)" }}
     >
+      {/* <Chatbot/> */}
       <div className="container">
-        <div className="widget-area">
+        <div className="widget-area p-4">
           <div className="col-md-12 text-center">
                <img src="/assets/img/MyCarBuddy-Logo1.png" alt="MyCarBuddy"  width={"300px"}/>
           </div>
@@ -16,16 +19,26 @@ const FooterAreaOne = () => {
 
             
 
-            <div className="col-md-3 col-xl-auto">
-              <div className="widget widget_nav_menu footer-widget">
+            <div className="col-md-3 ">
+              <div className="widget widget_nav_menu footer-widget text-center">
                 <h3 className="widget_title">Company</h3>
                 <div className="menu-all-pages-container">
-                  <ul className="menu">
+                  <ul className="menu d-inline-block">
                     <li>
                       <Link to="/about">About</Link>
                     </li>
                     <li>
-                      <Link to="/terms">Services</Link>
+                      <Link  to="/"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (window.location.pathname !== "/") {
+                              window.location.href = "/#scroll-to-service";
+                            } else {
+                              window.dispatchEvent(
+                                new Event("scrollToService")
+                              );
+                            }
+                          }}>Services</Link>
                     </li>
                     <li>
                       <Link to="/contact">Contact</Link>
@@ -35,30 +48,29 @@ const FooterAreaOne = () => {
               </div>
             </div>
 
-            <div className="col-md-6 col-xl-auto">
+            <div className="col-md-6 ">
               <div className="widget footer-widget widget-newsletter">
                 <h3 className="widget_title">About</h3>
              
                 <p className="footer-text ">
-                 At CarBuddy, we bring the car spa to your doorstep.
-No more waiting in queues or driving to a car wash center — we specialize in interior and exterior car washing right at your home, so you can relax while we make your car shine.
+                At My Car Buddy, we make car care effortless by bringing professional services straight to your doorstep. No more waiting at garages or service centers. Our expert mechanics and technicians come to you, whenever and wherever you need them.
                 </p>
                 
               </div>
             </div>
 
-            <div className="col-md-3 col-xl-auto">
-              <div className="widget footer-widget">
+            <div className="col-md-3 ">
+              <div className="widget footer-widget text-center">
                 <h3 className="widget_title">Contact</h3>
                 <div className="widget-contact">
                   <p>
-                    <Link to="tel:888123456765">(+91) 123 456 765</Link>
+                    <Link to="tel:888123456765">+91 98856 53865</Link>
                   </p>
                   <p>
-                    <Link to="mailto:infoname@mail.com">carbuddy@example.com</Link>
+                    <Link to="mailto:info@glansa.com">info@glansa.com</Link>
                   </p>
                   <p>
-                    Madhapur, Hyderabad <br /> India, 500081
+                   Flat No. 102, Mahalaxmi Paradise,<br></br> Aswini Colony, West Maredpally,<br /> Secunderabad,  Hyderabad <br /> India, 500081
                   </p>
                 </div>
               </div>
@@ -79,7 +91,7 @@ No more waiting in queues or driving to a car wash center — we specialize in i
               <div className="footer-links">
                 <Link to="/terms">Terms &amp; Condition</Link>
                 <Link to="/privacy">Privacy Policy</Link>
-                <Link to="/refund">Refund Policy</Link>
+                <Link to="/refund-cancellation">Cancellation & Refund Policy</Link>
               </div>
             </div>
           </div>

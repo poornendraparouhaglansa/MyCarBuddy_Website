@@ -352,6 +352,25 @@ font-size: 12px;
   
 }
 
+.btn.btn-confirm:disabled, .btn.btn-confirm[disabled]{
+  border: none !important;
+  text-decoration: line-through !important;
+  background: #d5d3d3 !important;  
+}
+
+.process-card.style2{
+  padding: 16px 3px !important;
+  border: 2px solid rgb(102 100 100 / 10%) !important;
+  box-shadow: 4px 2px 11px 0px #b3b1b1 !important;
+}
+.footer-wrapper{
+  background-color: #116d6e !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+}
+.footer-wrapper a:hover{
+  color: #ffffff !important;
+}
 @media screen and (max-width: 768px) {
   .timeline-container  {
     overflow: auto;

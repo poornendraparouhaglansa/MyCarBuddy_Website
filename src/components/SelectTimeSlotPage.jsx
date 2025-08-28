@@ -12,10 +12,11 @@ import CryptoJS from "crypto-js";
 
 const SelectTimeSlotPage = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
   const token = user?.token || "";
   const { cartItems, clearCart } = useCart();
-  cartItems.length === 0 && navigate("/cart");
+  // cartItems.length === 0 && navigate("/cart");
   const [step, setStep] = useState(1);
   const baseUrl = process.env.REACT_APP_CARBUDDY_BASE_URL;
   const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
@@ -40,6 +41,7 @@ const SelectTimeSlotPage = () => {
     pincode: "",
     StateID: "",
     CityID: "",
+    CityName: "",
     addressLine1: "",
     addressLine2: "",
     technicianNote: "",
@@ -49,8 +51,8 @@ const SelectTimeSlotPage = () => {
     paymentMethod: "COS",
     savedAddresses: [],
     mapLocation: {
-      latitude: location.latitude, // Default to Hyderabad
-      longitude: location.longitude,
+      latitude: '17.385044', // Default to Hyderabad
+      longitude: '78.486671',
     },
     registrationNumber: "",
     yearOfPurchase: "",
@@ -77,7 +79,7 @@ const SelectTimeSlotPage = () => {
 
   const [appliedCoupon, setAppliedCoupon] = useState(null); // Stores selected coupon
   const [couponApplied, setCouponApplied] = useState(false); // Tracks applied status
-  const [paymentMethod, setPaymentMethod] = useState("COS");
+  const [paymentMethod, setPaymentMethod] = useState("razorpay");
   const [modal, setModal] = useState({ show: false, type: "", message: "" });
   const addressRef = useRef(null);
   const paymentRef = useRef(null);
@@ -94,7 +96,17 @@ const SelectTimeSlotPage = () => {
 
   const { showAlert } = useAlert();
 
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+const [paymentMessage, setPaymentMessage] = useState("");
+const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
+
+  const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
   const handleNext = () => {
+     scrollToTop();
     if (step === 1 && !selectedTime) {
       showAlert("Please select a time slot.");
       return;
@@ -106,7 +118,7 @@ const SelectTimeSlotPage = () => {
       }
 
       if (
-        !formData.CityID ||
+        !formData.CityName ||
         !formData.StateID ||
         !formData.addressLine1.trim()
       ) {
@@ -114,17 +126,19 @@ const SelectTimeSlotPage = () => {
 
         return;
       }
-      if (
-        step === 3 &&
-        (!formData.registrationNumber || !formData.yearOfPurchase)
-      ) {
-        showAlert("Please enter car details.");
-        return;
-      }
 
-      if (!formData.selectedSavedAddressID) {
+        if (!formData.selectedSavedAddressID) {
         handleContinue();
       }
+
+    }
+     if (step === 3) {
+
+        if (!formData.registrationNumber || !formData.yearOfPurchase) {
+          showAlert("Please enter car registration number and year of purchase.");
+          return;
+        }
+    
     }
 
     setStep((prev) => prev + 1);
@@ -159,8 +173,8 @@ const SelectTimeSlotPage = () => {
     fetchStates();
   }, []);
 
-  useEffect(() => {
-    const fetchCities = async () => {
+  const fetchCities = async (Pincode) => {
+
       try {
         const response = await axios.get(`${baseUrl}City`, {
           headers: {
@@ -171,67 +185,89 @@ const SelectTimeSlotPage = () => {
           (c) => c.StateID === parseInt(formData.StateID) && c.IsActive
         );
         setCities(filteredCities);
+       if (Pincode !== undefined && Pincode !== null && Pincode !== "") {
+
+
+      const matchedCity = response.data.filter(
+        (c) => Number(c.Pincode) === Number(Pincode)
+      );
+
+
+      if (matchedCity.length === 0) {
+        showAlert("Service is not available in your selected location.");
+
+        setFormData((prev) => ({
+          ...prev,
+          StateID: "",
+          CityID: "",
+          pincode: "",
+          addressLine1: "",
+          CityName: "",
+        }));
+
+        return;
+      }
+    }
       } catch (err) {
         console.error("Error fetching cities:", err);
       }
     };
 
+
+  useEffect(() => {
+    
+
     fetchCities();
   }, [formData.StateID, selectedState]);
 
-  useEffect(() => {
-    // handleMapClick(formData.mapLocation.latitude, formData.mapLocation.longitude);
+ useEffect(() => {
+  const carData = localStorage.getItem("selectedCarDetails");
+  if (!carData) return;
 
-    const car = localStorage.getItem("selectedCarDetails");
-    if (car) {
-      if (JSON.parse(car).VehicleID) {
-        try {
-          const res = axios.get(
-            `${baseUrl}CustomerVehicles/CustVehicleId?CustVehicleId=${
-              JSON.parse(car).VehicleID
-            }`
-          );
-          res.then((response) => {
-            setSelectedVehicle(response.data);
-            console.log("Selected :", response.data[0].TransmissionType);
-            setFormData((prev) => ({
-              ...prev,
-              brandID: response.data[0].BrandID,
-              modelID: response.data[0].ModelID,
-              fuelTypeID: response.data[0].FuelTypeID,
-              VehicleID: JSON.parse(car).VehicleID,
-              registrationNumber: response.data[0].VehicleNumber,
-              yearOfPurchase: response.data[0].YearOfPurchase,
-              engineType: response.data[0].EngineType,
-              kilometerDriven: response.data[0].KilometersDriven,
-              transmissionType: response.data[0].TransmissionType,
-            }));
-          });
-          console.log("Selected fon:", formData);
-        } catch (error) {
-          console.error("Error fetching vehicle details:", error);
+  const parsedCar = JSON.parse(carData);
+  const vehicleId = parsedCar.VehicleID;
+
+  if (vehicleId) {
+    axios
+      .get(`${baseUrl}CustomerVehicles/CustVehicleId?CustVehicleId=${vehicleId}`)
+      .then((response) => {
+        if (response.data?.length > 0) {
+          const vehicle = response.data[0];
+          setSelectedVehicle(vehicle);
+          setFormData((prev) => ({
+            ...prev,
+            brandID: vehicle.BrandID,
+            modelID: vehicle.ModelID,
+            fuelTypeID: vehicle.FuelTypeID,
+            VehicleID: vehicleId,
+            registrationNumber: vehicle.VehicleNumber,
+            yearOfPurchase: vehicle.YearOfPurchase,
+            engineType: vehicle.EngineType,
+            kilometerDriven: vehicle.KilometersDriven,
+            transmissionType: vehicle.TransmissionType,
+          }));
+        } else {
+          console.warn(`Vehicle with ID ${vehicleId} not found. Falling back to stored car data.`);
+          setSelectedVehicle(parsedCar);
         }
-      } else {
-        setSelectedVehicle(JSON.parse(car));
-        setFormData((prev) => ({
-          ...prev,
-          brandID: JSON.parse(car).brand.id,
-          modelID: JSON.parse(car).model.id,
-          fuelTypeID: JSON.parse(car).fuel.id,
-          VehicleID: JSON.parse(car).VehicleID ? JSON.parse(car).VehicleID : "",
-        }));
-      }
-      // setSelectedVehicle(JSON.parse(car));
-      // setFormData((prev) => ({
-      //   ...prev,
-      //   brandID: JSON.parse(car).brand.id,
-      //   modelID: JSON.parse(car).model.id,
-      //   fuelTypeID: JSON.parse(car).fuel.id,
-      //   VehicleID: JSON.parse(car).VehicleID ? JSON.parse(car).VehicleID : "",
-      // }))
-    }
-    console.log("Selected Vehicle:", selectedVehicle);
-  }, []);
+      })
+      .catch((error) => {
+        console.error("Error fetching vehicle details:", error);
+        setSelectedVehicle(parsedCar);
+      });
+  } else {
+    // Fallback for manually added car (not yet in DB)
+    setSelectedVehicle(parsedCar);
+    setFormData((prev) => ({
+      ...prev,
+      brandID: parsedCar.brand?.id,
+      modelID: parsedCar.model?.id,
+      fuelTypeID: parsedCar.fuel?.id,
+      VehicleID: "",
+    }));
+  }
+}, []);
+
 
   const handleMapClick = async (lat, lng) => {
     const result = await reverseGeocode(lat, lng);
@@ -239,16 +275,29 @@ const SelectTimeSlotPage = () => {
 
     const stateName = result?.state?.toLowerCase?.();
     const cityName = result?.city?.toLowerCase?.();
+    const Pincode = result?.postalCode?.toLowerCase?.();
 
     const matchedState = states.find(
       (s) => s.StateName?.replace(/\s+/g, "").toLowerCase() === stateName
     );
-    const matchedCity = cities.find(
-      (c) => c.CityName?.replace(/\s+/g, "").toLowerCase() === cityName
-    );
+
+    
+    const matchedCity = cities.find((c) => Number(c.Pincode) === Number(Pincode));
+
+    fetchCities(Pincode);
 
     if (!matchedState) {
       // alert("Service is not available in your selected location.");
+      showAlert("Service is not available in your selected location.");
+
+      setFormData((prev) => ({
+        ...prev,
+        StateID: "",
+        CityID: "",
+        pincode: "",
+        addressLine1: "",
+      }));
+
       return;
     }
 
@@ -256,6 +305,7 @@ const SelectTimeSlotPage = () => {
       ...prev,
       StateID: matchedState?.StateID || "",
       CityID: matchedCity?.CityID || "",
+      CityName: matchedCity?.CityName || "",
       pincode: result?.postalCode || "",
       addressLine1: result?.address || "",
       mapLocation: { latitude: lat, longitude: lng },
@@ -319,26 +369,31 @@ const SelectTimeSlotPage = () => {
       if (
         name === "CityID" ||
         name === "pincode" ||
+        name === "CityName" ||
         name === "addressLine1" ||
         name === "mapLocation" ||
         name === "StateID"
       ) {
         updateMapFromAddress(updatedForm); // trigger map update
+      if( name === "pincode" && value.length === 6 )
+        fetchCities(value);
       }
       return updatedForm;
     });
   };
 
   const updateMapFromAddress = async (form) => {
-    const { addressLine1, pincode, CityID, StateID } = form;
+
+    const { addressLine1, pincode, CityID, StateID , CityName } = form;
 
     const state = states.find((s) => s.StateID === parseInt(StateID));
-    const city = cities.find((c) => c.CityID === parseInt(CityID));
+    // const city = cities.find((c) => c.CityID === parseInt(CityID));
+    const city = CityName;
 
     const fullAddress = `${addressLine1 || ""}, ${pincode || ""}, ${
-      city?.CityName?.replace(/\s+/g, "").toLowerCase() || ""
+      city?.replace(/\s+/g, "").toLowerCase() || ""
     }, ${state?.StateName?.replace(/\s+/g, "").toLowerCase() || ""}`;
-
+    console.log(pincode);
     if (!fullAddress.trim()) return;
     console.log(fullAddress);
 
@@ -497,67 +552,82 @@ const SelectTimeSlotPage = () => {
     }
   };
 
-  const loadRazorpay = (amount, data) => {
-    const options = {
-      key: process.env.REACT_APP_RAZORPAY_KEY,
-      amount: amount * 100,
-      currency: "INR",
-      name: "MyCarBuddy",
-      order_id: data.razorpay.orderID,
-      description: "Payment for Car Services",
-      image: "/assets/img/MyCarBuddy-Logo1.png",
-      handler: function (response) {
-        console.log("Payment success:", response);
-        clearCart();
-        const res = axios.post(
-          `${baseUrl}Bookings/confirm-Payment`,
-          {
-            bookingID: data.bookingID,
-            amountPaid: amount,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpaySignature: response.razorpay_signature,
-            razorpayOrderId: response.razorpay_order_id,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
+ const loadRazorpay = (amount, data) => {
+  const options = {
+    key: process.env.REACT_APP_RAZORPAY_KEY,
+    amount: amount * 100,
+    currency: "INR",
+    name: "MyCarBuddy",
+    order_id: data.razorpay.orderID,
+    description: "Payment for Car Services",
+    image: "/assets/img/MyCarBuddy-Logo1.png",
+    handler: function (response) {
+      console.log("Payment success:", response);
+
+      // Show a modal indicating processing
+      setPaymentStatus("processing");
+      setPaymentMessage("Please wait... your booking is being processed.");
+      setShowPaymentModal(true);
+
+      // Wait for 5 seconds before calling confirm-payment
+      setTimeout(async () => {
+        try {
+          const res = await axios.post(
+            `${baseUrl}Bookings/confirm-Payment`,
+            {
+              bookingID: data.bookingID,
+              amountPaid: amount,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              razorpayOrderId: response.razorpay_order_id,
+              paymentMode: "Razorpay",
             },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (res?.data?.success || res?.status === 200) {
+            setPaymentStatus("success");
+            setPaymentMessage("Payment was successful!");
+            clearCart();
+          } else {
+            setPaymentStatus("error");
+            setPaymentMessage("Payment failed! Please try again.");
+            clearCart();
           }
-        );
-
-        if (res.success) {
-          setModal({
-            show: true,
-            type: "success",
-            message: "Payment was successful.",
-          });
-        } else {
-          setModal({
-            show: true,
-            type: "error",
-            message: "Payment was cancelled or failed.",
-          });
-          navigate("/profile?tab=mybookings");
+        } catch (error) {
+          console.error(error);
+          setPaymentStatus("error");
+          setPaymentMessage("Payment failed! Please try again.");
+          clearCart();
         }
-        console.log(res);
+      }, 5000); // 5 seconds delay
+    },
+    theme: {
+      color: "#1890ae",
+    },
+    prefill: {
+      name: formData.fullName,
+      email: formData.email,
+      contact: formData.phone,
+    },
+    modal: {
+      ondismiss: function () {
+        setPaymentStatus("error");
+        setPaymentMessage("Payment was cancelled or failed.");
+        setShowPaymentModal(true);
+        clearCart();
       },
-      theme: {
-        color: "#1890ae",
-      },
-      modal: {
-        ondismiss: function () {
-          setModal({
-            show: true,
-            type: "error",
-            message: "Payment was cancelled or failed.",
-          });
-        },
-      },
-    };
-
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+    },
   };
+
+  const rzp = new window.Razorpay(options);
+  rzp.open();
+};
+
 
   const CreateOrderID = async (id) => {
     try {
@@ -588,7 +658,7 @@ const SelectTimeSlotPage = () => {
 
     const bookingDateTime = getBookingDateTime();
     const packageIds = cartItems.map((item) => item.id).join(",");
-    const packagePrice = cartItems.reduce((sum, item) => sum + item.price, 0);
+    const packagePrice = cartItems.map((item) => item.price).join(",");
 
     if (
       !decryptedCustId ||
@@ -684,6 +754,8 @@ const SelectTimeSlotPage = () => {
     form.append("Notes", formData.technicianNote);
     form.append("CouponCode", couponApplied ? formData.appliedCouponCode : "");
     form.append("CouponAmount", getOriginalTotal() - getDiscountedTotal());
+    form.append("GSTAmount", getGST());
+    setIsLoading(true);
 
     try {
       const res = await axios.post(`${baseUrl}Bookings/insert-booking`, form, {
@@ -705,13 +777,18 @@ const SelectTimeSlotPage = () => {
           loadRazorpay(finalTotal, res.data);
         } else {
           clearCart();
-          navigate("/profile?tab=mybookings");
+
+         setPaymentStatus("success");
+          setPaymentMessage("Payment was successful!");
+          setShowPaymentModal(true);
+
         }
       } else {
         showAlert("Booking failed. Please try again.");
       }
     } catch (err) {
       console.error("Booking error:", err);
+      setIsLoading(false);
       showAlert("Error while booking. Please try again.");
     }
   };
@@ -719,7 +796,7 @@ const SelectTimeSlotPage = () => {
   const reverseGeocode = async (lat, lng) => {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyAC8UIiyDI55MVKRzNTHwQ9mnCnRjDymVo`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
       );
       const data = await response.json();
       console.log("Reverse Geocode Response:", data);
@@ -827,16 +904,28 @@ const SelectTimeSlotPage = () => {
   return Math.max(total, 0); // prevent negative total
 };
 
+const getGST = () => {
+  const discountedTotal = getDiscountedTotal();
+  const taxAmount = Math.round(discountedTotal * 0.18);
+  return taxAmount;
+};
+
   const getFinalTotal = () => {
     const originalTotal = getOriginalTotal();
     const discountedTotal = getDiscountedTotal();
-    const taxAmount = discountedTotal * 0.18;
+    const taxAmount = getGST();
 
     return discountedTotal + taxAmount;
   };
 
   return (
-    <div className="container py-4">
+    <>
+    {cartItems.length === 0 ? (
+      <div className="no-items">
+        <div className="alert alert-info">No items in cart.</div>
+      </div>
+    ) : (
+      <div className="container py-4">
       <div className="row">
         {/* Left: Time Slot Selection */}
         <div className="col-md-8 border-end left-scrollable">
@@ -845,10 +934,10 @@ const SelectTimeSlotPage = () => {
               <div
                 className="progress-bar"
                 role="progressbar"
-                style={{ width: `${(step / 3) * 100}%` }}
+                style={{ width: `${(step / 4) * 100}%` }}
               ></div>
             </div>
-            <p className="text-center mt-2">Step {step} of 3</p>
+            <p className="text-center mt-2">Step {step} of 4</p>
           </div>
           {step === 1 && (
             <>
@@ -967,6 +1056,7 @@ const SelectTimeSlotPage = () => {
 
                 <div className="row">
                   <div className="col-md-4 mb-3">
+                    <label className="form-label fw-semibold">Full Name <span className="text-danger">*</span></label>
                     <input
                       type="text"
                       name="fullName"
@@ -977,6 +1067,7 @@ const SelectTimeSlotPage = () => {
                     />
                   </div>
                   <div className="col-md-4 mb-3">
+                    <label className="form-label fw-semibold">Phone Number <span className="text-danger">*</span></label>
                     <input
                       type="tel"
                       name="phone"
@@ -988,6 +1079,7 @@ const SelectTimeSlotPage = () => {
                     />
                   </div>
                   <div className="col-md-4 mb-3">
+                     <label className="form-label fw-semibold">Email <span className="text-danger">*</span></label>
                     <input
                       type="email"
                       name="email"
@@ -1062,7 +1154,13 @@ const SelectTimeSlotPage = () => {
                 setAddressLine2={setAddressLine2}
                 handleMapClick={handleMapClick}
               />
-
+                </div>
+          )}
+          {step === 3 && (
+              <div
+              ref={addressRef}
+              className="border-start border-3 border-danger ps-3 pt-3 mt-4"
+            >
               <BookingVehicleDetails
                 vehicle={selectedVehicle}
                 setVehicle={setSelectedVehicle}
@@ -1078,7 +1176,7 @@ const SelectTimeSlotPage = () => {
             </div>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <div ref={paymentRef} className="mt-5">
               {/* Technician Note */}
               <div className="card shadow p-4 mb-4">
@@ -1146,8 +1244,9 @@ const SelectTimeSlotPage = () => {
 
                 <div className="text-end d-flex justify-content-end">
                   <button
-                    className="tab tab-pill active btn-lg px-4 py-2"
+                    className="tab tab-pill active btn-lg px-4 py-2 btn-confirm"
                     onClick={handleBookingSubmit}
+                    disabled={isLoading}
                   >
                     Confirm Booking
                   </button>
@@ -1165,7 +1264,7 @@ const SelectTimeSlotPage = () => {
                 Back
               </button>
             )}
-            {step < 3 && (
+            {step < 4 && (
               <button
                 className="btn btn-primary ms-auto px-4 py-2"
                 onClick={handleNext}
@@ -1221,7 +1320,7 @@ const SelectTimeSlotPage = () => {
                   {(() => {
                     const originalTotal = getOriginalTotal();
                     const discountedTotal = getDiscountedTotal();
-                    const gstAmount = discountedTotal * 0.18;
+                    const gstAmount = getGST(originalTotal);
                     const finalTotal = getFinalTotal();
                     const savings = couponApplied
                       ? originalTotal - discountedTotal
@@ -1293,7 +1392,7 @@ const SelectTimeSlotPage = () => {
                         setCouponApplied(false);
                       }}
                     >
-                      Unapply
+                      Remove
                     </button>
                   </div>
                 </div>
@@ -1363,7 +1462,104 @@ const SelectTimeSlotPage = () => {
           </div>
         </div>
       </div>
+
+
+
+
     </div>
+    )}
+
+
+    {showPaymentModal && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      zIndex: 9999,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <div
+      style={{
+        position: "relative",
+        backgroundColor: "#fff",
+        borderRadius: "12px",
+        padding: "20px",
+        width: "90%",
+        maxWidth: "350px",
+        textAlign: "center",
+        boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
+      }}
+    >
+      {paymentStatus === "processing" ? (
+        <>
+          <div
+            style={{
+              width: 50,
+              height: 50,
+              margin: "0 auto 20px",
+              border: "4px solid #1890ae",
+              borderTop: "4px solid transparent",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }}
+          />
+          <h4 style={{ marginBottom: 10 }}>Processing Payment</h4>
+          <p style={{ color: "#666", marginBottom: 20 }}>
+            Please wait... your booking is being processed.
+          </p>
+        </>
+      ) : (
+        <>
+          <img
+            src={
+              paymentStatus === "success"
+                ? "https://cdn-icons-png.flaticon.com/512/190/190411.png" // green check
+                : "https://cdn-icons-png.flaticon.com/512/463/463612.png" // red cross
+            }
+            alt="Status Icon"
+            style={{ width: 50, height: 50, marginBottom: 20 }}
+          />
+          <h4 style={{ marginBottom: 10 }}>
+            {paymentStatus === "success" ? "Payment Successful" : "Payment Failed"}
+          </h4>
+          <p style={{ color: "#666", marginBottom: 20 }}>{paymentMessage}</p>
+          <button
+            onClick={() => {
+              setShowPaymentModal(false);
+              navigate("/profile?tab=mybookings"); // Redirect to bookings
+            }}
+            style={{
+              backgroundColor: paymentStatus === "success" ? "#28a745" : "#dc3545",
+              color: "#fff",
+              padding: "8px 20px",
+              border: "none",
+              borderRadius: "6px",
+              fontSize: "14px",
+              cursor: "pointer",
+            }}
+          >
+            OK
+          </button>
+        </>
+      )}
+
+      {/* Spinner animation */}
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+    </div>
+  </div>
+)}
+    </>
   );
 };
 

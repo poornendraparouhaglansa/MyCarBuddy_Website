@@ -4,6 +4,7 @@ import axios from "axios";
 
 const ServiceAreaTwo = () => {
   const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
+  const ImageURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
   const [services, setServices] = useState([]);
 
   useEffect(() => {
@@ -17,8 +18,8 @@ const ServiceAreaTwo = () => {
             id: cat.CategoryID,
             title: cat.CategoryName,
             description: cat.Description || "No description provided.",
-            image: `https://api.mycarsbuddy.com/Images/${cat.ThumbnailImage}`,
-            icon: `https://api.mycarsbuddy.com/Images/${cat.IconImage}`,
+            image: `${ImageURL}${cat.ThumbnailImage}`,
+            icon: `${ImageURL}${cat.IconImage}`,
           }));
 
           setServices(formatted);
@@ -80,7 +81,7 @@ const ServiceAreaTwo = () => {
                     <div className="checklist style-white mb-50">
                       <div className="btn-wrap mt-20">
                         <Link className="btn style4 px-4 py-2" to={`/service-details/${service.id}`}>
-                          Read More <i className="fas fa-arrow-right ms-2" />
+                      Book Service <i className="fas fa-arrow-right ms-2" />
                         </Link>
                       </div>
                     </div>
@@ -94,27 +95,38 @@ const ServiceAreaTwo = () => {
         <div className="container">
           <div className="row gy-4 justify-content-center">
             {services.map((service) => (
-              <div key={service.id} className="col-lg-3 col-md-6">
-                <div className="service-card style2">
+              <div key={service.id} className="col-lg-4">
+                <Link className=" " to={`/service-details/${service.id}`}>
                   <div
-                    className="service-card_content"
+                    className="counter-checklist-wrap"
                     style={{ backgroundImage: `url(${service.image})` }}
                   >
-                    <div>
-                      <div className="service-card_icon">
+                    <div className="call-media-wrap">
+                      <div className="icon">
                         <img src={service.icon} alt="icon" />
                       </div>
-                      <h4 className="service-card_title h5">
-                        <Link to={`/service-details/${service.id}`}>{service.title}</Link>
-                      </h4>
-                      <p className="service-card_text">{service.description}</p>
+                      <div className="media-body">
+                        <h4 className="link">
+                          <Link className="text-white" to={`/service-details/${service.id}`}>
+                            {service.title}
+                          </Link>
+                        </h4>
+                        <p className="service-card_text text-white mt-2">
+                          {service.description}
+                        </p>
+                      </div>
+
+                    </div>
+                    <div className="checklist style-white mb-50">
+                      <div className="btn-wrap mt-20">
+                        <Link className="btn style4 px-4 py-2" to={`/service-details/${service.id}`}>
+                          Book Service <i className="fas fa-arrow-right ms-2" />
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                  <Link to={`/service-details/${service.id}`} className="btn style4">
-                    Read More <i className="fas fa-arrow-right" />
                   </Link>
                 </div>
-              </div>
             ))}
           </div>
         </div>

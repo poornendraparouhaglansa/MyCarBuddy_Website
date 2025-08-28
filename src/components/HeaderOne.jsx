@@ -7,7 +7,7 @@ import ChooseCarModal from "./ChooseCarModal";
 import { FaShoppingCart } from "react-icons/fa";
 import { useCart } from "../context/CartContext";
 import ProfileModal from "./ProfileModal";
-import { useAlert} from "../context/AlertContext";
+import { useAlert } from "../context/AlertContext";
 import axios from "axios";
 
 const API_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
@@ -23,7 +23,7 @@ const HeaderOne = () => {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [location, setLocation] = useState(null);
 
-  const [locationText, setLocationText] = useState("Fetching location...");
+  const [locationText, setLocationText] = useState("");
   const [isServiceAvailable, setIsServiceAvailable] = useState(null);
 
   const [user, setUser] = useState(null);
@@ -34,14 +34,16 @@ const HeaderOne = () => {
   const { showAlert } = useAlert();
   const navigate = useNavigate();
 
+  const [showLocationSearchModal, setShowLocationSearchModal] = useState(false);
+  const [cityList, setCityList] = useState([]);
+const [searchTerm, setSearchTerm] = useState("");
+const [filteredCities, setFilteredCities] = useState([]);
+
   useEffect(() => {
     const alreadyShown = localStorage.getItem("locationModalShown");
     if (!alreadyShown) {
       setShowLocationModal(true);
-      // auto trigger
     }
- handleGetLocation();
-    // your scroll and menu logic remains unchanged...
   }, []);
 
   useEffect(() => {
@@ -63,9 +65,9 @@ const HeaderOne = () => {
       }
 
       const carData = localStorage.getItem("selectedCarDetails");
-        if (carData) {
-          setSelectedCar(JSON.parse(carData));
-        }
+      if (carData) {
+        setSelectedCar(JSON.parse(carData));
+      }
     };
 
     loadUser();
@@ -73,7 +75,6 @@ const HeaderOne = () => {
     window.addEventListener("userProfileUpdated", loadUser);
     return () => window.removeEventListener("userProfileUpdated", loadUser);
   }, []);
-
 
   useEffect(() => {
     var offCanvasNav = document.getElementById("offcanvas-navigation");
@@ -117,62 +118,85 @@ const HeaderOne = () => {
     setActive(!active);
   };
 
-const handleGetLocation = () => {
+  const handleGetLocation = () => {
 
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const coords = position.coords;
-        setLocation(coords);
-        localStorage.setItem("location", JSON.stringify(coords));
-        localStorage.setItem("locationModalShown", "true");
-        setShowLocationModal(false);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const coords = position.coords;
+          setLocation(coords);
+          localStorage.setItem("location", JSON.stringify(coords));
+          localStorage.setItem("locationModalShown", "true");
+          setShowLocationModal(false);
 
-        const result = await getCityAndStateFromCoords(coords.latitude, coords.longitude);
-        if (result) {
-          const { city, state } = result;
-          setLocationText(`${city}, ${state}`);
+          const result = await getCityAndStateFromCoords(
+            coords.latitude,
+            coords.longitude
+          );
+          console.log(result);
+          console.log(coords.latitude, coords.longitude);
+          if (result) {
+            const { city, state , pincode } = result;
+            setLocationText(`${city}, ${state}`);
 
-          try {
-            const token = localStorage.getItem("token"); // adjust if you're storing token differently
+            try {
+              const token = localStorage.getItem("token"); // adjust if you're storing token differently
 
-            const res = await axios.get(`${API_URL}State`);
+              const res = await axios.get(`${API_URL}State`);
+              const cityres = await axios.get(`${API_URL}City`);
 
-            const states = res.data;
-            const matched = states.find(
-              (s) => s.StateName.toLowerCase() === state.toLowerCase() && s.IsActive
-            );
+              const states = res.data;
+              const matched = states.find(
+                (s) =>
+                  s.StateName.toLowerCase() === state.toLowerCase() &&
+                  s.IsActive
+              );
+              const cities = cityres.data;
+              const matchedCity = cities.find(
+                (c) =>
+                  c.CityName.toLowerCase() === city.toLowerCase() && c.IsActive
+              );
+              const pincodeMatched = cities.find(
+                (c) => c.Pincode === pincode.toLowerCase() && c.IsActive
+              );
 
-            if (matched) {
+              console.log("Matched State:", pincodeMatched);
+              
+              if (matched && pincodeMatched) {
+                setIsServiceAvailable(true);
+              } else {
+                setIsServiceAvailable(true);
+                // showAlert("Service is not available in your state.");
+              }
+            } catch (err) {
+              console.error("State API error:", err);
               setIsServiceAvailable(true);
-            } else {
-              setIsServiceAvailable(false);
-              showAlert("Service is not available in your state.");
+              // showAlert("Service is not available in your state.");
             }
-          } catch (err) {
-            console.error("State API error:", err);
-            setIsServiceAvailable(false);
-            showAlert("Failed to verify service availability.");
           }
-        }
-      },
-      (error) => {
-        console.error("Location error:", error.message);
-        setLocationText("Location not found");
-        setIsServiceAvailable(false);
-        localStorage.setItem("locationModalShown", "true");
-        setShowLocationModal(false);
-      }
-    );
-  } else {
-    showAlert("Geolocation is not supported by this browser.");
-    setLocationText("Location unavailable");
-    setIsServiceAvailable(false);
-    localStorage.setItem("locationModalShown", "true");
-    setShowLocationModal(false);
-  }
-};
+        },
+        (error) => {
 
+          // const alreadyShown = localStorage.getItem("locationModalShown");
+          // if (!alreadyShown) {
+          //   handleCityPicker();
+          // }
+          
+          // setLocationText("Location not found");
+          // setIsServiceAvailable(false);
+         
+          // setShowLocationModal(false);
+        }
+      );
+    } else {
+      
+      showAlert("Geolocation is not supported by this browser.");
+      setLocationText("Location unavailable");
+      setIsServiceAvailable(false);
+      localStorage.setItem("locationModalShown", "true");
+      setShowLocationModal(false);
+    }
+  };
 
   const handleCloseModal = () => {
     localStorage.setItem("locationModalShown", "true");
@@ -180,17 +204,81 @@ const handleGetLocation = () => {
   };
 
   const getCityAndStateFromCoords = async (lat, lon) => {
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+    console.log(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
     );
-    const data = await response.json();
-    const { city, state } = data.address;
-    return { city, state };
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
+      );
+
+      const data = await response.json();
+
+      if (data.status === "OK") {
+        let city = "";
+        let district = "";
+        let state = "";
+        let pincode = "";
+
+        const components = data.results[0].address_components;
+
+        for (let comp of components) {
+          if (comp.types.includes("locality")) {
+            city = comp.long_name; // Hyderabad usually
+          }
+          if (comp.types.includes("administrative_area_level_2")) {
+            district = comp.long_name; // Hyderabad district
+          }
+          if (comp.types.includes("administrative_area_level_1")) {
+            state = comp.long_name; // Telangana
+          }
+          if(comp.types.includes("postal_code")) {
+            pincode = comp.long_name;
+          }
+        }
+
+        // ✅ Restriction logic
+        return { city: city || district, state, pincode };
+       
+      } else {
+        console.error("Geocode error:", data.status);
+        return null;
+      }
+    } catch (error) {
+      console.error("Google Maps reverse geocode error:", error);
+      return null;
+    }
+  };
+
+
+  const handleCityPicker = async () => {
+  try {
+    const cityres = await axios.get(`${API_URL}City`);
+    if (Array.isArray(cityres.data)) {
+      const activeCities = cityres.data.filter(c => c.IsActive);
+      setCityList(activeCities);
+      setFilteredCities(activeCities);
+      setShowLocationSearchModal(true);
+    }
   } catch (error) {
-    console.error("Reverse geocode error:", error);
-    return null;
+    console.error("City API fetch error:", error);
   }
+};
+
+const handleCitySearch = (e) => {
+  const value = e.target.value.toLowerCase();
+  setSearchTerm(value);
+  setFilteredCities(
+    cityList.filter(c => c.CityName.toLowerCase().includes(value))
+  );
+};
+
+const handleSelectCity = (city) => {
+  setLocationText(`${city.CityName}, ${city.StateName}`);
+  localStorage.setItem("locationText", `${city.CityName}, ${city.StateName}`);
+  localStorage.setItem("selectedCity", JSON.stringify(city));
+  setIsServiceAvailable(true);
+  setShowLocationSearchModal(false);
 };
 
   return (
@@ -204,20 +292,26 @@ const handleGetLocation = () => {
                   <ul>
                     <li>
                       <i className="fas fa-envelope" />
-                      <Link to="mailto:info@example.com">carbuddy@example.com</Link>
+                      <Link to="mailto:info@glansa.com">info@glansa.com</Link>
                     </li>
-                   <li onClick={handleGetLocation} style={{ cursor: "pointer" }}>
-                        <i className="fas fa-map-marker-alt" />
-                        {isServiceAvailable === false ? (
-                          <span className="text-danger">Service not available at your location</span>
-                        ) : (
-                          locationText || "Detecting location..."
-                        )}
-                      </li>
                     <li>
+                      <i className="fas fa-map-marker-alt" />
+                      {isServiceAvailable === false ? (
+                        <span className="text-danger">
+                          Service is not available in your state
+                        </span>
+                      ) : (
+                        <>
+                        <span    onClick={handleCityPicker}
+                      style={{ cursor: "pointer" }}> {locationText || "Pick your city"}</span>
+                        </>
+                       
+                      )}
+                    </li>
+                    {/* <li>
                       <i className="fas fa-clock" />
                       Monday - Sunday
-                    </li>
+                    </li> */}
                   </ul>
                 </div>
               </div>
@@ -226,16 +320,25 @@ const handleGetLocation = () => {
                   <ul>
                     <li>
                       <div className="social-links">
-                        <Link to="">
+                        <Link
+                          to="https://www.facebook.com/people/Mycarbuddyin/61578291056729/?sk=about_details"
+                          target="_blank"
+                        >
                           <i className="fab fa-facebook-f" />
                         </Link>
-                        <Link to="">
+                        <Link
+                          to="https://www.instagram.com/mycarbuddy.in/"
+                          target="_blank"
+                        >
                           <i className="fab fa-instagram" />
                         </Link>
-                        <Link to="">
+                        {/* <Link to="" target="_blank">
                           <i className="fab fa-twitter" />
-                        </Link>
-                        <Link to="">
+                        </Link> */}
+                        <Link
+                          to="https://www.linkedin.com/company/108159284/admin/dashboard/"
+                          target="_blank"
+                        >
                           <i className="fab fa-linkedin" />
                         </Link>
                       </div>
@@ -259,7 +362,11 @@ const handleGetLocation = () => {
                 <div className="col-auto d-block">
                   <div className="header-logo1 ">
                     <Link to="/">
-                      <img src="/assets/img/MyCarBuddy-Logo1.png" alt="MyCarBuddy" width={200} />
+                      <img
+                        src="/assets/img/MyCarBuddy-Logo1.png"
+                        alt="MyCarBuddy"
+                        width={200}
+                      />
                     </Link>
                   </div>
                 </div>
@@ -287,7 +394,9 @@ const handleGetLocation = () => {
                             if (window.location.pathname !== "/") {
                               window.location.href = "/#scroll-to-service";
                             } else {
-                              window.dispatchEvent(new Event("scrollToService"));
+                              window.dispatchEvent(
+                                new Event("scrollToService")
+                              );
                             }
                           }}
                         >
@@ -331,26 +440,44 @@ const handleGetLocation = () => {
                     >
                       <div
                         className="navbar-right-desc-details"
-                        style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", cursor: "pointer" }}
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-start",
+                          cursor: "pointer",
+                        }}
                         onClick={() => {
                           if (user && (user.name || user.identifier)) {
-                           navigate("/profile");
+                            navigate("/profile");
                           } else {
                             setSignInVisible(true); // Show sign-in modal
                           }
                         }}
                       >
-                        <span className="header-grid-text" style={{ fontSize: "13px", color: "#555", marginBottom: "2px" }}>
-                          {user?.name || user?.identifier ? "Hello," : "Sign In"}
+                        <span
+                          className="header-grid-text"
+                          style={{
+                            fontSize: "13px",
+                            color: "#555",
+                            marginBottom: "2px",
+                          }}
+                        >
+                          {user?.name || user?.identifier
+                            ? "Hello,"
+                            : "Sign In"}
                         </span>
                         <h6
                           className="header-grid-title"
-                          style={{ fontSize: "15px", fontWeight: 600, color: "#116d6e", textDecoration: "underline" }}
+                          style={{
+                            fontSize: "15px",
+                            fontWeight: 600,
+                            color: "#116d6e",
+                            textDecoration: "underline",
+                          }}
                         >
                           {user?.name || user?.identifier || "Account"}
                         </h6>
                       </div>
-
 
                       <div
                         className="navbar-right-desc-details"
@@ -365,14 +492,22 @@ const handleGetLocation = () => {
                         {!selectedCar && (
                           <span
                             className="header-grid-text"
-                            style={{ fontSize: "13px", color: "#666", marginBottom: "2px" }}
+                            style={{
+                              fontSize: "13px",
+                              color: "#666",
+                              marginBottom: "2px",
+                            }}
                           >
                             Vehicle
                           </span>
                         )}
                         <h6
                           className="header-grid-title"
-                          style={{ fontSize: "15px", fontWeight: 600, color: "#116d6e" }}
+                          style={{
+                            fontSize: "15px",
+                            fontWeight: 600,
+                            color: "#116d6e",
+                          }}
                         >
                           <span
                             style={{
@@ -384,7 +519,10 @@ const handleGetLocation = () => {
                             {selectedCar ? (
                               <>
                                 <img
-                                  src={selectedCar.model?.logo || "https://via.placeholder.com/50"}
+                                  src={
+                                    selectedCar.model?.logo ||
+                                    "https://via.placeholder.com/50"
+                                  }
                                   alt={selectedCar.model?.name}
                                   style={{
                                     width: 40,
@@ -393,15 +531,25 @@ const handleGetLocation = () => {
                                     backgroundColor: "#fff",
                                   }}
                                 />
-                                <div style={{ display: "flex", flexDirection: "column", marginTop: '10px' }}>
-                                  <small style={{ fontSize: "12px", color: "#555" }}>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    marginTop: "10px",
+                                  }}
+                                >
+                                  <small
+                                    style={{ fontSize: "12px", color: "#555" }}
+                                  >
                                     {selectedCar.brand?.name}
                                   </small>
                                   <strong>{selectedCar.model?.name}</strong>
                                 </div>
                               </>
                             ) : (
-                              <span style={{ textDecoration: "underline" }}>Choose Your Car</span>
+                              <span style={{ textDecoration: "underline" }}>
+                                Choose Your Car
+                              </span>
                             )}
                           </span>
                         </h6>
@@ -416,10 +564,17 @@ const handleGetLocation = () => {
                           justifyContent: "center",
                         }}
                       >
-                        <span className="header-grid-text" style={{ visibility: "hidden" }}>
+                        <span
+                          className="header-grid-text"
+                          style={{ visibility: "hidden" }}
+                        >
                           {/* Cart */}
                         </span>
-                        <Link to="/cart" title="Go to Cart" style={{ color: "#116d6e", position: "relative" }}>
+                        <Link
+                          to="/cart"
+                          title="Go to Cart"
+                          style={{ color: "#116d6e", position: "relative" }}
+                        >
                           <FaShoppingCart size={22} />
                           {itemCount > 0 && (
                             <span className="badge bg-danger position-absolute top-0 start-100 translate-middle">
@@ -429,7 +584,6 @@ const handleGetLocation = () => {
                         </Link>
                       </div>
                     </div>
-
                   </div>
                 </div>
               </div>
@@ -491,8 +645,8 @@ const handleGetLocation = () => {
             </div>
             <div className="mobile-menu">
               <ul id="offcanvas-navigation">
-                <li >
-                  <Link to="#">Home</Link>
+                <li>
+                  <Link to="/">Home</Link>
                 </li>
                 <li>
                   <NavLink
@@ -502,22 +656,35 @@ const handleGetLocation = () => {
                     About
                   </NavLink>
                 </li>
-               
-                <li >
-                  <Link to="#">Service</Link>
+
+                <li>
+                 <Link
+                          to="/"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (window.location.pathname !== "/") {
+                              window.location.href = "/#scroll-to-service";
+                            } else {
+                              window.dispatchEvent(
+                                new Event("scrollToService")
+                              );
+                            }
+                          }}
+                        >Service</Link>
                 </li>
 
                 {user?.id && (
                   <li>
                     <NavLink
                       to="/profile"
-                      className={(navData) => (navData.isActive ? "active" : "")}
+                      className={(navData) =>
+                        navData.isActive ? "active" : ""
+                      }
                     >
                       Profile
                     </NavLink>
                   </li>
                 )}
-
 
                 <li>
                   <NavLink
@@ -534,25 +701,29 @@ const handleGetLocation = () => {
       </header>
 
       {showLocationModal && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          backgroundColor: "rgba(0,0,0,0.6)",
-          zIndex: 9999,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
-        }}>
-          <div style={{
-            position: "relative",
-            backgroundColor: "#fff",
-            borderRadius: "12px",
-            padding: "10px",
-            width: "90%",
-            maxWidth: "350px",
-            textAlign: "center",
-            boxShadow: "0 10px 25px rgba(0,0,0,0.25)"
-          }}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              backgroundColor: "#fff",
+              borderRadius: "12px",
+              padding: "10px",
+              width: "90%",
+              maxWidth: "350px",
+              textAlign: "center",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
+            }}
+          >
             {/* ✕ Close Icon */}
             <button
               onClick={handleCloseModal}
@@ -564,7 +735,7 @@ const handleGetLocation = () => {
                 border: "none",
                 fontSize: "22px",
                 color: "#888",
-                cursor: "pointer"
+                cursor: "pointer",
               }}
               aria-label="Close"
             >
@@ -589,7 +760,7 @@ const handleGetLocation = () => {
                 border: "none",
                 borderRadius: "6px",
                 fontSize: "12px",
-                cursor: "pointer"
+                cursor: "pointer",
               }}
             >
               Get Location
@@ -597,6 +768,61 @@ const handleGetLocation = () => {
           </div>
         </div>
       )}
+
+
+ {showLocationSearchModal && (
+  <div
+    className="modal fade show d-block"
+    style={{ backgroundColor: "rgba(0, 0, 0, 0.8)" }}
+  >
+    <div className="modal-dialog modal-dialog-centered">
+      <div className="modal-content">
+        <div className="text-end">
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setShowLocationSearchModal(false)}
+          >X</button>
+        </div>
+        <div className="modal-body">
+          <input
+            type="text"
+            className="form-control mb-3"
+            placeholder="Search city..."
+            value={searchTerm}
+            onChange={handleCitySearch}
+          />
+
+          <div
+            className="list-group"
+            style={{
+              maxHeight: "250px", // Restrict list height
+              overflowY: "auto",  // Scroll only list
+            }}
+          >
+            {filteredCities.length > 0 ? (
+              filteredCities.map((city) => (
+                <button
+                  key={city.CityID}
+                  type="button"
+                  className="list-group-item list-group-item-action"
+                  onClick={() => handleSelectCity(city)}
+                >
+                  {city.CityName}, {city.StateName}
+                </button>
+              ))
+            ) : (
+              <div className="list-group-item text-muted">
+                No cities found
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
     </>
   );
 };

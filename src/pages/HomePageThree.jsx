@@ -12,12 +12,36 @@ import AboutFour from "../components/AboutFour";
 import HeroSection from "../components/HeroSection";
 import ChooseCarModal from "../components/ChooseCarModal";
 import ServiceAreaTwo from "../components/ServiceAreaTwo";
+import ProcessAreaTwo from "../components/ProcessAreaTwo";
+import axios from "axios";
+import { Helmet } from "react-helmet-async";
 
 
 const HomePageThree = () => {
   let [active, setActive] = useState(true);
   const [showModal, setShowModal] = useState(false);
+   const [seoMeta, setSeoMeta] = useState(null);
   const serviceRef = useRef(null);
+  const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
+
+  // Fetch SEO metadata from API using page_slug=home
+  useEffect(() => {
+    const fetchSeoData = async () => {
+
+      try {
+        const res = await axios.get(
+          `${BaseURL}Seometa/page_slug?page_slug=home`
+        );
+        if (res.data) {
+          setSeoMeta(res.data[0]);
+        }
+      } catch (error) {
+        console.error("Error fetching SEO metadata:", error);
+      }
+    };
+
+    fetchSeoData();
+  }, []);
 
   useEffect(() => {
     setTimeout(() => setActive(false), 2000);
@@ -49,6 +73,15 @@ const HomePageThree = () => {
 
   return (
     <>
+     {/* ✅ Dynamic SEO Meta Tags */}
+      {seoMeta && (
+        <Helmet>
+          <title>{seoMeta.seo_title || "Home | MyCarBuddy"}</title>
+          <meta name="description" content={seoMeta.seo_description || ""} />
+          <meta name="keywords" content={seoMeta.seo_keywords || ""} />
+        </Helmet>
+      )}
+
       {/* Preloader */}
       {active === true && <Preloader />}
 
@@ -58,6 +91,7 @@ const HomePageThree = () => {
       {/* Hero Three */}
       {/* <HeroThree /> */}
       <HeroSection />
+      <ProcessAreaTwo />
 
       {/* Service Area Two */}
       <div ref={serviceRef}>
@@ -67,33 +101,6 @@ const HomePageThree = () => {
       {/* Choose Car Modal */}
       <ChooseCarModal isVisible={showModal} onClose={() => setShowModal(false)}  />
 
-      {/* Reopen button */}
-      {!showModal && (
-        <>  </>
-        // <button
-        //   style={{
-        //     position: "fixed",
-        //     right: 0,
-        //     top: "50%",
-        //     transform: "translateY(-50%)",
-        //     zIndex: 998,
-        //     padding: "10px 0px",
-        //     borderRadius: "8px 0 0 8px",
-        //     background: "#ed1c24",
-        //     color: "#fff",
-        //     border: "none",
-        //     cursor: "pointer",
-        //     transition: "transform 0.3s ease",
-        //     writingMode: "vertical-rl", // Note: camelCase in inline styles
-        //     textOrientation: "mixed",   // Also camelCase
-        //   }}
-        //   onClick={() => setShowModal(true)}
-        // >
-        //   Choose Car
-        // </button>
-
-      )}
-
 
       {/* Feature Area One */}
       <AboutFour />
@@ -101,19 +108,6 @@ const HomePageThree = () => {
 
       {/* CTA Area One */}
       <CTAAreaOne />
-
-      {/* About Three */}
-      {/* <AboutThree /> */}
-
-      {/* Intro Area One */}
-      {/* <IntroAreaOne /> */}
-
-      {/* Service Area One */}
-      {/* <ServiceAreaOne /> */}
-
-
-      {/* Portfolio Two */}
-      {/* <PortfolioTwo /> */}
 
       {/* Faq Area Two */}
       <FaqAreaTwo />

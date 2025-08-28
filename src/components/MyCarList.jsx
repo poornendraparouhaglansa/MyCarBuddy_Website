@@ -364,32 +364,63 @@ const MyCarList = () => {
           const isPrimary = car.VehicleID === primaryCarId;
 
           return (
-            <div className="col-md-4" key={car.VehicleID}>
-                
-              <div className={`border rounded shadow-sm h-100 p-3 d-flex flex-column ${isPrimary ? "border-primary" : ""}`}>
-                 <div className="d-flex justify-content-end mb-3">
+            <div className="col-md-6 mb-4" key={car.VehicleID}>
+  <div
+    className={`card h-100 shadow-sm border-0 rounded-3 ${
+      car.IsPrimary ? "border border-success" : ""
+    }`}
+  >
+    <div className="card-body p-3 d-flex flex-column">
+      {/* Primary Tag */}
+      <div className="d-flex justify-content-end">
                         {/* <i className={`bi ${isPrimary ? "bi-star-fill text-warning" : "bi-star"} fs-5 cursor-pointer`} title="Toggle Primary" role="button"  /> */}
                         <span className={`${car.IsPrimary ? "tab-pill tab-green text-white" : "tab-pill "}  px-2 py-0`}   onClick={() => handleSetPrimary(car.VehicleID)} style={{ lineHeight: "1.5", fontSize: "13px"}}>Primary</span>
                        
-                </div> 
-                <div className="row">
-                    <div className="col-md-7 text-center mb-3"> 
-                        <img src={`${IMAGE_BASE_URL}${car.VehicleImage}`} alt={car.modelName} className="mb-3 rounded w-100"  />
-                        <span className="text-muted border-car py-1 px-2">{car.VehicleNumber}</span>
-                    </div>
-                    <div className="col-md-5">
-                        <div className="text-muted small mb-2">{car.ModelName}</div>
-                        <div className="text-muted small mb-2">{car.FuelTypeName}</div>
-                       <div className="text-end mt-4">
-                        <i className="bi bi-eye text-primary fs-5 cursor-pointer" title="View" role="button" onClick={() => setViewCar(car)} />
-                         <i className="bi bi-trash text-danger fs-5 cursor-pointer" title="Delete" role="button" onClick={() => handleDelete(car.VehicleID)} />
-                        
-                        </div>
-                    </div>
-                    
                 </div>
-              </div>
-            </div>
+
+      {/* Vehicle Details */}
+      <div className="row g-3">
+        {/* Vehicle Image */}
+        <div className="col-md-7 text-center">
+          <img
+            src={`${IMAGE_BASE_URL}${car.VehicleImage}`}
+            alt={car.ModelName}
+            className="img-fluid rounded"
+            style={{ maxHeight: "120px", objectFit: "cover" }}
+          />
+          <div className="mt-2">
+            <span className="text-muted border-car py-1 px-2">{car.VehicleNumber}</span>
+          </div>
+        </div>
+
+        {/* Vehicle Info */}
+        <div className="col-md-5 d-flex flex-column justify-content-between">
+          <div>
+            <p className="text-dark fw-semibold mb-1 mt-3">{car.BrandName}</p>
+            <p className="text-dark fw-semibold mb-1">{car.ModelName}</p>
+            <p className="text-muted small mb-1">{car.FuelTypeName}</p>
+          </div>
+
+          <div className="text-end">
+            <i
+              className="bi bi-eye text-primary fs-5 me-2 cursor-pointer"
+              title="View"
+              role="button"
+              onClick={() => setViewCar(car)}
+            />
+            <i
+              className="bi bi-trash text-danger fs-5 cursor-pointer"
+              title="Delete"
+              role="button"
+              onClick={() => handleDelete(car.VehicleID)}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
           );
         })}
       </div>

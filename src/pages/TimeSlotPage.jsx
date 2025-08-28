@@ -29,7 +29,7 @@ const TimeSlotPage = () => {
       <SelectTimeSlotPage />
 
       {/* Subscribe One */}
-      <SubscribeOne />
+      {/* <SubscribeOne /> */}
 
       {/* Footer Area One */}
       <FooterAreaOne />

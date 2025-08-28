@@ -23,16 +23,16 @@ const AboutFour = () => {
                     {({ isVisible }) =>
                       isVisible && (
                         <span className="counter-number">
-                          <CountUp delay={0} start={0} end={5} />
-                          k+
+                          <CountUp delay={0} start={0} end={30} />
+                          + <span className="text-sm" style={{ fontSize: "20px" }}>Years</span>
                         </span>
                       )
                     }
                   </TrackVisibility>
                 </h3>
-                <h4 className="about-counter-text">Trusted Customer</h4>
+                <h4 className="about-counter-text">Domain Industry Expertise</h4>
               </div>
-              <div className="about-year-wrap2 movingX">
+              {/* <div className="about-year-wrap2 movingX">
                 <div className="about-year-grid-wrap">
                   <div className="icon">
                     <img
@@ -54,7 +54,7 @@ const AboutFour = () => {
                   </h3>
                 </div>
                 <h4 className="about-year-text">Years Of Experiences</h4>
-              </div>
+              </div> */}
             </div>
           </div>
           <div className="col-xxl-5 col-xl-6">
@@ -65,7 +65,9 @@ const AboutFour = () => {
                  Professional Car Service You Can Trust
                 </h2>
                 <p className="sec-text">
-                  At MyCarBuddy, we specialize in providing reliable, professional, and convenient car care solutions right at your doorstep. Whether it's a quick interior clean or a complete service package, our skilled technicians are trained to handle every detail with precision and care.
+                 At My Car Buddy, we make car care effortless by bringing professional services straight to your doorstep. No more waiting at garages or service centers. Our expert mechanics and technicians come to you, whenever and wherever you need them.
+<br></br>Whether it’s a routine service, car wash, detailing, oil change, battery replacement, or emergency breakdown support, we’ve got you covered. With just a few taps on our app or website, you can book a service at your convenience and relax while our team takes care of the rest.
+
                 </p>
               </div>
              <div className="col-xl-auto col-lg-6">

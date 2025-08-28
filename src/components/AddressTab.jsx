@@ -133,7 +133,7 @@ const AddressTab = ({ custID = 0 }) => {
                   </div>
                   <hr />
                   <p className="mb-1">{addr.address1}</p>
-                  <p className="mb-0">{addr.address2}</p>
+                  {/* <p className="mb-0">{addr.address2}</p> */}
                   {/* {addr.isPrimary && (
                     <span className="badge bg-danger mt-2">Primary</span>
                   )} */}

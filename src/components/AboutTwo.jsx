@@ -16,7 +16,7 @@ const AboutTwo = () => {
               <div className="about-img-2">
                 <img src="assets/img/normal/about_2-2.png" alt="CarBuddy" />
               </div>
-              <div className="about-counter-wrap jump-reverse">
+              {/* <div className="about-counter-wrap jump-reverse">
                 <img src="assets/img/icon/about_icon2-1.svg" alt="CarBuddy" />
                 <h3 className="about-counter">
                   <TrackVisibility once>
@@ -30,8 +30,8 @@ const AboutTwo = () => {
                   </TrackVisibility>
                 </h3>
                 <h4 className="about-counter-text">Happy Customers Served</h4>
-              </div>
-              <div className="about-year-wrap2 movingX">
+              </div> */}
+              {/* <div className="about-year-wrap2 movingX">
                 <div className="about-year-grid-wrap">
                   <div className="icon">
                     <img src="assets/img/icon/about_icon2-2.png" alt="CarBuddy" />
@@ -41,7 +41,7 @@ const AboutTwo = () => {
                   </h3>
                 </div>
                 <h4 className="about-year-text">Years of Car Care Experience</h4>
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -59,16 +59,23 @@ const AboutTwo = () => {
                   />
                 </h2>
                 <p className="sec-text">
-                  At <strong>CarBuddy</strong>, we make car washing convenient by
-                  bringing professional-grade interior and exterior cleaning right
-                  to your doorstep. No queues, no waiting — just premium, eco-friendly
-                  car care while you relax at home or work. Our trained experts ensure
-                  every inch of your car is spotless, fresh, and shining like new.
+                 At My Car Buddy, we make car care effortless by bringing professional services straight to your doorstep. No more waiting at garages or service centers. Our expert mechanics and technicians come to you, whenever and wherever you need them.
+<br></br>Whether it’s a routine service, car wash, detailing, oil change, battery replacement, or emergency breakdown support, we’ve got you covered. With just a few taps on our app or website, you can book a service at your convenience and relax while our team takes care of the rest.
+<br></br>We believe in quality, transparency, and trust. Our mechanics are trained professionals who use top-grade products and modern techniques to ensure your car gets the best care possible. Plus, with upfront pricing and live tracking, you always know what’s happening with your vehicle.
+
                 </p>
               </div>
 
               {/* Feature 1 */}
-              <div className="about-feature-wrap style-shadow">
+             
+
+            </div>
+          </div>
+        </div>
+        <div className="row mt-4">
+          <div className="col-xxl-7 col-xl-6">
+
+            <div className="about-feature-wrap style-shadow">
                 <div className="icon">
                   <img src="assets/img/icon/about_icon2-3.svg" alt="CarBuddy" />
                 </div>
@@ -81,6 +88,10 @@ const AboutTwo = () => {
                 </div>
               </div>
 
+
+          </div>
+          <div className="col-xxl-5 col-xl-6">
+             
               {/* Feature 2 */}
               <div className="about-feature-wrap style-shadow">
                 <div className="icon">
@@ -95,8 +106,6 @@ const AboutTwo = () => {
                   </p>
                 </div>
               </div>
-
-            </div>
           </div>
         </div>
       </div>

@@ -29,7 +29,7 @@ const CartPage = () => {
       <Cart />
 
       {/* Subscribe One */}
-      <SubscribeOne />
+      {/* <SubscribeOne /> */}
 
       {/* Footer Area One */}
       <FooterAreaOne />

@@ -4,7 +4,7 @@ import { Navigation, FreeMode, Thumbs, EffectFade } from "swiper";
 const TestimonialOne = () => {
   return (
     <div
-      className="testimonial-area-1 overflow-hidden"
+      className="testimonial-area-1 overflow-hidden pt-2"
       style={{ backgroundImage: "url(assets/img/bg/testimonial-bg1-1.png)" }}
     >
       <div className="container">

@@ -318,11 +318,15 @@ setAllServices(response.data);
                 <div className="widget widget_contact bg-light p-3 rounded text-center">
                   <h5 className="widget_title mb-2">Need Help?</h5>
                   <p className="text-muted mb-2">Have questions about this service?</p>
-                  <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Exercitationem enim veniam, quasi incidunt odio magni dolorem cumque quo aperiam, quisquam eius. Quidem nam provident fuga facere quisquam deserunt voluptas consequuntur?</p>
+                  <p>At <strong>My Car Buddy</strong>, powered by{" "}
+                <strong>Glansa Solutions Pvt. Ltd.</strong>, we aim to make your car
+                care experience seamless and worry-free. Whether you need assistance
+                with booking, payments, service updates, or technical support, our team
+                is ready to help.</p>
                   <div className="icon fs-3 mb-2 text-primary">
                     <i className="fas fa-phone-alt"></i>
                   </div>
-                  <h5><Link to="tel:80855510111">(808) 555-0111</Link></h5>
+                  <h5><Link to="tel:9885653865">+91 98856 53865</Link></h5>
                 </div>
               </aside>
             </div>
