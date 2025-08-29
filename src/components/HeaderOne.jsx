@@ -292,7 +292,7 @@ const handleSelectCity = (city) => {
                   <ul>
                     <li>
                       <i className="fas fa-envelope" />
-                      <Link to="mailto:info@glansa.com">info@glansa.com</Link>
+                      <Link to="mailto:info@mycarbuddy.in">info@mycarbuddy.in</Link>
                     </li>
                     <li>
                       <i className="fas fa-map-marker-alt" />

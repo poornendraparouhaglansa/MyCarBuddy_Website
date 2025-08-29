@@ -45,7 +45,7 @@ const CartPage = () => {
             <table className="table align-middle">
               <thead>
                 <tr>
-                  <th>SNO</th>
+                  <th>S.No</th>
                   <th>Service</th>
                   <th>Price</th>
                   <th />

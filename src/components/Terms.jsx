@@ -116,7 +116,8 @@ const Terms = () => {
         Flat No. 102, Mahalaxmi Paradise, Aswini Colony, West Maredpally,{" "}
         Secunderabad, Hyderabad, Telangana – 500026, India. <br />
         📧 Email: info@glansa.com <br />
-        📞 Phone: +91 9885653865
+        📞 Phone: +91 9885653865<br/>
+        📞 Phone: +91 70752 43939
       </p>
     </div>
   );

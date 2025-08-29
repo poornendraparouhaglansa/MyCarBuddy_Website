@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import HeaderOne from "../components/HeaderOne";
 import FooterAreaOne from "../components/FooterAreaOne";
 import Breadcrumb from "../components/Breadcrumb";
-import SubscribeOne from "../components/SubscribeOne";
+// import SubscribeOne from "../components/SubscribeOne";
 import Preloader from "../helper/Preloader";
-import Profile from "../components/Profile";
+// import Profile from "../components/Profile";
 import MainProfile from "../components/MainProfile";
 
 const ProfilePage = () => {

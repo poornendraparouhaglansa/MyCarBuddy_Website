@@ -3,8 +3,8 @@ import HeaderOne from "../components/HeaderOne";
 
 import FooterAreaOne from "../components/FooterAreaOne";
 import Breadcrumb from "../components/Breadcrumb";
-import SubscribeOne from "../components/SubscribeOne";
-import ServiceDetails from "../components/ServiceDetails";
+// import SubscribeOne from "../components/SubscribeOne";
+// import ServiceDetails from "../components/ServiceDetails";
 import Preloader from "../helper/Preloader";
 import ServiceCards from "../components/ServiceCards";
 import axios from "axios";

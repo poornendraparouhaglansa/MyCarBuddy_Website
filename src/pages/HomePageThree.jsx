@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import HeaderOne from "./../components/HeaderOne";
-import HeaderTwo from "./../components/HeaderTwo";
+// import HeaderTwo from "./../components/HeaderTwo";
 import FaqAreaTwo from "../components/FaqAreaTwo";
 import MarqueeOne from "../components/MarqueeOne";
 import CTAAreaOne from "../components/CTAAreaOne";
 import TestimonialOne from "../components/TestimonialOne";
 import FooterAreaOne from "../components/FooterAreaOne";
-import SubscribeOne from "../components/SubscribeOne";
+// import SubscribeOne from "../components/SubscribeOne";
 import Preloader from "../helper/Preloader";
 import AboutFour from "../components/AboutFour";
 import HeroSection from "../components/HeroSection";

@@ -1,4 +1,4 @@
-import React , { useEffect , useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import HeaderOne from "./HeaderOne";
 import Breadcrumb from "./Breadcrumb";
@@ -16,13 +16,13 @@ const ImageURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
 const ServiceDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-    const { cartItems, addToCart } = useCart();
+  const { cartItems, addToCart } = useCart();
   const [services, setServices] = React.useState([]);
-    const [selectedCar, setSelectedCar] = useState(null);
-      const [showCarModal, setShowCarModal] = useState(false);
-      const [allServices, setAllServices] = useState([]);
+  const [selectedCar, setSelectedCar] = useState(null);
+  const [showCarModal, setShowCarModal] = useState(false);
+  const [allServices, setAllServices] = useState([]);
 
-      const selectedCarDetails = JSON.parse(localStorage.getItem("selectedCarDetails"));
+  const selectedCarDetails = JSON.parse(localStorage.getItem("selectedCarDetails"));
   let brandId;
   let modelId;
   let fuelId;
@@ -51,67 +51,67 @@ const ServiceDetails = () => {
         setSelectedCar(null);
       }
     };
-  
+
     loadSelectedCar();
-  
+
     // Listen to custom event triggered after login
     const handleProfileUpdate = () => {
       loadSelectedCar();
     };
-  
+
     window.addEventListener("userProfileUpdated", handleProfileUpdate);
-  
+
     return () => {
       window.removeEventListener("userProfileUpdated", handleProfileUpdate);
     };
   }, []);
-  
+
 
   useEffect(() => {
-         const fetchPackages = async () => {
+    const fetchPackages = async () => {
       try {
         const response = await axios.get(
           `${BaseURL}PlanPackage/GetPlanPackagesByCategoryAndSubCategory`
         );
-                 
-//         if (Array.isArray(response)) {
-//  console.log("Fetched packages:", );
-setAllServices(response.data);
 
-         const formatted = response.data
-  .filter(pkg => pkg.PackageID === parseInt(id))
-  .map(pkg => {
-    const hours = pkg.EstimatedDurationMinutes
-      ? pkg.EstimatedDurationMinutes // 1 decimal place
-      : null;
+        //         if (Array.isArray(response)) {
+        //  console.log("Fetched packages:", );
+        setAllServices(response.data);
 
-    return {
-      id: pkg.PackageID,
-      title: pkg.PackageName,
-       banners: pkg.BannerImage
-      ? pkg.BannerImage.split(",").map(img => `${ImageURL}${img.trim()}`)
-      : [],
-      image: `${ImageURL}${pkg.PackageImage}`,
-      tag: "Featured Package",
-      duration: pkg.EstimatedDurationMinutes ? `${pkg.EstimatedDurationMinutes} ` : "N/A",
-      price: pkg.Serv_Off_Price,
-      originalPrice: pkg.Serv_Reg_Price,
-      includes: pkg.IncludeNames
-        ? pkg.IncludeNames.split(",").map(i => i.trim())
-        : [],
-      BrandId: "",
-      ModelId: "",
-      isActive: pkg.IsActive,
-      EstimatedDurationMinutes: pkg.EstimatedDurationMinutes,
-      EstimatedDurationHours: hours, // Keep hours separately too if needed
-      Description: pkg.Description,
-      categoryId: pkg.CategoryID,
-    };
-  });
+        const formatted = response.data
+          .filter(pkg => pkg.PackageID === parseInt(id))
+          .map(pkg => {
+            const hours = pkg.EstimatedDurationMinutes
+              ? pkg.EstimatedDurationMinutes // 1 decimal place
+              : null;
+
+            return {
+              id: pkg.PackageID,
+              title: pkg.PackageName,
+              banners: pkg.BannerImage
+                ? pkg.BannerImage.split(",").map(img => `${ImageURL}${img.trim()}`)
+                : [],
+              image: `${ImageURL}${pkg.PackageImage}`,
+              tag: "Featured Package",
+              duration: pkg.EstimatedDurationMinutes ? `${pkg.EstimatedDurationMinutes} ` : "N/A",
+              price: pkg.Serv_Off_Price,
+              originalPrice: pkg.Serv_Reg_Price,
+              includes: pkg.IncludeNames
+                ? pkg.IncludeNames.split(",").map(i => i.trim())
+                : [],
+              BrandId: "",
+              ModelId: "",
+              isActive: pkg.IsActive,
+              EstimatedDurationMinutes: pkg.EstimatedDurationMinutes,
+              EstimatedDurationHours: hours, // Keep hours separately too if needed
+              Description: pkg.Description,
+              categoryId: pkg.CategoryID,
+            };
+          });
 
 
-            setServices(formatted);
-        
+        setServices(formatted);
+
 
         // } else {
         //   setPackages([]);
@@ -148,48 +148,48 @@ setAllServices(response.data);
                 <div className="page-img mb-4">
                   <div className="d-flex1">
                     <div className="w-100">
-                     <div
-                          id="serviceCarousel"
-                          className="carousel slide mb-4"
-                          data-bs-ride="carousel"
-                          data-bs-interval="3000"  // 3 seconds
-                        >
-                          <div className="carousel-inner">
-                            {service.banners.map((img, idx) => (
-                              <div
-                                className={`carousel-item ${idx === 0 ? "active" : ""}`}
-                                key={idx}
-                              >
-                                <img
-                                  src={img}
-                                  className="d-block w-100 rounded"
-                                  alt={`${service.title} ${idx + 1}`}
-                                  style={{ objectFit: "cover", height: "400px" }}
-                                />
-                              </div>
-                            ))}
-                          </div>
-
-                          <button
-                            className="carousel-control-prev"
-                            type="button"
-                            data-bs-target="#serviceCarousel"
-                            data-bs-slide="prev"
-                          >
-                            <span className="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span className="visually-hidden">Previous</span>
-                          </button>
-
-                          <button
-                            className="carousel-control-next"
-                            type="button"
-                            data-bs-target="#serviceCarousel"
-                            data-bs-slide="next"
-                          >
-                            <span className="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span className="visually-hidden">Next</span>
-                          </button>
+                      <div
+                        id="serviceCarousel"
+                        className="carousel slide mb-4"
+                        data-bs-ride="carousel"
+                        data-bs-interval="3000"  // 3 seconds
+                      >
+                        <div className="carousel-inner">
+                          {service.banners.map((img, idx) => (
+                            <div
+                              className={`carousel-item ${idx === 0 ? "active" : ""}`}
+                              key={idx}
+                            >
+                              <img
+                                src={img}
+                                className="d-block w-100 rounded"
+                                alt={`${service.title} ${idx + 1}`}
+                                style={{ objectFit: "cover", height: "400px" }}
+                              />
+                            </div>
+                          ))}
                         </div>
+
+                        <button
+                          className="carousel-control-prev"
+                          type="button"
+                          data-bs-target="#serviceCarousel"
+                          data-bs-slide="prev"
+                        >
+                          <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+                          <span className="visually-hidden">Previous</span>
+                        </button>
+
+                        <button
+                          className="carousel-control-next"
+                          type="button"
+                          data-bs-target="#serviceCarousel"
+                          data-bs-slide="next"
+                        >
+                          <span className="carousel-control-next-icon" aria-hidden="true"></span>
+                          <span className="visually-hidden">Next</span>
+                        </button>
+                      </div>
 
                     </div>
 
@@ -198,14 +198,14 @@ setAllServices(response.data);
                       {/* <p className="mb-0 fw-regular text-muted"> {service.duration}</p> */}
                     </div>
                   </div>
-                  
+
 
                   <div className="d-flex justify-content-between align-items-center px-4 py-3" style={{ backgroundColor: '#f1f1f1' }}>
 
-                   {selectedCar ? (
+                    {selectedCar ? (
                       <>
-                    <h5 className="mb-0 fw-bold text-dark">₹ {service.price}</h5>
-                     {isInCart ? (
+                        <h5 className="mb-0 fw-bold text-dark">₹ {service.price}</h5>
+                        {isInCart ? (
                           <button
                             className="btn style-border2"
                             onClick={(e) => {
@@ -216,17 +216,17 @@ setAllServices(response.data);
                             ✔ View Cart
                           </button>
                         ) : (
-                          <button className="btn btn-danger fw-bold"  onClick={(e) => {
-                              e.stopPropagation();
-                              addToCart(service);
-                              toast.success("Service added to cart");
-                            }}>
-                      + ADD TO CART
-                    </button>
-                    
+                          <button className="btn btn-danger fw-bold" onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(service);
+                            toast.success("Service added to cart");
+                          }}>
+                            + ADD TO CART
+                          </button>
+
                         )}
-                        </>
-                        ) : (
+                      </>
+                    ) : (
                       <>
                         <div className="text-muted fst-italic mb-2">Select your car to see price</div>
                         <button
@@ -240,7 +240,7 @@ setAllServices(response.data);
                         </button>
                       </>
                     )}
-                    
+
                   </div>
                 </div>
 
@@ -249,8 +249,8 @@ setAllServices(response.data);
                 <div className="page-content">
                   <h2 className="page-title">{service.title}</h2>
                   <p className="text-muted mb-3">{service.duration}</p>
-                 <p>
-                  {service.Description}
+                  <p>
+                    {service.Description}
                   </p>
 
                   <h4 className="mt-4 mb-2">Included in this service:</h4>
@@ -319,14 +319,15 @@ setAllServices(response.data);
                   <h5 className="widget_title mb-2">Need Help?</h5>
                   <p className="text-muted mb-2">Have questions about this service?</p>
                   <p>At <strong>My Car Buddy</strong>, powered by{" "}
-                <strong>Glansa Solutions Pvt. Ltd.</strong>, we aim to make your car
-                care experience seamless and worry-free. Whether you need assistance
-                with booking, payments, service updates, or technical support, our team
-                is ready to help.</p>
+                    <strong>Glansa Solutions Pvt. Ltd.</strong>, we aim to make your car
+                    care experience seamless and worry-free. Whether you need assistance
+                    with booking, payments, service updates, or technical support, our team
+                    is ready to help.</p>
                   <div className="icon fs-3 mb-2 text-primary">
                     <i className="fas fa-phone-alt"></i>
                   </div>
-                  <h5><Link to="tel:9885653865">+91 98856 53865</Link></h5>
+                  <h5> <Link to="tel:7075243939">+91 70752 43939</Link><br /> <Link to="tel:9885653865"> +91 98856 53865</Link>
+                  </h5>
                 </div>
               </aside>
             </div>
@@ -334,20 +335,20 @@ setAllServices(response.data);
         </div>
 
         <ChooseCarModal
-        isVisible={showCarModal}
-        onClose={() => {
-          setShowCarModal(false);
-          const saved = localStorage.getItem("selectedCarDetails");
-          if (saved) {
-            try {
-              setSelectedCar(JSON.parse(saved));
-            } catch (err) {
-              console.error("Error parsing selected car", err);
+          isVisible={showCarModal}
+          onClose={() => {
+            setShowCarModal(false);
+            const saved = localStorage.getItem("selectedCarDetails");
+            if (saved) {
+              try {
+                setSelectedCar(JSON.parse(saved));
+              } catch (err) {
+                console.error("Error parsing selected car", err);
+              }
             }
-          }
-        }}
-        onCarSaved={(car) => setSelectedCar(car)}
-      />
+          }}
+          onCarSaved={(car) => setSelectedCar(car)}
+        />
       </div>
       {/* <SubscribeOne /> */}
     </>

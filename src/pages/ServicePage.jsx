@@ -3,7 +3,7 @@ import HeaderOne from "../components/HeaderOne";
 
 import FooterAreaOne from "../components/FooterAreaOne";
 import Breadcrumb from "../components/Breadcrumb";
-import SubscribeOne from "../components/SubscribeOne";
+// import SubscribeOne from "../components/SubscribeOne";
 import ServiceAreaOneMultiImg from "../components/ServiceAreaOneMultiImg";
 import Preloader from "../helper/Preloader";
 

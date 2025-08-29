@@ -64,13 +64,13 @@ const FooterAreaOne = () => {
                 <h3 className="widget_title">Contact</h3>
                 <div className="widget-contact">
                   <p>
-                    <Link to="tel:888123456765">+91 98856 53865</Link>
+                  <Link to="tel:7075243939">+91 70752 43939</Link><br /> <Link to="tel:9885653865"> +91 98856 53865</Link>
                   </p>
                   <p>
-                    <Link to="mailto:info@glansa.com">info@glansa.com</Link>
+                    <Link to="mailto:info@mycarbuddy.in">info@mycarbuddy.in</Link>
                   </p>
                   <p>
-                   Flat No. 102, Mahalaxmi Paradise,<br></br> Aswini Colony, West Maredpally,<br /> Secunderabad,  Hyderabad <br /> India, 500081
+                   Unit #B1, Second Floor Spaces & More Business Park,<br></br> Madhapur #3 D.No# 1-89/A/8, C/2, Vittal Rao Nagar Rd,<br /> Madhapur,  Hyderabad <br /> India, 500081
                   </p>
                 </div>
               </div>

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const ContactArea = () => {
   return (
@@ -25,7 +26,7 @@ const ContactArea = () => {
                 </div>
                 <h6 className="contact-info_title">Phone Number</h6>
                 <p className="contact-info_text">
-                  <a href="tel:9885653865">+91 98856 53865</a>
+                  <Link to="tel:7075243939">+91 70752 43939</Link><br /> <Link to="tel:9885653865"> +91 98856 53865</Link>
                 </p>
                 <p className="contact-info_text">
                   {/* <a href="tel:01254693326">01254693326</a> */}
@@ -49,8 +50,8 @@ const ContactArea = () => {
                 </div>
                 <h6 className="contact-info_title">E-mail</h6>
                 <p className="contact-info_text">
-                  <a href="mailto:info@glansa.com">
-                    info@glansa.com
+                  <a href="mailto:info@mycarbuddy.in">
+                    info@mycarbuddy.in
                   </a>
                 </p>
                 <p className="contact-info_text">
