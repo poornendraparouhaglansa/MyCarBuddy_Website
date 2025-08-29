@@ -58,7 +58,7 @@ const HeroSection = () => {
              <div className="hero-subtitle text-white" data-ani="slideinup" data-ani-delay="0s">
                                 <span>
                                   <img src="assets/img/hero/hero_shape_3.png" alt="MyCarBuddy" />
-                                  Welcome MyCarBuddy
+                                  Welcome To MyCarBuddy
                                 </span>
                               </div>
                               <h1 className="hero-title text-white" data-ani="slideinup" data-ani-delay="0.1s">

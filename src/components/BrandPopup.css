@@ -67,8 +67,9 @@
 
 .brand-scroll-container {
   max-height: 380px;
-  overflow-y: auto;
+  /* overflow-y: auto; */
   padding-right: 4px;
+  margin-top: 10px;
 }
 
 .brand-scroll-container::-webkit-scrollbar {

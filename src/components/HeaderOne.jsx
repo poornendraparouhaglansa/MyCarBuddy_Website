@@ -365,7 +365,7 @@ const handleSelectCity = (city) => {
                       <img
                         src="/assets/img/MyCarBuddy-Logo1.png"
                         alt="MyCarBuddy"
-                        width={200}
+                        width={300}
                       />
                     </Link>
                   </div>

@@ -557,7 +557,7 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
     key: process.env.REACT_APP_RAZORPAY_KEY,
     amount: amount * 100,
     currency: "INR",
-    name: "MyCarBuddy",
+    name: "MyCarBuddy a product by Glansa Solutions Pvt. Ltd.",
     order_id: data.razorpay.orderID,
     description: "Payment for Car Services",
     image: "/assets/img/MyCarBuddy-Logo1.png",

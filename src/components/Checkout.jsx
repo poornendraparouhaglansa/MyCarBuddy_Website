@@ -22,7 +22,7 @@ const Checkout = () => {
       key: process.env.REACT_APP_RAZORPAY_KEY,
       amount: totalAmount * 100,
       currency: "INR",
-      name: "MyCarBuddy",
+      name: "MyCarBuddy a product by Glansa Solutions Pvt. Ltd.",
       description: "Test Payment for Car Services",
       image: "./public/assets/img/logo-yellow-01.png",
       handler: function (response) {
