@@ -3,6 +3,7 @@ import "./ChooseCarModal.css";
 import BrandPopup from "./BrandPopup"; // new popup component
 import ModelPopup from "./ModelPopup";
 import axios from "axios";
+import { useAlert } from "../context/AlertContext";
 
 const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
   const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
@@ -18,6 +19,9 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
   const modalRef = useRef();
   const imageBaseURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
   const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
+
+  const { showAlert } = useAlert();
+
 
   useEffect(() => {
     const fetchBrands = async () => {
@@ -61,7 +65,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
         const getImageUrl = (path) => {
           if (!path) return "https://via.placeholder.com/100?text=No+Image";
           const fileName = path.split('/').pop();
-          return  `${imageBaseURL}${path.startsWith("/") ? path.slice(1) : path}`;
+          return `${imageBaseURL}${path.startsWith("/") ? path.slice(1) : path}`;
         };
         const filteredModels = response.data.data
           .filter((m) => m.BrandID === brandId && m.IsActive)
@@ -111,7 +115,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
     e.preventDefault();
 
     if (!brand || !model || !fuel) {
-      alert("Please select brand, model, and fuel type.");
+       showAlert("Missing Info", "Please select brand, model, and fuel type.", 3000, "error");
       return;
     }
 
@@ -131,10 +135,11 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
     if (onCarSaved) {
       onCarSaved(selectedCarDetails);
     }
+    localStorage.removeItem("cartItems");
 
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
 
     console.log("Saved Car:", selectedCarDetails);
 
@@ -155,7 +160,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
     setModel(id);
     setShowModelPopup(false);
   };
-  
+
 
   return (
     <div className={`choose-car-modal ${isVisible ? "visible" : "hidden"}`}>

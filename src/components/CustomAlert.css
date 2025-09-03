@@ -1,22 +1,25 @@
 .custom-alert-backdrop {
   position: fixed;
-  top: 60px;
-  right: 20px;
+  bottom: 40px;
+  left: 80%;
+  transform: translateX(-50%);
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
 }
 
 .custom-alert {
   background: #ffffff;
   border-left: 6px solid #ffdd00;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  font-size: 15px;
   padding: 16px 20px;
   width: 280px;
   margin-top: 10px;
-  animation: slideIn 0.3s ease;
+  /* animation: slideIn 0.3s ease; */
+  animation: slideDownBounce 0.6s ease;
 }
 
 .custom-alert-header {
@@ -57,19 +60,37 @@
   }
 }
 
+@keyframes slideDownBounce {
+  0% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.9);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateY(10px) scale(1.05);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+
 .custom-alert.info {
   border-left: 6px solid #ffdd00;
+  background-color: #fffbea;
   /* Yellow for info/warning */
 }
 
 .custom-alert.error {
   border-left: 6px solid #e53935;
   /* Red for errors */
-  background-color: #fff5f5;
+  background-color: #fdecea;
 }
 
 .custom-alert.success {
   border-left: 6px solid #4caf50;
   /* Optional: green for success */
-  background-color: #f5fff5;
+  background-color: #eafaf1;
 }

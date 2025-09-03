@@ -1232,7 +1232,7 @@ const getGST = () => {
                     onChange={() => setPaymentMethod("COS")}
                   />
                   <label className="form-check-label" htmlFor="COS">
-                    Cash on Service
+                    Pay After Completion
                   </label>
                 </div>
 
