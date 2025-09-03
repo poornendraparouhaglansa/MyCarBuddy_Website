@@ -89,8 +89,8 @@ const HeroFive = () => {
                   <div className="col-lg-6 align-self-end">
                     <div className="hero-thumb text-lg-center">
                       <img
-                        src="assets/img/testimonial/testimonial-1-1.png"
-                        alt="Fixturbo"
+                        src="assets/img/testimonial/testimonial-1-1.webp"
+                        alt="MyCarBuddy"
                       />
                     </div>
                   </div>

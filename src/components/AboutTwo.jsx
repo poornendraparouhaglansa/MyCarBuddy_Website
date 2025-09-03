@@ -100,7 +100,7 @@ const AboutTwo = () => {
                 <div className="about-feature-wrap-details">
                   <h5 className="about-feature-title">Shiny Exterior Finish</h5>
                   <p className="about-feature-text">
-                    Gentle hand wash, high-pressure rinse, tire cleaning, and wax
+                    Gentle hand wash, high-pressure rinse, tyre cleaning, and wax
                     protection to keep your car looking brand new — right in your
                     driveway.
                   </p>

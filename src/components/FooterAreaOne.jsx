@@ -13,7 +13,7 @@ const FooterAreaOne = () => {
       <div className="container">
         <div className="widget-area p-4">
           <div className="col-md-12 text-center">
-               <img src="/assets/img/MyCarBuddy-Logo1.png" alt="MyCarBuddy"  width={"300px"}/>
+               <img src="/assets/img/MyCarBuddy-Logo1.webp" alt="MyCarBuddy"  width={"300px"}/>
           </div>
           <div className="row justify-content-between">
 
@@ -28,17 +28,7 @@ const FooterAreaOne = () => {
                       <Link to="/about">About</Link>
                     </li>
                     <li>
-                      <Link  to="/"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (window.location.pathname !== "/") {
-                              window.location.href = "/#scroll-to-service";
-                            } else {
-                              window.dispatchEvent(
-                                new Event("scrollToService")
-                              );
-                            }
-                          }}>Services</Link>
+                      <Link  to="/service">Services</Link>
                     </li>
                     <li>
                       <Link to="/contact">Contact</Link>
@@ -70,7 +60,7 @@ const FooterAreaOne = () => {
                     <Link to="mailto:info@mycarbuddy.in">info@mycarbuddy.in</Link>
                   </p>
                   <p>
-                   Unit #B1, Second Floor Spaces & More Business Park,<br></br> Madhapur #3 D.No# 1-89/A/8, C/2, Vittal Rao Nagar Rd,<br /> Madhapur,  Hyderabad <br /> India, 500081
+                   Unit #B1, Second Floor Spaces & More Business Park,<br></br> Madhapur #3 D.No# 1-89/A/8, C/2, Vittal Rao Nagar Rd, Madhapur,  Hyderabad India, 500081
                   </p>
                 </div>
               </div>

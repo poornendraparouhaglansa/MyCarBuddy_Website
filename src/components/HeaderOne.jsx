@@ -40,10 +40,25 @@ const [searchTerm, setSearchTerm] = useState("");
 const [filteredCities, setFilteredCities] = useState([]);
 
   useEffect(() => {
-    const alreadyShown = localStorage.getItem("locationModalShown");
-    if (!alreadyShown) {
-      setShowLocationModal(true);
-    }
+    let timeoutId;
+
+    const handleScroll = () => {
+      // Only show modal if it hasn't been shown yet
+      const alreadyShown = localStorage.getItem("locationModalShown");
+      if (!alreadyShown && !timeoutId) {
+        // Wait 5 seconds after first scroll
+        timeoutId = setTimeout(() => {
+          setShowLocationModal(true);
+        }, 3000);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   useEffect(() => {
@@ -288,7 +303,7 @@ const handleSelectCity = (city) => {
           <div className="container">
             <div className="row justify-content-center justify-content-lg-between align-items-center gy-2">
               <div className="col-auto d-none d-lg-block">
-                <div className="header-links">
+                <div className="header-links pl-30">
                   <ul>
                     <li>
                       <i className="fas fa-envelope" />
@@ -363,9 +378,10 @@ const handleSelectCity = (city) => {
                   <div className="header-logo1 ">
                     <Link to="/">
                       <img
-                        src="/assets/img/MyCarBuddy-Logo1.png"
+                        src="/assets/img/MyCarBuddy-Logo1.webp"
                         alt="MyCarBuddy"
                         width={300}
+                        height={100}
                       />
                     </Link>
                   </div>
@@ -388,17 +404,17 @@ const handleSelectCity = (city) => {
                       </li>
                       <li>
                         <Link
-                          to="/"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (window.location.pathname !== "/") {
-                              window.location.href = "/#scroll-to-service";
-                            } else {
-                              window.dispatchEvent(
-                                new Event("scrollToService")
-                              );
-                            }
-                          }}
+                          to="/service"
+                          // onClick={(e) => {
+                          //   e.preventDefault();
+                          //   if (window.location.pathname !== "/") {
+                          //     window.location.href = "/#services";
+                          //   } else {
+                          //     window.dispatchEvent(
+                          //       new Event("scrollToService")
+                          //     );
+                          //   }
+                          // }}
                         >
                           Services
                         </Link>
@@ -599,7 +615,7 @@ const handleSelectCity = (city) => {
                 setSignInVisible(false);
               }}
             />
-            <RegisterModal
+            {/* <RegisterModal
               isVisible={registerVisible}
               onClose={() => setRegisterVisible(false)}
               onBackToSignIn={() => {
@@ -610,7 +626,7 @@ const handleSelectCity = (city) => {
                 setRegisterVisible(false);
                 setUser(updatedUser);
               }}
-            />
+            /> */}
             <ChooseCarModal
               isVisible={carModalVisible}
               onClose={() => {
@@ -663,7 +679,7 @@ const handleSelectCity = (city) => {
                           onClick={(e) => {
                             e.preventDefault();
                             if (window.location.pathname !== "/") {
-                              window.location.href = "/#scroll-to-service";
+                              window.location.href = "/#services";
                             } else {
                               window.dispatchEvent(
                                 new Event("scrollToService")

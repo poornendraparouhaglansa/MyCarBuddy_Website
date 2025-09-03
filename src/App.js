@@ -21,6 +21,7 @@ import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import RefundPage from "./pages/RefundPage";
 import ServiceInDetailsPage from "./pages/ServiceInDetailsPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function App() {
   return (
@@ -43,8 +44,7 @@ function App() {
           <Route exact path="/terms" element={<TermsPage />} />
           <Route exact path="/privacy" element={<PrivacyPage />} />
           <Route exact path="/refund-cancellation" element={<RefundPage />} />
-
-
+          <Route path="*" element={<NotFoundPage />} />
 
         </Routes>
       </CartProvider>

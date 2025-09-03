@@ -93,7 +93,7 @@ const ContactArea = () => {
                     <h4 className="about-counter-text">Services we provide</h4>
                   </div>
                 </div>
-                <img src="assets/img/normal/faq-thumb-2-1.png" alt="MyCarBuddy" />
+                <img src="assets/img/normal/faq-thumb-2-1.webp" alt="MyCarBuddy" />
               </div>
             </div>
             <div className="col-lg-6">

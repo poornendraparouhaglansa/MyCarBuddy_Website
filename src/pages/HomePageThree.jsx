@@ -64,7 +64,7 @@ const HomePageThree = () => {
   }, []);
 
   useEffect(() => {
-    if (window.location.hash === "#scroll-to-service") {
+    if (window.location.hash === "#services") {
       setTimeout(() => {
         window.dispatchEvent(new Event("scrollToService"));
       }, 300);

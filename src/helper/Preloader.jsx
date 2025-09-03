@@ -6,7 +6,9 @@ const Preloader = () => {
       {/* Preloader Start*/}
       <div className="preloader ">
         <div className="preloader-inner">
-          <span className="loader" />
+          {/* <span className="loader" /> */}
+          {/* add loader gif */}
+          <img src="assets/img/loader.gif" alt="loader" />
         </div>
       </div>
     </>

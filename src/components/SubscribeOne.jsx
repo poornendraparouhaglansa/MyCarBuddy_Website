@@ -27,13 +27,13 @@ const SubscribeOne = () => {
           </div>
         </div>
         <div className="social-btn">
-          <a href="https://www.facebook.com/people/Mycarbuddyin/61578291056729/?sk=about_details" target="_blank">
+          <a href="https://www.facebook.com/people/Mycarbuddyin/61578291056729/?sk=about_details" target="_blank" rel="noopener noreferrer">
             <i className="fab fa-facebook-f" />
           </a>
-          <a href="https://www.instagram.com/mycarbuddy.in/" target="_blank">
+          <a href="https://www.instagram.com/mycarbuddy.in/" target="_blank" rel="noopener noreferrer">
             <i className="fab fa-instagram" />
           </a>
-           <a href="https://www.linkedin.com/company/mycarbuddy/" target="_blank">
+          <a href="https://www.linkedin.com/company/mycarbuddy/" target="_blank" rel="noopener noreferrer">
             <i className="fab fa-linkedin" />
           </a>
         </div>

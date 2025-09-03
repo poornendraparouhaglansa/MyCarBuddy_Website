@@ -21,40 +21,76 @@ const MyBookings = () => {
   const [technicianRating, setTechnicianRating] = useState(0);
   const [feedback, setFeedback] = useState("");
 
+  // New states for cancel section and reasons
+  const [showCancelSection, setShowCancelSection] = useState(false);
+  const [cancelReasons, setCancelReasons] = useState([]);
+  const [selectedReason, setSelectedReason] = useState('');
+  const [otherReason, setOtherReason] = useState('');
+  const [otherChecked, setOtherChecked] = useState(false);
+
   const user = JSON.parse(localStorage.getItem("user"));
   const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
   const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
 
-  const handleBack = () => setSelectedBooking(null);
+  const handleBack = () => {
+    if (showCancelSection) {
+      setShowCancelSection(false);
+    } else {
+      setSelectedBooking(null);
+    }
+  };
   const location = useLocation();
   const [feedbackExists, setFeedbackExists] = useState(false);
 
+  // Fetch cancel reasons for modal
   useEffect(() => {
-  const searchParams = new URLSearchParams(location.search);
-  const currentTab = searchParams.get("tab");
-
-  const fetchBookings = async () => {
-    try {
-      const res = await axios.get(`${BaseURL}Bookings/${decryptedCustId}`, {
-        headers: {
-          Authorization: `Bearer ${user?.token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = res.data;
-      if (Array.isArray(data) && data.length > 0) {
-        setBookings(data);
-      } else {
-        setBookings([]);
+    const fetchCancelReasons = async () => {
+      try {
+        const res = await axios.get(`${BaseURL}AfterServiceLeads`, {
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+            "Content-Type": "application/json",
+          }
+        });
+        if (res.status === 200 && Array.isArray(res.data)) {
+          const filteredReasons = res.data.filter(reason => reason.ReasonType === 'Cancel');
+          setCancelReasons(filteredReasons);
+        }
+      } catch (error) {
+        console.error("Error fetching cancel reasons:", error);
       }
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
-    }
-  };
+    };
+    fetchCancelReasons();
+  }, [user?.token]);
 
-  fetchBookings();
-}, []); // 👀 Watch for URL search param changes
+      const fetchBookings = async () => {
+      try {
+        const res = await axios.get(`${BaseURL}Bookings/${decryptedCustId}`, {
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = res.data;
+        if (Array.isArray(data) && data.length > 0) {
+          setBookings(data);
+        } else {
+          setBookings([]);
+        }
+      } catch (error) {
+        console.error("Error fetching bookings:", error);
+      }
+    };
+
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const currentTab = searchParams.get("tab");
+
+
+    fetchBookings();
+  }, []); // 👀 Watch for URL search param changes
 
 
 
@@ -142,6 +178,82 @@ if(paymentMethod === 'Razorpay' || paymentMethod === 'razorpay'){
     console.error("Error cancelling booking:", error);
   }
 }
+
+// New function to handle showing cancel section
+const openCancelModal = () => {
+  setShowCancelSection(true);
+  setSelectedReason('');
+  setOtherReason('');
+  setOtherChecked(false);
+};
+
+  // New function to handle submitting cancellation with reason
+  const submitCancellation = async () => {
+    if (!selectedReason && !otherChecked) {
+      alert("Please select a reason or choose 'Other' and provide a reason.");
+      return;
+    }
+    if (otherChecked && !otherReason.trim()) {
+      alert("Please provide a reason in the text area.");
+      return;
+    }
+
+    const reasonToSend = otherChecked ? otherReason.trim() : selectedReason;
+
+    try {
+      const payload = {
+        bookingID: selectedBooking.BookingID,
+        cancelledBy: decryptedCustId || '',
+        reason: reasonToSend,
+        refundStatus: 'Pending'
+      };
+
+      const response = await axios.post(`${BaseURL}Cancellations`, payload, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.status === 200) {
+        showAlert("Booking cancellation submitted successfully.");
+       
+       if(selectedBooking.paymentMethod === 'Razorpay' || selectedBooking.paymentMethod === 'razorpay'){
+
+            const res_refund = await axios.post(`${BaseURL}Refund/Refund`, {
+              paymentId: selectedBooking.TransactionID,
+              amount: selectedBooking.TotalPrice + selectedBooking.GSTAmount - selectedBooking.CouponAmount
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${user?.token}`,
+                "Content-Type": "application/json",
+              },
+            }
+            );
+
+            if(res_refund.status === 200 ){
+              if(res_refund.data.status === 'success'){
+                 setShowCancelSection(false);
+                showAlert("Refund has been initiated");
+              }
+            }
+        }
+        else{
+            setShowCancelSection(false);
+        }
+        setBookings(prevBookings => prevBookings.map(booking =>
+          booking.BookingID === selectedBooking.BookingID ? {...booking, BookingStatus: 'Cancelled'} : booking
+        ));
+        setSelectedBooking(prev => ({...prev, BookingStatus: 'Cancelled'}));
+      } else {
+        alert("Failed to submit cancellation. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error submitting cancellation:", error);
+      alert("Something went wrong while submitting cancellation.");
+    }
+  };
 
 const filteredBookings = bookings.filter((booking) => {
   const matchesSearch = booking.BookingTrackID
@@ -403,29 +515,38 @@ const handleSubmitReview = async (bookingID) => {
     </p>
   </div>
 
-{selectedBooking.BookingStatus !== "Completed" && selectedBooking.BookingStatus !== "Cancelled" ? (
-  <button
-    className="tab-pill pill border-danger text-danger px-3 py-1"
-    onClick={() => handleCancel(selectedBooking.BookingID , selectedBooking.PaymentMethod, selectedBooking.Payments[0].TransactionID , 'Cancelled', selectedBooking.Payments[0].AmountPaid)}
-  >
-    Cancel
-  </button>
-) : (
-  (() => {
-    const bookingDate = new Date(selectedBooking.BookingDate); // Replace with actual date field
-    const now = new Date();
-    const diffInDays = Math.floor((now - bookingDate) / (1000 * 60 * 60 * 24));
-
-    return diffInDays <= 7 && selectedBooking.BookingStatus !== "Cancelled"  ? (
+{selectedBooking?.Payments 
+  ? (
+    selectedBooking.BookingStatus !== "Completed" &&
+    selectedBooking.BookingStatus !== "Cancelled" &&
+    selectedBooking.BookingStatus !== "Refunded" &&
+    !showCancelSection ? (
       <button
-        className="tab-pill pill border-success text-success px-3 py-1"
-        onClick={() => handleCancel(selectedBooking.BookingID , selectedBooking.PaymentMethod, selectedBooking.TransactionID , 'Refunded' , '0')}
+        className="tab-pill pill border-danger text-danger px-3 py-1"
+        onClick={() => openCancelModal()}
       >
-        Request for Refund
+        Cancel
       </button>
-    ) : null;
-  })()
-)}
+    ) : (
+      (() => {
+        const bookingDate = new Date(selectedBooking.BookingDate);
+        const now = new Date();
+        const diffInDays = Math.floor((now - bookingDate) / (1000 * 60 * 60 * 24));
+
+        return diffInDays <= 7 && selectedBooking.BookingStatus !== "Cancelled" ? (
+          <button
+            className="tab-pill pill border-success text-success px-3 py-1"
+            onClick={() =>
+              openCancelModal()
+            }
+          >
+            Request for Refund
+          </button>
+        ) : null;
+      })()
+    )
+  ) : null}
+
 </div>
 
     {/* Customer & Vehicle Info */}
@@ -574,56 +695,119 @@ const handleSubmitReview = async (bookingID) => {
       </div>
     </div>
 
-
-    {selectedBooking.BookingStatus === "Completed" && (
-  <div className="review-card border rounded-3 p-4 mt-4">
-
-    <h6 className="text-primary">Rate Your Experience</h6>
-
-    {/* Service Quality */}
-    <div className="mb-3">
-      <label className="fw-bold">Service Quality</label>
-      <p className="small text-muted">How satisfied were you with the overall service?</p>
-      <StarRating rating={serviceQuality} onRatingChange={setServiceQuality} />
-    </div>
-
-    {/* Technician Rating */}
-    <div className="mb-3">
-      <label className="fw-bold">Technician </label>
-      <p className="small text-muted">How would you rate the professionalism and expertise?</p>
-      <StarRating rating={technicianRating} onRatingChange={setTechnicianRating} />
-    </div>
-
-    {/* Feedback */}
-    <div className="mb-3">
-      <label className="fw-bold">Your Feedback</label>
-      <textarea
-        className="form-control"
-        rows="3"
-        placeholder="Share your thoughts to help us improve"
-        value={feedback}
-        onChange={(e) => setFeedback(e.target.value)}
-      />
-    </div>
-
-    {feedbackExists ? (
-      ''
-    ) : (
-      <button
-        className="btn btn-primary"
-        onClick={() => handleSubmitReview(selectedBooking.BookingID)}
-      >
-        Submit Review
-      </button>
+    {/* Cancel Section Overlay */}
+    {showCancelSection && (
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        background: 'rgba(255,255,255,0.95)',
+        zIndex: 10,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '1rem',
+      }}>
+        <div className="border rounded-3 p-4 bg-white shadow" style={{ minWidth: 350, maxWidth: 500 }}>
+          <h6 className="text-danger">Cancel Booking</h6>
+          <form>
+            {cancelReasons.map((reason) => (
+              <div className="form-check" key={reason.ID}>
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="cancelReason"
+                  id={`reason-${reason.ID}`}
+                  value={reason.Reason}
+                  checked={selectedReason === reason.Reason && !otherChecked}
+                  onChange={() => {
+                    setSelectedReason(reason.Reason);
+                    setOtherChecked(false);
+                  }}
+                />
+                <label className="form-check-label" htmlFor={`reason-${reason.ID}`}>
+                  {reason.Reason}
+                </label>
+              </div>
+            ))}
+            <div className="form-check mt-2">
+              <input
+                className="form-check-input"
+                type="radio"
+                name="cancelReason"
+                id="reason-other"
+                checked={otherChecked}
+                onChange={() => {
+                  setOtherChecked(true);
+                  setSelectedReason('');
+                }}
+              />
+              <label className="form-check-label" htmlFor="reason-other">
+                Other
+              </label>
+            </div>
+            {otherChecked && (
+              <textarea
+                className="form-control mt-2"
+                rows="3"
+                placeholder="Please specify your reason"
+                value={otherReason}
+                onChange={(e) => setOtherReason(e.target.value)}
+              />
+            )}
+          </form>
+          <div className="d-flex justify-content-end mt-3">
+            <button type="button" className="btn btn-secondary me-2 px-4 py-2" onClick={() => setShowCancelSection(false)}>Close</button>
+            <button type="button" className="btn btn-danger px-4 py-2" onClick={submitCancellation}>Submit</button>
+          </div>
+        </div>
+      </div>
     )}
 
-   
-  </div>
-)}
+    {/* Review Section (only if not cancelling) */}
+    {!showCancelSection && selectedBooking.BookingStatus === "Completed" && (
+      <div className="review-card border rounded-3 p-4 mt-4">
+        <h6 className="text-primary">Rate Your Experience</h6>
+        {/* Service Quality */}
+        <div className="mb-3">
+          <label className="fw-bold">Service Quality</label>
+          <p className="small text-muted">How satisfied were you with the overall service?</p>
+          <StarRating rating={serviceQuality} onRatingChange={setServiceQuality} />
+        </div>
+        {/* Technician Rating */}
+        <div className="mb-3">
+          <label className="fw-bold">Technician </label>
+          <p className="small text-muted">How would you rate the professionalism and expertise?</p>
+          <StarRating rating={technicianRating} onRatingChange={setTechnicianRating} />
+        </div>
+        {/* Feedback */}
+        <div className="mb-3">
+          <label className="fw-bold">Your Feedback</label>
+          <textarea
+            className="form-control"
+            rows="3"
+            placeholder="Share your thoughts to help us improve"
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+          />
+        </div>
+        {feedbackExists ? (
+          ''
+        ) : (
+          <button
+            className="btn btn-primary"
+            onClick={() => handleSubmitReview(selectedBooking.BookingID)}
+          >
+            Submit Review
+          </button>
+        )}
+      </div>
+    )}
 
   </div>
 )}
-
 
 
 

@@ -30,7 +30,7 @@ const FaqAreaTwo = () => {
                   <h4 className="about-counter-text">Cars Washed</h4>
                 </div>
               </div> */}
-                 <img src="assets/img/normal/faq-thumb-2-1.png" alt="Fixturbo"/>
+                 <img src="assets/img/normal/faq-thumb-2-1.webp" alt="MyCarBuddy"/>
             </div>
           </div>
 
@@ -102,7 +102,7 @@ const FaqAreaTwo = () => {
                   <div className="accordion-body">
                     <p className="faq-text">
                       We hand-wash your vehicle using premium shampoo,
-                      high-pressure rinse, tire cleaning, and waxing for a shiny
+                      high-pressure rinse, tyre cleaning, and waxing for a shiny
                       finish that protects your paint.
                     </p>
                   </div>

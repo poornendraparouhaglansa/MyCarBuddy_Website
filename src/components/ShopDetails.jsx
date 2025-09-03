@@ -47,7 +47,7 @@ const ShopDetails = () => {
                 <span className="posted_in">
                   Category:{" "}
                   <Link to="/shop" rel="tag">
-                    Tires &amp; Wheels
+                    Tyres &amp; Wheels
                   </Link>
                 </span>
                 <span>

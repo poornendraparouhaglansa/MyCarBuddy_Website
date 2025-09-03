@@ -40,7 +40,7 @@ const SelectTimeSlotPage = () => {
     othersPhoneNumber: "",
     pincode: "",
     StateID: "",
-    CityID: "",
+    CityID: "0",
     CityName: "",
     addressLine1: "",
     addressLine2: "",
@@ -199,7 +199,7 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
         setFormData((prev) => ({
           ...prev,
           StateID: "",
-          CityID: "",
+          CityID: "0",
           pincode: "",
           addressLine1: "",
           CityName: "",
@@ -293,7 +293,7 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
       setFormData((prev) => ({
         ...prev,
         StateID: "",
-        CityID: "",
+        CityID: "0",
         pincode: "",
         addressLine1: "",
       }));
@@ -304,8 +304,8 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
     setFormData((prev) => ({
       ...prev,
       StateID: matchedState?.StateID || "",
-      CityID: matchedCity?.CityID || "",
-      CityName: matchedCity?.CityName || "",
+      CityID: matchedCity?.CityID || "0",
+      CityName: cityName || "",
       pincode: result?.postalCode || "",
       addressLine1: result?.address || "",
       mapLocation: { latitude: lat, longitude: lng },
@@ -367,7 +367,6 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
       };
 
       if (
-        name === "CityID" ||
         name === "pincode" ||
         name === "CityName" ||
         name === "addressLine1" ||
@@ -384,7 +383,7 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
 
   const updateMapFromAddress = async (form) => {
 
-    const { addressLine1, pincode, CityID, StateID , CityName } = form;
+    const { addressLine1, pincode, StateID , CityName } = form;
 
     const state = states.find((s) => s.StateID === parseInt(StateID));
     // const city = cities.find((c) => c.CityID === parseInt(CityID));
@@ -616,6 +615,19 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
     },
     modal: {
       ondismiss: function () {
+
+        axios.post(
+          `${baseUrl}Bookings/booking-status`,
+          {
+            bookingID: data.bookingID,
+            bookingStatus: "Failed",
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         setPaymentStatus("error");
         setPaymentMessage("Payment was cancelled or failed.");
         setShowPaymentModal(true);
@@ -663,7 +675,7 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
     if (
       !decryptedCustId ||
       !formData.StateID ||
-      !formData.CityID ||
+      // !formData.CityID ||
       !formData.pincode ||
       !formData.addressLine1 ||
       !selectedDate ||
@@ -779,7 +791,7 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
           clearCart();
 
          setPaymentStatus("success");
-          setPaymentMessage("Payment was successful!");
+          setPaymentMessage("Booking submitted successfully!");
           setShowPaymentModal(true);
 
         }
@@ -1524,7 +1536,7 @@ const getGST = () => {
             style={{ width: 50, height: 50, marginBottom: 20 }}
           />
           <h4 style={{ marginBottom: 10 }}>
-            {paymentStatus === "success" ? "Payment Successful" : "Payment Failed"}
+            {paymentStatus === "success" ? "Successful" : " Failed"}
           </h4>
           <p style={{ color: "#666", marginBottom: 20 }}>{paymentMessage}</p>
           <button

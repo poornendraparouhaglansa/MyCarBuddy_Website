@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./ServiceCards.css";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { FaSnowflake, FaCarBattery, FaCarSide, FaPaintRoller, FaMagic, FaShower, FaTools, FaGasPump } from "react-icons/fa";
-import servicetwo from '../../src/images/service-2.png';
+import { useNavigate, useParams } from "react-router-dom";
+// import { FaSnowflake, FaCarBattery, FaCarSide, FaPaintRoller, FaMagic, FaShower, FaTools, FaGasPump } from "react-icons/fa";
+// import servicetwo from '../../src/images/service-2.png';
 import { useCart } from "../context/CartContext";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -105,7 +105,7 @@ export default function ServiceCards() {
     };
 
     fetchPackages();
-  }, [categoryId, activeTab]);
+  }, [BASE_URL, baseUrlImage, categoryId, activeTab, brandId, modelId, fuelId]);
 
   useEffect(() => {
     setPackages([]);

@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import HeaderOne from "./HeaderOne";
-import Breadcrumb from "./Breadcrumb";
-import FooterAreaOne from "./FooterAreaOne";
-import SubscribeOne from "./SubscribeOne";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";

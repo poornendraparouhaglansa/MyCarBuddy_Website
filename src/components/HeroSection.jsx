@@ -1,10 +1,6 @@
 // src/components/HeroSection.jsx
 import React from "react";
-// import { Canvas } from "@react-three/fiber";
-// import { OrbitControls, Environment } from "@react-three/drei";
-// import { motion } from "framer-motion";
-// import CarModel from "./CarModel";
-// import ParticlesBg from "./ParticlesBg";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
@@ -18,7 +14,7 @@ const HeroSection = () => {
         justifyContent: "space-between",
         padding: "80px 60px",
         // backgroundColor: "#ffffff",
-        backgroundImage: `url("assets/img/hero/hero_bg.png")`,
+        backgroundImage: `url("assets/img/hero/hero_bg.webp")`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -65,24 +61,38 @@ const HeroSection = () => {
                                Premium Car Care at Your Doorstep
                               </h1>
                               <p className="hero-text text-white" data-ani="slideinup" data-ani-delay="0.2s">
-                               Hygiene. Shine. Satisfaction. Book our expert service now.
+                                We bring hassle-free service right when you need it, so you enjoy life while we care for your car.
+                               </p>
+                              <p className="hero-text text-white" data-ani="slideinup" data-ani-delay="0.2s">
+                                Our experts assess your car’s needs with clarity, no hidden costs, only genuine solutions.
+                              </p>
+                              <p className="hero-text text-white" data-ani="slideinup" data-ani-delay="0.2s">
+                                Treat your car like our best buddy. Book now for expert care that keeps it running at its best!
                               </p>
                               <div className="btn-group" data-ani="slideinup" data-ani-delay="0.3s">
                                 {/* <Link to="/about" className="btn">
                                   Learn More
                                 </Link> */}
                                 <div className="call-media-wrap">
-                                  <div className="icon">
+
+                                  <Link to="/service" className="btn btn-primary px-4 py-3">
+                                    Book Now
+                                    </Link>
+                                  {/* <div className="icon">
                                     <img src="/assets/img/icon/phone-1.svg" alt="MyCarBuddy" />
                                   </div>
                                   <div className="media-body">
                                     <h6 className="title text-white">Requesting A Call:</h6>
-                                    <h4 className="link">
+                                    <h4 className="link1">
                                       <a className="text-white" href="tel:9885653865">
                                         +91 98856 53865
                                       </a>
+                                      <br />
+                                      <a className="text-white" href="tel:7075243939">
+                                        +91 70752 43939
+                                      </a>
                                     </h4>
-                                  </div>
+                                  </div> */}
                                 </div>
                               </div>
                             </div>

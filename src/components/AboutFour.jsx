@@ -11,13 +11,13 @@ const AboutFour = () => {
           <div className="col-xxl-7 col-xl-6">
             <div className="about-thumb2 mb-40 mb-xl-0">
               <div className="about-img-1">
-                <img src="assets/img/normal/about_2-1.png" alt="Fixturbo" />
+                <img src="assets/img/normal/about_2-1.webp" alt="MYCARBUDDY" />
               </div>
               <div className="about-img-2">
-                <img src="assets/img/normal/about_2-2.png" alt="Fixturbo" />
+                <img src="assets/img/normal/about_2-2.webp" alt="MYCARBUDDY" />
               </div>
               <div className="about-counter-wrap jump-reverse">
-                <img src="assets/img/icon/about_icon2-1.svg" alt="Fixturbo" />
+                <img src="assets/img/icon/about_icon2-1.svg" alt="MYCARBUDDY" />
                 <h3 className="about-counter">
                   <TrackVisibility once>
                     {({ isVisible }) =>

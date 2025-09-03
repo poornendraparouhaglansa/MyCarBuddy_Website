@@ -150,7 +150,7 @@ $fontsMap: map-merge(
   font-size: 15px !important;
 }
 .hero-style3 {
-    padding: 255px 0 90px  !important;
+    padding: 160px 0 90px  !important;
 }
 .counter-checklist-wrap:after {
     background: linear-gradient(90deg, #116d6e -1.06%, rgba(232, 9, 46, 0) 100%) !important;
@@ -371,6 +371,16 @@ font-size: 12px;
 .footer-wrapper a:hover{
   color: #ffffff !important;
 }
+@media (min-width: 1400px) {
+ .menu-area .container{
+      // max-width: 1290px !important;
+      max-width: 90% !important;
+    }
+}
+.pl-30{
+  padding-left: 30px !important;
+}
+
 @media screen and (max-width: 768px) {
   .timeline-container  {
     overflow: auto;
