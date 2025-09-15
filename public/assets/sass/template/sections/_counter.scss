@@ -18,8 +18,9 @@
     background-size: cover;
     position: relative;
     z-index: 1;
-    padding: 40px 60px;
+    padding: 40px 35px;
     height: 100%;
+    border-radius: 10px;
     &:after {
         content: '';
         position: absolute;
@@ -27,6 +28,9 @@
         background: linear-gradient(90deg, #E8092E -1.06%, rgba(232, 9, 46, 0.00) 100%);
         z-index: -1;
     }
+}
+.call-media-wrap .link:hover a{
+    color: $white-color !important;
 }
 .counter-card {
     position: relative;

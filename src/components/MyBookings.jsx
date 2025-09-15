@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import CryptoJS from "crypto-js";
 import axios from "axios";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAlert } from "../context/AlertContext";
 
 const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
 const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
 const ImageURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
-
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -16,81 +15,117 @@ const MyBookings = () => {
   const { showAlert } = useAlert();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const [serviceQuality, setServiceQuality] = useState(0);
-  const [technicianRating, setTechnicianRating] = useState(0);
+    const user = JSON.parse(localStorage.getItem("user"));
+    const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
+    const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
+  const location = useLocation();
+  const navigate = useNavigate();
   const [feedback, setFeedback] = useState("");
-
-  // New states for cancel section and reasons
   const [showCancelSection, setShowCancelSection] = useState(false);
+  const [technicianRating, setTechnicianRating] = useState(0);
   const [cancelReasons, setCancelReasons] = useState([]);
   const [selectedReason, setSelectedReason] = useState('');
   const [otherReason, setOtherReason] = useState('');
   const [otherChecked, setOtherChecked] = useState(false);
-
-  const user = JSON.parse(localStorage.getItem("user"));
-  const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
-  const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
+  const [showFeedbackSection, setShowFeedbackSection] = useState(false);
+  const [serviceQuality, setServiceQuality] = useState(0);
+  const [feedbackExists, setFeedbackExists] = useState(false);
+  const [showResumeForm, setShowResumeForm] = useState(false);
+  const [resumeDate, setResumeDate] = useState('');
+  const [resumePaymentMethod, setResumePaymentMethod] = useState('');
+  const [selectedResumeTimes, setSelectedResumeTimes] = useState([]);
+  const [resumeMorningSlots, setResumeMorningSlots] = useState([]);
+  const [resumeAfternoonSlots, setResumeAfternoonSlots] = useState([]);
+  const [resumeEveningSlots, setResumeEveningSlots] = useState([]);
+  const [isSubmittingResume, setIsSubmittingResume] = useState(false);
 
   const handleBack = () => {
-    if (showCancelSection) {
-      setShowCancelSection(false);
-    } else {
-      setSelectedBooking(null);
+    setSelectedBooking(null);
+  };
+
+  
+  
+
+  const fetchBookings = async () => {
+    try {
+      setIsLoading(true);
+      const res = await axios.get(`${BaseURL}Bookings/${decryptedCustId}`, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = res.data;
+      if (Array.isArray(data) && data.length > 0) {
+        setBookings(data);
+      } else {
+        setBookings([]);
+      }
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
-  const location = useLocation();
-  const [feedbackExists, setFeedbackExists] = useState(false);
-
-  // Fetch cancel reasons for modal
-  useEffect(() => {
-    const fetchCancelReasons = async () => {
-      try {
-        const res = await axios.get(`${BaseURL}AfterServiceLeads`, {
-          headers: {
-            Authorization: `Bearer ${user?.token}`,
-            "Content-Type": "application/json",
-          }
-        });
-        if (res.status === 200 && Array.isArray(res.data)) {
-          const filteredReasons = res.data.filter(reason => reason.ReasonType === 'Cancel');
-          setCancelReasons(filteredReasons);
-        }
-      } catch (error) {
-        console.error("Error fetching cancel reasons:", error);
-      }
-    };
-    fetchCancelReasons();
-  }, [user?.token]);
-
-      const fetchBookings = async () => {
-      try {
-        const res = await axios.get(`${BaseURL}Bookings/${decryptedCustId}`, {
-          headers: {
-            Authorization: `Bearer ${user?.token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        const data = res.data;
-        if (Array.isArray(data) && data.length > 0) {
-          setBookings(data);
-        } else {
-          setBookings([]);
-        }
-      } catch (error) {
-        console.error("Error fetching bookings:", error);
-      }
-    };
-
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const currentTab = searchParams.get("tab");
 
-
     fetchBookings();
+
+    // Add event listener for notificationReceived event
+    const handleNotification = () => {
+      fetchBookings();
+    };
+    window.addEventListener('notificationReceived', handleNotification);
+
+    return () => {
+      window.removeEventListener('notificationReceived', handleNotification);
+    };
   }, []); // 👀 Watch for URL search param changes
+
+  // Define filteredBookings before using it in useEffect
+  const filteredBookings = bookings.filter((booking) => {
+    const matchesSearch = booking.BookingTrackID
+      ?.toString()
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "All" || booking.BookingStatus === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // Infinite scroll effect
+  useEffect(() => {
+    const handleScroll = (e) => {
+      const { scrollTop, scrollHeight, clientHeight } = e.target;
+      const threshold = 100; // Load more when 100px from bottom
+      
+      if (scrollHeight - scrollTop <= clientHeight + threshold) {
+        if (visibleCount < filteredBookings.length && !isLoadingMore) {
+          setIsLoadingMore(true);
+          // Simulate loading delay for better UX
+          setTimeout(() => {
+            setVisibleCount(prev => prev + 3);
+            setIsLoadingMore(false);
+          }, 500);
+        }
+      }
+    };
+
+    const scrollContainer = document.querySelector('.bookings-scroll-container');
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, [visibleCount, filteredBookings.length, isLoadingMore]);
 
 
 
@@ -126,6 +161,234 @@ useEffect(() => {
 
     fetchFeedback();
   }, [selectedBooking]);
+
+  // Request Refund handler
+  const handleRequestRefund = async () => {
+    if (!selectedBooking) return;
+    try {
+      const payload = {
+        bookingID: selectedBooking.BookingID,
+        isRefunded: true,
+      };
+      const res = await axios.put(`${BaseURL}Payments`, payload, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (res.status === 200) {
+        showAlert("Refund requested successfully.");
+        // Optimistically update local state
+        setSelectedBooking((prev) => (
+          prev
+            ? {
+                ...prev,
+                BookingStatus: prev.BookingStatus === "Cancelled" ? prev.BookingStatus : "Refunded",
+                Payments: Array.isArray(prev.Payments)
+                  ? [
+                      {
+                        ...prev.Payments[0],
+                        isRefunded: true,
+                      },
+                      ...prev.Payments.slice(1),
+                    ]
+                  : prev.Payments,
+              }
+            : prev
+        ));
+        setBookings((prev) =>
+          prev.map((b) =>
+            b.BookingID === selectedBooking.BookingID
+              ? { ...b, BookingStatus: b.BookingStatus === "Cancelled" ? b.BookingStatus : "Refunded" }
+              : b
+          )
+        );
+      } else {
+        showAlert("Failed to request refund. Please try again.");
+      }
+    } catch (err) {
+      console.error("Refund request error:", err);
+      showAlert("Error while requesting refund. Please try again.");
+    }
+  };
+
+  // Populate payment method for resume when opening details
+  useEffect(() => {
+    if (selectedBooking) {
+      setResumePaymentMethod(selectedBooking?.paymentMethod || "");
+    }
+  }, [selectedBooking]);
+
+  // Fetch TimeSlots for resume form
+  const fetchResumeTimeSlots = async (dateStr) => {
+    try {
+      const res = await axios.get(`${BaseURL}TimeSlot`, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+
+      const timeSlots = res.data || [];
+      const sorted = timeSlots
+        .filter((s) => s?.Status === true)
+        .sort((a, b) => a.StartTime.localeCompare(b.StartTime));
+
+      const categorized = { morning: [], afternoon: [], evening: [] };
+
+      const now = new Date();
+      const isToday = dateStr && new Date(dateStr).toDateString() === now.toDateString();
+
+      sorted.forEach(({ StartTime, EndTime }) => {
+        const [sh, sm] = StartTime.split(":").map(Number);
+        const [eh, em] = EndTime.split(":").map(Number);
+
+        const startDate = new Date(dateStr);
+        startDate.setHours(sh, sm, 0, 0);
+        const endDate = new Date(dateStr);
+        endDate.setHours(eh, em, 0, 0);
+        const isExpired = isToday && endDate <= now;
+
+        const fmt = (d) =>
+          d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+        const label = `${fmt(startDate)} - ${fmt(endDate)}`;
+
+        const slot = { label, disabled: isExpired };
+        if (sh < 12) categorized.morning.push(slot);
+        else if (sh < 16) categorized.afternoon.push(slot);
+        else categorized.evening.push(slot);
+      });
+
+      setResumeMorningSlots(categorized.morning);
+      setResumeAfternoonSlots(categorized.afternoon);
+      setResumeEveningSlots(categorized.evening);
+    } catch (err) {
+      console.error("Error fetching time slots:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (showResumeForm && resumeDate) {
+      fetchResumeTimeSlots(resumeDate);
+    }
+  }, [showResumeForm, resumeDate]);
+
+  const handleOpenResume = () => {
+    setShowCancelSection(false);
+    setShowResumeForm(true);
+    setSelectedResumeTimes([]);
+    // Default date to today if empty
+    if (!resumeDate) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const dd = String(today.getDate()).padStart(2, "0");
+      setResumeDate(`${yyyy}-${mm}-${dd}`);
+    }
+  };
+
+  const handleResumeSubmit = async () => {
+    if (!selectedBooking) return;
+    if (!resumeDate || selectedResumeTimes.length === 0 || !resumePaymentMethod) {
+      showAlert("Please select date, at least one timeslot and payment method.");
+      return;
+    }
+
+    try {
+      setIsSubmittingResume(true);
+      const form = new FormData();
+      form.append("BookingTrackID", selectedBooking.BookingTrackID);
+      form.append("BookingDate", resumeDate);
+      form.append("TimeSlot", selectedResumeTimes.join(","));
+      form.append("PaymentMethod", resumePaymentMethod);
+      form.append("BookingFrom", "web");
+      form.append("CouponAmount", selectedBooking.CouponAmount);
+      form.append("GSTAmount", selectedBooking.GSTAmount);
+      form.append("TotalAmount", selectedBooking.TotalPrice)
+
+      const res = await axios.put(`${BaseURL}Bookings/update-booking`, form, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+
+      if (res.status === 200 || res.status === 201) {
+        // alert("Booking resumed successfully!");
+
+        if (resumePaymentMethod === "razorpay") {
+          const finalTotal = (selectedBooking.TotalPrice + selectedBooking.GSTAmount - selectedBooking.CouponAmount).toFixed(2);
+          loadRazorpay(finalTotal, res.data);
+        } else {
+          showAlert("success", "Booking resumed successfully!", 3000, "success");
+          setShowResumeForm(false);
+          setSelectedBooking(null);
+          fetchBookings();
+       
+        }
+
+      } else {
+        showAlert("Failed to resume booking. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error resuming booking:", err);
+      showAlert("Error while resuming booking. Please try again.");
+    } finally {
+      setIsSubmittingResume(false);
+    }
+  };
+
+  const loadRazorpay = (amount, data) => {
+
+    const options = {
+      key: process.env.REACT_APP_RAZORPAY_KEY,
+      amount: amount * 100,
+      currency: "INR",
+      name: "MyCarBuddy a product by Glansa Solutions Pvt. Ltd.",
+      order_id: data.razorpay.orderID,
+      description: "Payment for Car Services",
+      image: "/assets/img/MyCarBuddy-Logo1.png",
+      handler: function (response) {
+        console.log("Payment success:", response);
+      },
+      prefill: {
+        name: selectedBooking.CustFullName,
+        email: selectedBooking.CustEmail,
+        contact: selectedBooking.CustPhoneNumber,
+      },
+      theme: {
+        color: "#1890ae",
+      },
+      modal: {
+        ondismiss: function () {
+  
+          axios.put(
+            `${BaseURL}Bookings/booking-status`,
+            {
+              bookingID: data.bookingID,
+              bookingStatus: "Failed",
+            },
+            {
+              headers: {
+                // Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          showAlert("success", "Payment was cancelled or failed.", 3000, "success");
+          setShowResumeForm(false);
+          setSelectedBooking(null);
+          fetchBookings();
+          // setPaymentStatus("error");
+          // setPaymentMessage("Payment was cancelled or failed.");
+          // setShowPaymentModal(true);
+          // clearCart();
+        },
+      },
+    };
+ const rzp = new window.Razorpay(options);
+  rzp.open();
+};
+  
 
 const handleCancel = async (bookingId ,paymentMethod, transactionID , type ,Amount) => {
   if (!window.confirm("Are you sure you want to cancel this booking?")) {
@@ -255,19 +518,6 @@ const openCancelModal = () => {
     }
   };
 
-const filteredBookings = bookings.filter((booking) => {
-  const matchesSearch = booking.BookingTrackID
-    ?.toString()
-    .toLowerCase()
-    .includes(searchTerm.toLowerCase());
-
-  const matchesStatus =
-    statusFilter === "All" || booking.BookingStatus === statusFilter;
-
-  return matchesSearch && matchesStatus;
-});
-
-
 const handleSubmitReview = async (bookingID) => {
   try {
     const payload = {
@@ -320,9 +570,125 @@ const handleSubmitReview = async (bookingID) => {
   );
 };
 
+// Skeleton Loading Component
+const BookingSkeleton = () => {
+  return (
+    <div className="card shadow-sm mb-4 position-relative border-start border-1" style={{ animation: "pulse 1.5s ease-in-out infinite" }}>
+      {/* Header Skeleton */}
+      <div
+        className="d-flex justify-content-between align-items-start mb-2 p-3"
+        style={{ backgroundColor: "#136d6e" }}
+      >
+        <div>
+          <div className="placeholder-glow">
+            <span className="placeholder col-3 bg-light" style={{ height: "12px" }}></span>
+          </div>
+          <div className="placeholder-glow mt-2">
+            <span className="placeholder col-4 bg-light" style={{ height: "16px" }}></span>
+          </div>
+        </div>
+        <div>
+          <div className="placeholder-glow">
+            <span className="placeholder col-3 bg-light" style={{ height: "12px" }}></span>
+          </div>
+          <div className="placeholder-glow mt-2">
+            <span className="placeholder col-6 bg-warning" style={{ height: "20px" }}></span>
+          </div>
+        </div>
+        <div className="placeholder-glow">
+          <span className="placeholder col-2 bg-light" style={{ height: "32px", width: "60px" }}></span>
+        </div>
+      </div>
+
+      {/* Timeline Skeleton */}
+      <div className="timeline-container p-3">
+        <div className="d-flex justify-content-between">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
+            <div key={item} className="text-center">
+              <div className="placeholder-glow">
+                <span 
+                  className="placeholder bg-secondary rounded-circle d-block mx-auto" 
+                  style={{ width: "30px", height: "30px" }}
+                ></span>
+              </div>
+              <div className="placeholder-glow mt-2">
+                <span className="placeholder col-6 bg-light" style={{ height: "10px" }}></span>
+              </div>
+              <div className="placeholder-glow mt-1">
+                <span className="placeholder col-4 bg-light" style={{ height: "8px" }}></span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Booking Info Skeleton */}
+      <div className="row g-3 p-3">
+        <div className="col-md-4">
+          <div className="d-flex align-items-center gap-2">
+            <div className="placeholder-glow">
+              <span className="placeholder bg-light rounded" style={{ width: "20px", height: "20px" }}></span>
+            </div>
+            <div className="flex-grow-1">
+              <div className="placeholder-glow">
+                <span className="placeholder col-3 bg-light" style={{ height: "10px" }}></span>
+              </div>
+              <div className="placeholder-glow mt-1">
+                <span className="placeholder col-4 bg-light" style={{ height: "12px" }}></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div className="d-flex align-items-center gap-2">
+            <div className="placeholder-glow">
+              <span className="placeholder bg-light rounded" style={{ width: "20px", height: "20px" }}></span>
+            </div>
+            <div className="flex-grow-1">
+              <div className="placeholder-glow">
+                <span className="placeholder col-3 bg-light" style={{ height: "10px" }}></span>
+              </div>
+              <div className="placeholder-glow mt-1">
+                <span className="placeholder col-5 bg-light" style={{ height: "12px" }}></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div className="d-flex align-items-center gap-2">
+            <div className="placeholder-glow">
+              <span className="placeholder bg-light rounded" style={{ width: "20px", height: "20px" }}></span>
+            </div>
+            <div className="flex-grow-1">
+              <div className="placeholder-glow">
+                <span className="placeholder col-3 bg-light" style={{ height: "10px" }}></span>
+              </div>
+              <div className="placeholder-glow mt-1">
+                <span className="placeholder col-6 bg-light" style={{ height: "12px" }}></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
   return (
     <div className="container py-4">
+      <style>
+        {`
+          @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+          }
+          .placeholder-glow .placeholder {
+            animation: pulse 1.5s ease-in-out infinite;
+          }
+        `}
+      </style>
       <h6 className="mb-4">My Bookings</h6>
 
       <div className="d-flex justify-content-between gap-3 mb-3">
@@ -352,16 +718,25 @@ const handleSubmitReview = async (bookingID) => {
 </div>
 
       {!selectedBooking && (
-        <div style={{ maxHeight: "75vh", overflowY: "auto" }}>
-   {Array.isArray(filteredBookings) && filteredBookings.length > 0 ? (
+        <div className="bookings-scroll-container" style={{ maxHeight: "75vh", overflowY: "auto" }}>
+   {isLoading ? (
+     // Show skeleton loading
+     <>
+       <BookingSkeleton />
+       <BookingSkeleton />
+       <BookingSkeleton />
+     </>
+   ) : Array.isArray(filteredBookings) && filteredBookings.length > 0 ? (
   filteredBookings.slice(0, visibleCount).map((booking) => {
+   const tracking = Array.isArray(booking.TechnicianTracking) ? booking.TechnicianTracking[0] : {};
+
     const statusTimeline = [
       { label: "Booking Created", date: booking.BookingDate },
-      { label: "Technician Assigned", date: booking.TechAssignDate },
-      { label: "Technician Started", date: booking.JourneyStartedAt },
-      { label: "Technician Reached", date: booking.ReachedAt },
-      { label: "Service Started", date: booking.ServiceStartedAt },
-      { label: "Service Completed", date: booking.ServiceEndedAt },
+      { label: "Buddy Assigned", date: booking.TechAssignDate },
+      { label: "Buddy Started", date: tracking?.JourneyStartedAt },
+      { label: "Buddy Reached", date: tracking?.ReachedAt },
+      { label: "Buddy Started", date: tracking?.ServiceStartedAt },
+      { label: "Buddy Completed", date: tracking?.ServiceEndedAt },
     ];
 
     return (
@@ -372,7 +747,7 @@ const handleSubmitReview = async (bookingID) => {
         {/* Header */}
         <div
           className="d-flex justify-content-between align-items-start mb-2 p-3"
-          style={{ backgroundColor: "#2d9c9cff" }}
+          style={{ backgroundColor: "#136d6e" }}
         >
           <div>
             <small className="text-white">Booking ID:</small>
@@ -398,25 +773,28 @@ const handleSubmitReview = async (bookingID) => {
 
         {/* Timeline */}
         <div className="timeline-container">
-          {[
+          {[  
             ...statusTimeline,
             ...(booking.BookingStatus === "Cancelled"
               ? [{ label: "Cancelled", date: new Date() }]
+              : []),
+            ...(booking.BookingStatus === "Failed"
+              ? [{ label: "Failed", date: new Date() }]
               : []),
           ].map((step, index, array) => {
             const isCompleted = !!step.date;
             return (
               <div
                 key={index}
-                className={`timeline-step ${isCompleted ? "completed" : ""} ${step.label === "Cancelled" ? "cancelled" : ""}`}
+                className={`timeline-step ${isCompleted ? "completed" : ""} ${step.label === "Cancelled" ? "cancelled" : ""} ${step.label === "Failed" ? "failed" : ""}`}
               >
                 <div
-                  className={`circle ${step.label === "Cancelled" ? "circle-cancel" : ""}`}
+                  className={`circle ${step.label === "Cancelled" ? "circle-cancel" : ""} ${step.label === "Failed" ? "circle-failed" : ""}`}
                   style={{
-                    backgroundColor: step.label === "Cancelled" ? "#a93b2a" : ""
+                    backgroundColor: step.label === "Cancelled" ? "#a93b2a" : step.label === "Failed" ? "#a93b2a" : ""
                   }}
                 >
-                  {step.label === "Cancelled" ? "✕" : isCompleted ? "✓" : index + 1}
+                  {step.label === "Cancelled" ? "✕" : step.label === "Failed" ? "✕" : isCompleted ? "✓" : index + 1}
                 </div>
                 <div className="label">{step.label}</div>
                 <div className="date">
@@ -447,11 +825,25 @@ const handleSubmitReview = async (bookingID) => {
           </div>
 
           <div className="col-md-4">
-            <div className="d-flex align-items-center gap-2">
-              <i className="bi bi-clock-history text-muted fs-5" />
+            <div className="d-flex align-items-start gap-2">
+              <i className="bi bi-clock-history text-muted fs-5 mt-1" />
               <div>
                 <div className="small text-muted">Time</div>
-                <div className="fw-semibold">{booking.TimeSlot}</div>
+                <div className="fw-semibold">
+                  {booking.TimeSlot && booking.TimeSlot.includes(',') ? (
+                    // Multiple time slots - display each on a new line
+                    <div>
+                      {booking.TimeSlot.split(',').map((timeSlot, index) => (
+                        <div key={index} className="mb-1">
+                          {timeSlot.trim()}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    // Single time slot
+                    booking.TimeSlot || "N/A"
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -478,11 +870,23 @@ const handleSubmitReview = async (bookingID) => {
   </div>
 )}
 
-          {visibleCount < bookings.length && (
-            <div className="text-center">
-              <button className="btn btn-outline-primary mb-4 px-4 py-2" onClick={() => setVisibleCount(visibleCount + 3)}>
-                Load More
-              </button>
+          {/* Infinite scroll loading indicator */}
+          {isLoadingMore && (
+            <div className="text-center py-3">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading more bookings...</span>
+              </div>
+              <div className="mt-2 text-muted">Loading more bookings...</div>
+            </div>
+          )}
+          
+          {/* End of results indicator */}
+          {visibleCount >= filteredBookings.length && filteredBookings.length > 0 && (
+            <div className="text-center py-3">
+              <div className="text-muted">
+                <i className="bi bi-check-circle me-2"></i>
+                You've reached the end of your bookings
+              </div>
             </div>
           )}
         </div>
@@ -507,7 +911,22 @@ const handleSubmitReview = async (bookingID) => {
   <div>
     <h4 className="fw-bold mb-1">Booking Details</h4>
     <p className="text-muted mb-0">
-      {new Date(selectedBooking.BookingDate).toLocaleDateString("en-GB")} • {selectedBooking.TimeSlot}
+      {new Date(selectedBooking.BookingDate).toLocaleDateString("en-GB")} • {
+        selectedBooking.TimeSlot && selectedBooking.TimeSlot.includes(',') ? (
+          // Multiple time slots - display with line breaks
+          <span>
+            {selectedBooking.TimeSlot.split(',').map((timeSlot, index) => (
+              <span key={index}>
+                {timeSlot.trim()}
+                {index < selectedBooking.TimeSlot.split(',').length - 1 && <br />}
+              </span>
+            ))}
+          </span>
+        ) : (
+          // Single time slot
+          selectedBooking.TimeSlot || "N/A"
+        )
+      }
     </p>
     <p className="text-secondary small mb-0">
       <i className="bi bi-geo-alt me-1" />
@@ -515,41 +934,224 @@ const handleSubmitReview = async (bookingID) => {
     </p>
   </div>
 
-{selectedBooking?.Payments 
+{selectedBooking?.Payments
   ? (
     selectedBooking.BookingStatus !== "Completed" &&
     selectedBooking.BookingStatus !== "Cancelled" &&
     selectedBooking.BookingStatus !== "Refunded" &&
+    selectedBooking.BookingStatus !== "Failed" &&
     !showCancelSection ? (
-      <button
-        className="tab-pill pill border-danger text-danger px-3 py-1"
-        onClick={() => openCancelModal()}
-      >
-        Cancel
-      </button>
+      <div className="d-flex gap-2">
+        <button
+          className="tab-pill pill border-warning text-warning px-3 py-1"
+          onClick={() => navigate(`/reschedule?bookingId=${selectedBooking.BookingID}`)}
+        >
+          Reschedule
+        </button>
+        <button
+          className="tab-pill pill border-danger text-danger px-3 py-1"
+          onClick={() => openCancelModal()}
+        >
+          Cancel
+        </button>
+      </div>
     ) : (
       (() => {
         const bookingDate = new Date(selectedBooking.BookingDate);
         const now = new Date();
         const diffInDays = Math.floor((now - bookingDate) / (1000 * 60 * 60 * 24));
 
-        return diffInDays <= 7 && selectedBooking.BookingStatus !== "Cancelled" ? (
-          <button
-            className="tab-pill pill border-success text-success px-3 py-1"
-            onClick={() =>
-              openCancelModal()
-            }
-          >
-            Request for Refund
-          </button>
-        ) : null;
+        return diffInDays <= 7 &&
+               selectedBooking.BookingStatus !== "Cancelled" &&
+               selectedBooking.Payments !== null &&
+               selectedBooking.Payments?.isRefunded === false ? (
+          <div className="d-flex gap-2">
+            {/* <button
+              className="tab-pill pill border-warning text-warning px-3 py-1"
+              onClick={() => navigate(`/reschedule?bookingId=${selectedBooking.BookingID}`)}
+            >
+              Reschedule
+            </button> */}
+            <button
+              className="tab-pill pill border-success text-success px-3 py-1"
+              onClick={handleRequestRefund}
+            >
+              Request for Refund
+            </button>
+          </div>
+        ) : (
+          selectedBooking.BookingStatus !== "Completed" &&
+          selectedBooking.BookingStatus !== "Cancelled" &&
+          selectedBooking.BookingStatus !== "Failed" &&
+          selectedBooking.BookingStatus !== "Refunded" ? (
+            <button
+              className="tab-pill pill border-warning text-warning px-3 py-1"
+              onClick={() => navigate(`/reschedule?bookingId=${selectedBooking.BookingID}`)}
+            >
+              Reschedule
+            </button>
+          ) : null
+        );
       })()
     )
-  ) : null}
+  ) : (
+     selectedBooking.BookingStatus !== "Failed" &&
+      selectedBooking.BookingStatus !== "Completed" &&
+      selectedBooking.BookingStatus !== "Cancelled" &&
+       selectedBooking.BookingStatus !== "Refunded" &&
+    !showResumeForm && (
+      <div className="d-flex gap-2">
+        {/* <button
+          className="tab-pill pill border-warning text-warning px-3 py-1"
+          onClick={() => navigate(`/reschedule?bookingId=${selectedBooking.BookingID}`)}
+        >
+          Reschedule
+        </button> */}
+        <button
+          className="tab-pill pill border-primary text-primary px-3 py-1"
+          onClick={handleOpenResume}
+        >
+          Resume booking
+        </button>
+      </div>
+    )
+  )}
 
 </div>
 
-    {/* Customer & Vehicle Info */}
+    {/* Resume Booking Form or Details */}
+    {showResumeForm ? (
+      <div className="border rounded-4 p-3 mb-4">
+        <h6 className="mb-3">Resume booking</h6>
+        <div className="row g-3">
+          <div className="col-md-4">
+            <label className="form-label">Select date</label>
+            <input
+              type="date"
+              className="form-control"
+              value={resumeDate}
+               min={new Date().toISOString().split("T")[0]}
+              onChange={(e) => {
+                setResumeDate(e.target.value);
+                setSelectedResumeTimes([]);
+              }}
+            />
+          </div>
+          <div className="col-md-8">
+            <label className="form-label">Payment method</label>
+            <div className="d-flex align-items-center gap-4 mt-1">
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="resumePaymentMethod"
+                  id="pm-razorpay"
+                  value="razorpay"
+                  checked={resumePaymentMethod === "razorpay"}
+                  onChange={(e) => setResumePaymentMethod(e.target.value)}
+                />
+                <label className="form-check-label" htmlFor="pm-razorpay">razorpay</label>
+              </div>
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="resumePaymentMethod"
+                  id="pm-cos"
+                  value="COS"
+                  checked={resumePaymentMethod === "COS"}
+                  onChange={(e) => setResumePaymentMethod(e.target.value)}
+                />
+                <label className="form-check-label" htmlFor="pm-cos">COS</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <label className="form-label">Select time slots (multi-select)</label>
+          <div className="row">
+            <div className="col-md-4">
+              <div className="fw-semibold mb-2">Morning</div>
+              {resumeMorningSlots.length === 0 && <div className="text-muted small">No slots</div>}
+              {resumeMorningSlots.map((s) => (
+                <div className="form-check" key={`m-${s.label}`}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id={`m-${s.label}`}
+                    disabled={s.disabled}
+                    checked={selectedResumeTimes.includes(s.label)}
+                    onChange={(e) => {
+                      setSelectedResumeTimes((prev) =>
+                        e.target.checked
+                          ? [...prev, s.label]
+                          : prev.filter((x) => x !== s.label)
+                      );
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor={`m-${s.label}`}>{s.label}</label>
+                </div>
+              ))}
+            </div>
+            <div className="col-md-4">
+              <div className="fw-semibold mb-2">Afternoon</div>
+              {resumeAfternoonSlots.length === 0 && <div className="text-muted small">No slots</div>}
+              {resumeAfternoonSlots.map((s) => (
+                <div className="form-check" key={`a-${s.label}`}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id={`a-${s.label}`}
+                    disabled={s.disabled}
+                    checked={selectedResumeTimes.includes(s.label)}
+                    onChange={(e) => {
+                      setSelectedResumeTimes((prev) =>
+                        e.target.checked
+                          ? [...prev, s.label]
+                          : prev.filter((x) => x !== s.label)
+                      );
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor={`a-${s.label}`}>{s.label}</label>
+                </div>
+              ))}
+            </div>
+            <div className="col-md-4">
+              <div className="fw-semibold mb-2">Evening</div>
+              {resumeEveningSlots.length === 0 && <div className="text-muted small">No slots</div>}
+              {resumeEveningSlots.map((s) => (
+                <div className="form-check" key={`e-${s.label}`}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id={`e-${s.label}`}
+                    disabled={s.disabled}
+                    checked={selectedResumeTimes.includes(s.label)}
+                    onChange={(e) => {
+                      setSelectedResumeTimes((prev) =>
+                        e.target.checked
+                          ? [...prev, s.label]
+                          : prev.filter((x) => x !== s.label)
+                      );
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor={`e-${s.label}`}>{s.label}</label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="d-flex justify-content-end gap-2 mt-3">
+            <button className="btn btn-outline-secondary px-4 py-2" onClick={() => setShowResumeForm(false)} disabled={isSubmittingResume}>Cancel</button>
+            <button className="btn btn-primary px-4  py-2" onClick={handleResumeSubmit} disabled={isSubmittingResume}>
+              {isSubmittingResume ? "Submitting..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      </div>
+    ) : (
+    <>
     <div className="row g-3 mb-4">
       {/* Customer Info */}
       <div className="col-md-5">
@@ -631,7 +1233,7 @@ const handleSubmitReview = async (bookingID) => {
         : "text-danger"
     }`}
   >
-    {selectedBooking?.Payments?.[0]?.PaymentStatus || "Failed"}
+    {selectedBooking?.Payments?.[0]?.PaymentStatus || "Pending"}
   </span>
 </div>
       </div>
@@ -804,6 +1406,8 @@ const handleSubmitReview = async (bookingID) => {
           </button>
         )}
       </div>
+    )}
+    </>
     )}
 
   </div>

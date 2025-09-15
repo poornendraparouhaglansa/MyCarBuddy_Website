@@ -6,6 +6,7 @@ import reportWebVitals from "./reportWebVitals";
 import "./index.scss";
 import { AlertProvider } from "./context/AlertContext";
 import { HelmetProvider } from "react-helmet-async";
+import { initFCM } from "./fcmSetup";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -17,5 +18,7 @@ root.render(
     </HelmetProvider>
   </>
 );
+
+initFCM();
 
 reportWebVitals();

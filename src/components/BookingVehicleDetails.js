@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import CryptoJS from "crypto-js";
+import axios from "axios";
 
 const BookingVehicleDetails = ({
   vehicle,
@@ -14,18 +15,108 @@ const BookingVehicleDetails = ({
   const [savedCars, setSavedCars] = useState([]);
   const [errors, setErrors] = useState({}); // ✅ Validation errors
   const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
+  const baseUrl = process.env.REACT_APP_CARBUDDY_BASE_URL;
+  const user = JSON.parse(localStorage.getItem("user"));
+  const token = user?.token || "";
 
-  const handleCarSelect = (e) => {
+  // Get decrypted customer ID
+  let decryptedCustId = null;
+  if (user?.id) {
+    const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
+    decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
+  }
+
+  const fetchSavedCars = async () => {
+    if (!decryptedCustId || !token) return;
+
+    try {
+      const response = await axios.get(
+        `${baseUrl}CustomerVehicles/CustId?CustId=${decryptedCustId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data && Array.isArray(response.data)) {
+        setSavedCars(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching saved cars:", error);
+    }
+  };
+
+  const [isLoadingModel, setIsLoadingModel] = useState(false);
+
+  const handleCarSelect = async (e) => {
     const selectedId = e.target.value;
-    const selected = savedCars.find((car) => car.id.toString() === selectedId);
+    const selected = savedCars.find((car) => car.VehicleID.toString() === selectedId);
     if (selected) {
+      // Immediately update vehicle state with basic info (no logo yet)
       setVehicle({
-        brand: { brandName: selected.brandName, id: selected.brandID },
-        model: { modelName: selected.modelName, id: selected.modelID },
-        fuelType: { fuelTypeName: selected.fuelType, id: selected.fuelTypeID },
+        brand: { brandName: selected.BrandName, id: selected.BrandID },
+        model: {
+          modelName: selected.ModelName,
+          id: selected.ModelID,
+          logo: null // Will be updated when fetched
+        },
+        fuelType: { fuelTypeName: selected.FuelTypeName, id: selected.FuelTypeID },
       });
 
-      setRegistrationNumber(selected.registrationNumber);
+      setRegistrationNumber(selected.VehicleNumber);
+
+      // Update formData with all vehicle details immediately
+      setFormData((prev) => ({
+        ...prev,
+        brandID: selected.BrandID,
+        modelID: selected.ModelID,
+        fuelTypeID: selected.FuelTypeID,
+        registrationNumber: selected.VehicleNumber,
+        yearOfPurchase: selected.YearOfPurchase,
+        engineType: selected.EngineType,
+        kilometerDriven: selected.KilometersDriven,
+        transmissionType: selected.TransmissionType,
+        VehicleID: selected.VehicleID,
+      }));
+
+      // Fetch model details to get the logo asynchronously
+      setIsLoadingModel(true);
+      try {
+        const response = await axios.get(
+          `${baseUrl}VehicleModels/GetListVehicleModel`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.data?.status && Array.isArray(response.data.data)) {
+          const modelData = response.data.data.find((m) => m.ModelID === selected.ModelID);
+          if (modelData?.VehicleImage) {
+            const imageBaseURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
+            const getImageUrl = (path) => {
+              if (!path) return "https://via.placeholder.com/100?text=No+Image";
+              return `${imageBaseURL}${path.startsWith("/") ? path.slice(1) : path}`;
+            };
+            const modelLogo = getImageUrl(modelData.VehicleImage);
+
+            // Update vehicle state with the logo
+            setVehicle((prev) => ({
+              ...prev,
+              model: {
+                ...prev.model,
+                logo: modelLogo
+              }
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching model details:", error);
+      } finally {
+        setIsLoadingModel(false);
+      }
     }
   };
 
@@ -63,20 +154,37 @@ const BookingVehicleDetails = ({
   };
 
   useEffect(() => {
-    const localVehicle = JSON.parse(localStorage.getItem("selectedCarDetails"));
-    if (localVehicle) {
-      setSavedCars(localVehicle);
-      setVehicle({
-        brand: { brandName: localVehicle.brandName, id: localVehicle.brandID },
-        model: { modelName: localVehicle.modelName, id: localVehicle.modelID },
-        fuelType: {
-          fuelTypeName: localVehicle.fuelType,
-          id: localVehicle.fuelTypeID,
-        },
-      });
-      setRegistrationNumber(localVehicle.registrationNumber || "");
+    fetchSavedCars();
+    
+    // Load selectedCarDetails from localStorage and display the vehicle image
+    const selectedCarDetails = localStorage.getItem("selectedCarDetails");
+    if (selectedCarDetails) {
+      try {
+        const carData = JSON.parse(selectedCarDetails);
+        if (carData.brand && carData.model) {
+          // Update the vehicle state with the selected car details
+          setVehicle({
+            brand: {
+              id: carData.brand.id,
+              brandName: carData.brand.name,
+              logo: carData.brand.logo
+            },
+            model: {
+              id: carData.model.id,
+              modelName: carData.model.name,
+              logo: carData.model.logo
+            },
+            fuelType: {
+              id: carData.fuel.id,
+              fuelTypeName: carData.fuel.name,
+              logo: carData.fuel.logo
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error parsing selectedCarDetails:", error);
+      }
     }
-    console.log("Vehicle loaded from localStorage:", localVehicle);
   }, []);
 
   if (!vehicle) return null;
@@ -97,8 +205,8 @@ const BookingVehicleDetails = ({
               -- Select a Saved Car --
             </option>
             {savedCars.map((car) => (
-              <option key={car.id} value={car.id}>
-                {car.brandName} - {car.modelName} ({car.registrationNumber})
+              <option key={car.VehicleID} value={car.VehicleID}>
+                {car.BrandName} - {car.ModelName} ({car.VehicleNumber})
               </option>
             ))}
           </select>
@@ -110,29 +218,35 @@ const BookingVehicleDetails = ({
           <div className="row">
             {/* Registration Number */}
             <div className="col-md-6 mb-3">
-                <label className="form-label fw-semibold">
-                  Registration Number <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="registrationNumber"
-                  className={`form-control ${errors.registrationNumber ? "is-invalid" : ""}`}
-                  placeholder="Enter Registration Number"
-                  value={formData.registrationNumber || registrationNumber || ""}
-                  onChange={(e) => {
-                    const upperValue = e.target.value.toUpperCase();
-                    handleChangeWithValidation({ target: { name: "registrationNumber", value: upperValue } });
-                  }}
-                  style={{ textTransform: "uppercase" }}
-                />
-                {errors.registrationNumber && (
-                  <div className="invalid-feedback">{errors.registrationNumber}</div>
-                )}
-              </div>
+              <label className="form-label fw-semibold">
+                Registration Number <span className="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                name="registrationNumber"
+                className={`form-control ${
+                  errors.registrationNumber ? "is-invalid" : ""
+                }`}
+                placeholder="Enter Registration Number"
+                value={formData.registrationNumber || registrationNumber || ""}
+                onChange={(e) => {
+                  const upperValue = e.target.value.toUpperCase();
+                  handleChangeWithValidation({
+                    target: { name: "registrationNumber", value: upperValue },
+                  });
+                }}
+                style={{ textTransform: "uppercase" }}
+              />
+              {errors.registrationNumber && (
+                <div className="invalid-feedback">{errors.registrationNumber}</div>
+              )}
+            </div>
 
             {/* Year of Purchase */}
             <div className="col-md-6 mb-3">
-              <label className="form-label fw-semibold">Year of Purchase <span className="text-danger">*</span></label>
+              <label className="form-label fw-semibold">
+                Year of Purchase <span className="text-danger">*</span>
+              </label>
               <input
                 type="text"
                 name="yearOfPurchase"
@@ -165,7 +279,9 @@ const BookingVehicleDetails = ({
               <input
                 type="text"
                 name="kilometerDriven"
-                className={`form-control ${errors.kilometerDriven ? "is-invalid" : ""}`}
+                className={`form-control ${
+                  errors.kilometerDriven ? "is-invalid" : ""
+                }`}
                 placeholder="e.g., 25000"
                 value={formData.kilometerDriven}
                 onChange={handleChangeWithValidation}
@@ -202,16 +318,54 @@ const BookingVehicleDetails = ({
             value={vehicle.fuelType?.id || ""}
           />
 
-          {savedCars ? (
+          {isLoadingModel ? (
+            // Loading skeleton
+            <div
+              style={{
+                width: 150,
+                height: 150,
+                backgroundColor: "#f0f0f0",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                animation: "pulse 1.5s ease-in-out infinite",
+              }}
+            >
+              <div style={{ color: "#999", fontSize: "14px" }}>Loading...</div>
+            </div>
+          ) : vehicle.model?.logo ? (
             <>
+              {/* Brand Logo */}
+              {vehicle.brand?.logo && (
+                <div style={{ marginBottom: "10px", textAlign: "center" }}>
+                  <img
+                    src={vehicle.brand.logo}
+                    alt={vehicle.brand.brandName}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      objectFit: "contain",
+                      backgroundColor: "#fff",
+                      borderRadius: "4px",
+                      padding: "5px",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    }}
+                  />
+                </div>
+              )}
+              
+              {/* Vehicle Model Image */}
               <img
-                src={savedCars.model?.logo || "https://via.placeholder.com/50"}
-                alt={savedCars.model?.name}
+                src={vehicle.model.logo}
+                alt={vehicle.model.modelName}
                 style={{
                   width: 150,
-                  height: 150,
+                  height: 120,
                   objectFit: "contain",
                   backgroundColor: "#fff",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                 }}
               />
               <div
@@ -219,16 +373,72 @@ const BookingVehicleDetails = ({
                   display: "flex",
                   flexDirection: "column",
                   marginTop: "10px",
+                  textAlign: "center",
                 }}
               >
                 <small style={{ fontSize: "12px", color: "#555" }}>
-                  {savedCars.brand?.name}
+                  {vehicle.brand?.brandName}
                 </small>
-                <strong>{savedCars.model?.name}</strong>
+                <strong style={{ fontSize: "14px", color: "#333" }}>
+                  {vehicle.model?.modelName}
+                </strong>
               </div>
             </>
+          ) : vehicle.model?.modelName ? (
+            // Show car info without image
+            <div
+              style={{
+                width: 150,
+                height: 150,
+                backgroundColor: "#f8f9fa",
+                borderRadius: "8px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px dashed #dee2e6",
+                textAlign: "center",
+                padding: "10px",
+              }}
+            >
+              {/* Brand Logo if available */}
+              {vehicle.brand?.logo && (
+                <img
+                  src={vehicle.brand.logo}
+                  alt={vehicle.brand.brandName}
+                  style={{
+                    width: 30,
+                    height: 30,
+                    objectFit: "contain",
+                    marginBottom: "8px",
+                  }}
+                />
+              )}
+              <div style={{ fontSize: "24px", marginBottom: "8px" }}>🚗</div>
+              <small style={{ fontSize: "12px", color: "#555" }}>
+                {vehicle.brand?.brandName}
+              </small>
+              <strong style={{ fontSize: "14px", color: "#333" }}>
+                {vehicle.model?.modelName}
+              </strong>
+            </div>
           ) : (
-            <span style={{ textDecoration: "underline" }}>Choose Your Car</span>
+            <div
+              style={{
+                width: 150,
+                height: 150,
+                backgroundColor: "#f8f9fa",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px dashed #dee2e6",
+              }}
+            >
+              <span style={{ color: "#6c757d", fontSize: "14px" }}>
+                Choose Your Car
+              </span>
+            </div>
           )}
         </div>
       </div>

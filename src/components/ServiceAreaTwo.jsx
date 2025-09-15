@@ -59,10 +59,10 @@ const ServiceAreaTwo = () => {
               {services.map((service) => (
                 <div key={service.id} className="col-lg-5">
                   <div
-                    className="counter-checklist-wrap"
-                    style={{ backgroundImage: `url(${service.image})` }}
+                    className="counter-checklist-wrap d-flex flex-column"
+                    style={{ backgroundImage: `url(${service.image})`, minHeight: '400px' }}
                   >
-                    <div className="call-media-wrap">
+                    <div className="call-media-wrap flex-grow-1">
                       <div className="icon">
                         <img src={service.icon} alt="icon" />
                       </div>
@@ -78,7 +78,7 @@ const ServiceAreaTwo = () => {
                       </div>
 
                     </div>
-                    <div className="checklist style-white mb-50">
+                    <div className="checklist style-white">
                       <div className="btn-wrap mt-20">
                         <Link className="btn style4 px-4 py-2" to={`/service-details/${service.id}`}>
                       Book Service <i className="fas fa-arrow-right ms-2" />
@@ -98,12 +98,12 @@ const ServiceAreaTwo = () => {
               <div key={service.id} className="col-lg-4">
                 <Link className=" " to={`/service-details/${service.id}`}>
                   <div
-                    className="counter-checklist-wrap"
-                    style={{ backgroundImage: `url(${service.image})` }}
+                    className="counter-checklist-wrap d-flex flex-column"
+                    style={{ backgroundImage: `url(${service.image})`, minHeight: '250px' }}
                   >
-                    <div className="call-media-wrap">
+                    <div className="call-media-wrap flex-grow-1">
                       <div className="icon">
-                        <img src={service.icon} alt="icon" />
+                        <img src={service.icon} alt="icon"  style={{maxWidth: '80%'} }/>
                       </div>
                       <div className="media-body">
                         <h4 className="link">
@@ -117,7 +117,7 @@ const ServiceAreaTwo = () => {
                       </div>
 
                     </div>
-                    <div className="checklist style-white mb-50">
+                    <div className="checklist style-white">
                       <div className="btn-wrap mt-20">
                         <Link className="btn style4 px-4 py-2" to={`/service-details/${service.id}`}>
                           Book Service <i className="fas fa-arrow-right ms-2" />

@@ -143,17 +143,18 @@ $fontsMap: map-merge(
 );
 
 .header-layout1 .header-top{
-  // background: #2f2f2f !important;
+  background: #373c3c !important;
   padding: 7px 0 !important;
 }
 .header-links li , .social-links a{
   font-size: 15px !important;
 }
 .hero-style3 {
-    padding: 160px 0 90px  !important;
+    padding: 0px 0 90px  !important;
 }
 .counter-checklist-wrap:after {
-    background: linear-gradient(90deg, #116d6e -1.06%, rgba(232, 9, 46, 0) 100%) !important;
+    background: linear-gradient(90deg, #302e2e  -1.06%, rgba(232, 9, 46, 0) 100%) !important;
+    border-radius: 10px;
 }
 // .header-logo img , .header-navbar-logo img {
 //     width: 18% !important;
@@ -245,7 +246,7 @@ $fontsMap: map-merge(
     margin-top: -24px;
 }
 .nav-pills .nav-link.active, .nav-pills .show>.nav-link{
-      background-color: #6edbdd;
+      background-color: #ed9600;
 }
 .btn.style-border2:active, .btn.style-border2:focus, .btn.style-border2:hover {
     color: #000000 !important;
@@ -364,7 +365,7 @@ font-size: 12px;
   box-shadow: 4px 2px 11px 0px #b3b1b1 !important;
 }
 .footer-wrapper{
-  background-color: #116d6e !important;
+  background-color: #136d6e !important;
   background-repeat: no-repeat !important;
   background-size: cover !important;
 }
@@ -374,13 +375,30 @@ font-size: 12px;
 @media (min-width: 1400px) {
  .menu-area .container{
       // max-width: 1290px !important;
-      max-width: 90% !important;
+      max-width: 97% !important;
     }
 }
 .pl-30{
   padding-left: 30px !important;
 }
+.pb-50{
+  padding-bottom: 50px !important;
+}
+.header-links a:hover {
+    color: #ffffff !important;
+}
+button.tab.tab-pill.active.btn-lg.px-4.py-2.btn-confirm:disabled {
+  text-decoration: auto !important;
+  background: #d5d5d5 !important;
+}
 
+.timeslot-checkbox label:before {
+    left: 3px !important;
+    top: 10.5px !important;
+    height: 18px !important;
+    width: 18px;
+    border-radius: 10px;
+}
 @media screen and (max-width: 768px) {
   .timeline-container  {
     overflow: auto;

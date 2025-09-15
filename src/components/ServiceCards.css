@@ -48,7 +48,7 @@
     gap: 8px;
     padding: 12px 18px;
     border-radius: 30px;
-    border: 2px solid #01615b;
+    border: 2px solid #136d6e;
     cursor: pointer;
     font-weight: 500;
     color: #555;
@@ -57,9 +57,9 @@
   }
 
   .tab-pill.active {
-    background-color: #01615b;
+    background-color: #136d6e;
     color: white;
-    border-color: #01615b;
+    border-color: #136d6e;
   }
 
   .arrow-btn {

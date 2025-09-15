@@ -35,10 +35,20 @@ const CartPage = () => {
 
   return (
     <div className="container py-4">
-      <h3 className="mb-4">Your Cart</h3>
+      {/* <h3 className="mb-4">Your Cart</h3> */}
 
       {cartItems.length === 0 ? (
-        <div className="alert alert-info">No services in cart yet.</div>
+        <div className=" no-services-cart" style={{ textAlign: "center" }}>
+          <img src="/assets/img/nocart.png" alt="No Cart" style={{ maxWidth: "200px", marginBottom: "20px" }} />
+          <h4>Your Garage  is empty</h4>
+          <p>Looks like you haven't added any services yet. Start exploring and add your favorite services to the cart!</p>
+          <button
+            className="btn btn-primary mt-3 px-4 py-2"
+            onClick={() => window.location.href = "/service"}
+          >
+            Book Service
+          </button>
+        </div>
       ) : (
         <>
           <div className="table-responsive mb-4">

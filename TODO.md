@@ -1,0 +1,8 @@
+- [x] Modify src/fcmSetup.js to dispatch custom event on foreground notification
+- [x] Modify public/firebase-messaging-sw.js to set flag on background notification click
+- [x] Modify src/App.js to check flag and dispatch event on app load
+- [x] Modify src/components/MyBookings.jsx to listen for event and call fetchBookings
+- [x] Test the implementation
+- [x] Improve AddToCartAnimation design and visibility
+- [x] Update AddToCartAnimation.js with better icon and animation
+- [x] Update AddToCartAnimation.css with enhanced styling

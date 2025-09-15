@@ -1,8 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import "./BrandPopup.css";
 
-const BrandPopup = ({ brands, selected, onSelect, onClose }) => {
+const BrandPopup = ({ brands, selected, onSelect, onClose, loading }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredBrands = brands.filter((b) =>
+    b.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="brand-popup-overlay" onClick={onClose}>
       <div
@@ -13,9 +19,17 @@ const BrandPopup = ({ brands, selected, onSelect, onClose }) => {
           <FaTimes />
         </button>
         <h5 className="popup-title mb-3">Choose Your Brand</h5>
+        <input
+          type="text"
+          placeholder="Search brands..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="form-control mb-3"
+          onClick={(e) => e.stopPropagation()}
+        />
         <div className="brand-scroll-container">
           <div className="row d-flex justify-content-center">
-            {brands.map((b) => (
+            {filteredBrands.map((b) => (
               <div key={b.id} className="col-6 col-sm-3 col-md-2 mb-3">
                 <div
                   className={`card brand-card ${

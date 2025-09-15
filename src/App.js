@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
 import RouteScrollToTop from "./helper/RouteScrollToTop";
 import ScrollToTop from "react-scroll-to-top";
 import AboutPage from "./pages/AboutPage";
@@ -22,8 +23,17 @@ import PrivacyPage from "./pages/PrivacyPage";
 import RefundPage from "./pages/RefundPage";
 import ServiceInDetailsPage from "./pages/ServiceInDetailsPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import ReschedulePage from "./pages/ReschedulePage";
 
 function App() {
+  useEffect(() => {
+    // Check if notification was received in background
+    if (localStorage.getItem('notificationReceived') === 'true') {
+      localStorage.removeItem('notificationReceived');
+      window.dispatchEvent(new CustomEvent('notificationReceived'));
+    }
+  }, []);
+
   return (
     <BrowserRouter>
       <CartProvider>
@@ -44,6 +54,7 @@ function App() {
           <Route exact path="/terms" element={<TermsPage />} />
           <Route exact path="/privacy" element={<PrivacyPage />} />
           <Route exact path="/refund-cancellation" element={<RefundPage />} />
+          <Route exact path="/reschedule" element={<ReschedulePage />} />
           <Route path="*" element={<NotFoundPage />} />
 
         </Routes>

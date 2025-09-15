@@ -26,9 +26,11 @@ const WeeklyCalendar = ({ selectedDate, onDateSelect }) => {
     const weekDates = getWeekDates(weekOffset);
 
     const handleDatePick = (date) => {
-        onDateSelect(date);
-        setWeekStartDate(startOfWeek(date, { weekStartsOn: 1 }));
-        setShowCalendar(false);
+        if (date && !isNaN(date.getTime())) {
+            onDateSelect(date);
+            setWeekStartDate(startOfWeek(date, { weekStartsOn: 1 }));
+            setShowCalendar(false);
+        }
     };
 
     return (

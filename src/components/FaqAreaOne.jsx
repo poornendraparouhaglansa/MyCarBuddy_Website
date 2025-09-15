@@ -26,7 +26,7 @@ const FaqAreaOne = () => {
             </div>
           </div>
           <div className="col-lg-6">
-            <div className="accordion-area accordion" id="faqAccordion">
+            <div className="accordion-area accordion" id="faqAccordion" style={{ maxHeight: '400px', overflowY: 'auto' }}>
               <div className="accordion-card active">
                 <div className="accordion-header" id="collapse-item-1">
                   <button

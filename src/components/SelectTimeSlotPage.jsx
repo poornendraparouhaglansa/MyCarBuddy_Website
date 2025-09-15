@@ -44,6 +44,8 @@ const SelectTimeSlotPage = () => {
     CityName: "",
     addressLine1: "",
     addressLine2: "",
+    floorNumber: "",
+    area: "",
     technicianNote: "",
     couponApplied: false,
     CouponAmount: "", // example value
@@ -66,7 +68,7 @@ const SelectTimeSlotPage = () => {
     selectedSavedAddressID: "",
   });
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedTimes, setSelectedTimes] = useState([]);
   const [showAddressFields, setShowAddressFields] = useState(false);
   const [dateTouched, setDateTouched] = useState(true);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -100,15 +102,34 @@ const SelectTimeSlotPage = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 const [paymentMessage, setPaymentMessage] = useState("");
 const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
+const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
 
   const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
+  const handleTimeSlotToggle = (timeSlot) => {
+    if (!selectedDate) {
+      showAlert("Please select a date before choosing a time slot.");
+      return;
+    }
+    
+    setSelectedTimes(prev => {
+      if (prev.includes(timeSlot)) {
+        // Remove the time slot if it's already selected
+        return prev.filter(time => time !== timeSlot);
+      } else {
+        // Add the time slot if it's not selected
+        return [...prev, timeSlot];
+      }
+    });
+    setShowCalendar(false); // hide calendar after selecting time
+  };
+
   const handleNext = () => {
      scrollToTop();
-    if (step === 1 && !selectedTime) {
-      showAlert("Please select a time slot.");
+    if (step === 1 && selectedTimes.length === 0) {
+      showAlert("Please select at least one time slot.");
       return;
     }
     if (step === 2) {
@@ -174,40 +195,56 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
   }, []);
 
   const fetchCities = async (Pincode) => {
-
       try {
         const response = await axios.get(`${baseUrl}City`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        const filteredCities = response.data.filter(
-          (c) => c.StateID === parseInt(formData.StateID) && c.IsActive
-        );
+
+        // If StateID is provided, filter cities by state
+        let filteredCities = response.data;
+        if (formData.StateID) {
+          filteredCities = response.data.filter(
+            (c) => c.StateID === parseInt(formData.StateID) && c.IsActive
+          );
+        } else {
+          // If no StateID, show all active cities
+          filteredCities = response.data.filter((c) => c.IsActive);
+        }
+
         setCities(filteredCities);
-       if (Pincode !== undefined && Pincode !== null && Pincode !== "") {
 
+        // If Pincode is provided, find matching city
+        if (Pincode !== undefined && Pincode !== null && Pincode !== "") {
+          const matchedCity = response.data.filter(
+            (c) => Number(c.Pincode) === Number(Pincode)
+          );
 
-      const matchedCity = response.data.filter(
-        (c) => Number(c.Pincode) === Number(Pincode)
-      );
+          if (matchedCity.length === 0) {
+            showAlert("Service is not available in your selected location.");
+            setFormData((prev) => ({
+              ...prev,
+              StateID: "",
+              CityID: "0",
+              pincode: "",
+              addressLine1: "",
+              CityName: "",
+            }));
+            return;
+          }
 
-
-      if (matchedCity.length === 0) {
-        showAlert("Service is not available in your selected location.");
-
-        setFormData((prev) => ({
-          ...prev,
-          StateID: "",
-          CityID: "0",
-          pincode: "",
-          addressLine1: "",
-          CityName: "",
-        }));
-
-        return;
-      }
-    }
+          // If we found a matching city by pincode, update the form
+          if (matchedCity.length > 0) {
+            const city = matchedCity[0];
+            setFormData((prev) => ({
+              ...prev,
+              StateID: city.StateID.toString(),
+              CityID: city.CityID.toString(),
+              CityName: city.CityName,
+            }));
+          }
+        }
       } catch (err) {
         console.error("Error fetching cities:", err);
       }
@@ -305,7 +342,7 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
       ...prev,
       StateID: matchedState?.StateID || "",
       CityID: matchedCity?.CityID || "0",
-      CityName: cityName || "",
+      CityName: matchedCity?.CityName || "",
       pincode: result?.postalCode || "",
       addressLine1: result?.address || "",
       mapLocation: { latitude: lat, longitude: lng },
@@ -334,9 +371,13 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
   const totalAmount = cartItems.reduce((sum, i) => sum + i.price, 0);
 
   const getBookingDateTime = () => {
-    const [startTime] = selectedTime.split(" - "); // e.g., "3"
+    // For multiple time slots, we'll use the first selected time slot for the date
+    if (selectedTimes.length === 0) return format(selectedDate, "yyyy-MM-dd");
+    
+    const firstTimeSlot = selectedTimes[0];
+    const [startTime] = firstTimeSlot.split(" - "); // e.g., "3"
     const hour = parseInt(startTime);
-    const isPM = selectedTime.includes("PM");
+    const isPM = firstTimeSlot.includes("PM");
     const hour24 = isPM && hour !== 12 ? hour + 12 : hour;
 
     const combinedDate = new Date(selectedDate);
@@ -421,6 +462,60 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
     }
   };
 
+  const findNextAvailableDate = async (currentDate) => {
+    if (isCheckingNextDate) return; // Prevent infinite loops
+    
+    setIsCheckingNextDate(true);
+    const maxDaysToCheck = 7; // Check up to 7 days ahead
+    let nextDate = new Date(currentDate);
+    
+    for (let i = 1; i <= maxDaysToCheck; i++) {
+      nextDate.setDate(nextDate.getDate() + 1);
+      
+      try {
+        const response = await axios.get(`${baseUrl}TimeSlot`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const timeSlots = response.data;
+        const sortedSlots = (timeSlots || [])
+          .filter((slot) => slot?.Status === true)
+          .sort((a, b) => a.StartTime.localeCompare(b.StartTime));
+
+        const now = new Date();
+        const isToday = new Date(nextDate).toDateString() === now.toDateString();
+        
+        let hasAvailableSlots = false;
+
+        for (const { StartTime } of sortedSlots) {
+          const [startHour, startMinute] = StartTime.split(":").map(Number);
+          const startDate = new Date(nextDate);
+          startDate.setHours(startHour, startMinute, 0, 0);
+          
+          const isExpired = isToday && startDate <= now;
+          
+          if (!isExpired) {
+            hasAvailableSlots = true;
+            break;
+          }
+        }
+
+        if (hasAvailableSlots) {
+          setSelectedDate(new Date(nextDate));
+           showAlert("Garage is closed on the selected date. Automatically moved to the next available date.", "info");
+          setIsCheckingNextDate(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Error checking date availability:", err);
+      }
+    }
+    
+    // If no available date found in the next 7 days
+    showAlert("No available time slots found in the next 7 days. Please try again later.", "warning");
+    setIsCheckingNextDate(false);
+  };
+
   const fetchTimeSlots = async (selectedDate) => {
     try {
       const response = await axios.get(`${baseUrl}TimeSlot`, {
@@ -445,6 +540,8 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
         selectedDate &&
         new Date(selectedDate).toDateString() === now.toDateString();
 
+      let allSlotsDisabled = true;
+
       sortedSlots.forEach(({ StartTime, EndTime }) => {
         const [startHour, startMinute] = StartTime.split(":").map(Number);
         const [endHour, endMinute] = EndTime.split(":").map(Number);
@@ -455,7 +552,8 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
         const endDate = new Date(selectedDate);
         endDate.setHours(endHour, endMinute, 0, 0);
 
-        const isExpired = isToday && endDate <= now;
+        // const isExpired = isToday && endDate <= now;
+        const isExpired = isToday && startDate <= now;
 
         const timeFormat = (date) =>
           date.toLocaleTimeString("en-US", {
@@ -469,6 +567,11 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
           disabled: isExpired,
         };
 
+        // If any slot is not disabled, then not all slots are disabled
+        if (!isExpired) {
+          allSlotsDisabled = false;
+        }
+
         if (startHour < 12) {
           categorized.morning.push(formatted);
         } else if (startHour < 16) {
@@ -481,6 +584,11 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
       setMorningSlots(categorized.morning);
       setAfternoonSlots(categorized.afternoon);
       setEveningSlots(categorized.evening);
+
+      // If all slots are disabled, find the next available date
+      if (allSlotsDisabled && sortedSlots.length > 0 && !isCheckingNextDate) {
+        findNextAvailableDate(selectedDate);
+      }
     } catch (err) {
       console.error("Error fetching time slots:", err);
     }
@@ -516,6 +624,8 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
       stateID: Number(formData.StateID),
       cityID: Number(formData.CityID),
       pincode: formData.pincode,
+      floorNumber: formData.floorNumber,
+      area: formData.area,
       latitude: formData.mapLocation.latitude,
       longitude: formData.mapLocation.longitude,
       isDefault: true,
@@ -616,7 +726,7 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
     modal: {
       ondismiss: function () {
 
-        axios.post(
+        axios.put(
           `${baseUrl}Bookings/booking-status`,
           {
             bookingID: data.bookingID,
@@ -641,29 +751,29 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
 };
 
 
-  const CreateOrderID = async (id) => {
-    try {
-      const response = await axios.post(
-        `${baseUrl}Bookings/create-order`,
-        {
-          BookingId: id,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+  // const CreateOrderID = async (id) => {
+  //   try {
+  //     const response = await axios.post(
+  //       `${baseUrl}Bookings/create-order`,
+  //       {
+  //         BookingId: id,
+  //       },
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
 
-      if (response.status !== 200) {
-        console.error("Error creating order ID:", response.data);
-        return null;
-      }
-    } catch (err) {
-      console.error("Error creating order ID:", err);
-      return null;
-    }
-  };
+  //     if (response.status !== 200) {
+  //       console.error("Error creating order ID:", response.data);
+  //       return null;
+  //     }
+  //   } catch (err) {
+  //     console.error("Error creating order ID:", err);
+  //     return null;
+  //   }
+  // };
 
   const handleBookingSubmit = async () => {
     const token = user?.token;
@@ -679,7 +789,7 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
       !formData.pincode ||
       !formData.addressLine1 ||
       !selectedDate ||
-      !selectedTime ||
+      selectedTimes.length === 0 ||
       cartItems.length === 0
     ) {
       showAlert("Please fill all required fields.");
@@ -749,7 +859,7 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
 
     form.append("VechicleID", formData.VehicleID);
     form.append("BookingDate", bookingDateTime);
-    form.append("TimeSlot", selectedTime);
+    form.append("TimeSlot", selectedTimes.join(","));
     form.append("PackageIds", packageIds);
     form.append("PackagePrice", packagePrice);
     form.append("TotalPrice", totalAmount);
@@ -760,6 +870,8 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
     form.append("StateID", formData.StateID);
     form.append("CityID", formData.CityID);
     form.append("Pincode", formData.pincode);
+    form.append("FloorNumber", formData.floorNumber);
+    form.append("Area", formData.area);
 
     form.append("Longitude", formData.mapLocation.longitude);
     form.append("Latitude", formData.mapLocation.latitude);
@@ -962,7 +1074,7 @@ const getGST = () => {
                   onDateSelect={(date) => {
                     setSelectedDate(date);
                     fetchTimeSlots(date);
-                    setSelectedTime("");
+                    setSelectedTimes([]);
                     setDateTouched(true);
                   }}
                 />
@@ -973,26 +1085,35 @@ const getGST = () => {
                     <strong>🌅 Morning</strong>
                     <div className="d-flex gap-2 mt-2 flex-wrap">
                       {morningSlots.map((slot, i) => (
-                        <button
-                          key={i}
-                          disabled={slot.disabled}
-                          className={` ${
-                            selectedTime === slot.label ? "active" : ""
-                          } tab-pill  rounded-pill px-3 py-2`}
-                          onClick={() => {
-                            if (!selectedDate) {
-                              showAlert(
-                                "Please select a date before choosing a time slot."
-                              );
-                              return;
-                            }
-
-                            setSelectedTime(slot.label);
-                            setShowCalendar(false); // hide calendar after selecting time
-                          }}
-                        >
-                          {slot.label}
-                        </button>
+                        <div key={i} className="form-check form-check-inline timeslot-checkbox">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id={`morning-${i}`}
+                            disabled={slot.disabled}
+                            checked={selectedTimes.includes(slot.label)}
+                            onChange={() => handleTimeSlotToggle(slot.label)}
+                            style={{ 
+                              transform: "scale(1.2)", 
+                              marginRight: "8px",
+                              accentColor: "#1890ae"
+                            }}
+                          />
+                          <label 
+                            className={`form-check-label tab-pill rounded-pill px-4 py-2 ${
+                              selectedTimes.includes(slot.label) ? "active" : ""
+                            } ${slot.disabled ? "disabled" : ""}`}
+                            htmlFor={`morning-${i}`}
+                            style={{ 
+                              cursor: slot.disabled ? "not-allowed" : "pointer",
+                              backgroundColor: selectedTimes.includes(slot.label) ? "#1890ae" : "transparent",
+                              color: selectedTimes.includes(slot.label) ? "white" : "inherit",
+                              border: "1px solid #1890ae"
+                            }}
+                          >
+                            {slot.label}
+                          </label>
+                        </div>
                       ))}
                     </div>
                   </>
@@ -1002,25 +1123,35 @@ const getGST = () => {
                   <strong>🌤️ Afternoon</strong>
                   <div className="d-flex gap-2 mt-2 flex-wrap">
                     {afternoonSlots.map((slot, i) => (
-                      <button
-                        key={i}
-                        disabled={slot.disabled}
-                        className={` ${
-                          selectedTime === slot.label ? "active" : ""
-                        } tab-pill  rounded-pill px-3 py-2`}
-                        onClick={() => {
-                          if (!selectedDate) {
-                            showAlert(
-                              "Please select a date before choosing a time slot."
-                            );
-                            return;
-                          }
-                          setSelectedTime(slot.label);
-                          setShowCalendar(false); // hide calendar after selecting time
-                        }}
-                      >
-                        {slot.label}
-                      </button>
+                      <div key={i} className="form-check form-check-inline timeslot-checkbox">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id={`afternoon-${i}`}
+                          disabled={slot.disabled}
+                          checked={selectedTimes.includes(slot.label)}
+                          onChange={() => handleTimeSlotToggle(slot.label)}
+                          style={{ 
+                            transform: "scale(1.2)", 
+                            marginRight: "8px",
+                            accentColor: "#1890ae"
+                          }}
+                        />
+                        <label 
+                          className={`form-check-label tab-pill rounded-pill px-4 py-2 ${
+                            selectedTimes.includes(slot.label) ? "active" : ""
+                          } ${slot.disabled ? "disabled" : ""}`}
+                          htmlFor={`afternoon-${i}`}
+                          style={{ 
+                            cursor: slot.disabled ? "not-allowed" : "pointer",
+                            backgroundColor: selectedTimes.includes(slot.label) ? "#1890ae" : "transparent",
+                            color: selectedTimes.includes(slot.label) ? "white" : "inherit",
+                            border: "1px solid #1890ae"
+                          }}
+                        >
+                          {slot.label}
+                        </label>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -1028,29 +1159,61 @@ const getGST = () => {
                 <div className="mb-3">
                   <strong>🌇 Evening</strong>
                   <div className="d-flex gap-2 mt-2 flex-wrap">
-                    {eveningSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        disabled={slot.disabled}
-                        className={` ${
-                          selectedTime === slot.label ? "active" : ""
-                        } tab-pill  rounded-pill px-3 py-2`}
-                        onClick={() => {
-                          if (!selectedDate) {
-                            showAlert(
-                              "Please select a date before choosing a time slot."
-                            );
-                            return;
-                          }
-                          setSelectedTime(slot.label);
-                          setShowCalendar(false); // hide calendar after selecting time
-                        }}
-                      >
-                        {slot.label}
-                      </button>
+                    {eveningSlots.map((slot, i) => (
+                      <div key={i} className="form-check form-check-inline timeslot-checkbox">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id={`evening-${i}`}
+                          disabled={slot.disabled}
+                          checked={selectedTimes.includes(slot.label)}
+                          onChange={() => handleTimeSlotToggle(slot.label)}
+                          style={{ 
+                            transform: "scale(1.2)", 
+                            marginRight: "8px",
+                            accentColor: "#1890ae"
+                          }}
+                        />
+                        <label 
+                          className={`form-check-label tab-pill rounded-pill px-4 py-2 ${
+                            selectedTimes.includes(slot.label) ? "active" : ""
+                          } ${slot.disabled ? "disabled" : ""}`}
+                          htmlFor={`evening-${i}`}
+                          style={{ 
+                            cursor: slot.disabled ? "not-allowed" : "pointer",
+                            backgroundColor: selectedTimes.includes(slot.label) ? "#1890ae" : "transparent",
+                            color: selectedTimes.includes(slot.label) ? "white" : "inherit",
+                            border: "1px solid #1890ae"
+                          }}
+                        >
+                          {slot.label}
+                        </label>
+                      </div>
                     ))}
                   </div>
                 </div>
+                
+                {/* Selected Time Slots Summary */}
+                {selectedTimes.length > 0 && (
+                  <div className="mt-3 p-3 bg-light rounded">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h6 className="mb-0">Selected Time Slots ({selectedTimes.length}):</h6>
+                      <button 
+                        className="btn btn-outline-danger px-3 py-1"
+                        onClick={() => setSelectedTimes([])}
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                    <div className="d-flex flex-wrap gap-2">
+                      {selectedTimes.map((time, index) => (
+                        <span key={index} className="badge bg-primary">
+                          {time}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
               {/* )} */}
             </>
@@ -1232,7 +1395,7 @@ const getGST = () => {
                     onChange={() => setPaymentMethod("COS")}
                   />
                   <label className="form-check-label" htmlFor="COS">
-                    Pay After Completion
+                    Cash on Service
                   </label>
                 </div>
 

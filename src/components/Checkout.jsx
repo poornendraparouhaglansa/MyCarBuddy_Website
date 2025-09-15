@@ -23,7 +23,7 @@ const Checkout = () => {
       amount: totalAmount * 100,
       currency: "INR",
       name: "MyCarBuddy a product by Glansa Solutions Pvt. Ltd.",
-      description: "Test Payment for Car Services",
+      description: "Payment for Car Services",
       image: "./public/assets/img/logo-yellow-01.png",
       handler: function (response) {
         console.log("Payment successful:", response);

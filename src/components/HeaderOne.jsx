@@ -48,7 +48,8 @@ const [filteredCities, setFilteredCities] = useState([]);
       if (!alreadyShown && !timeoutId) {
         // Wait 5 seconds after first scroll
         timeoutId = setTimeout(() => {
-          setShowLocationModal(true);
+          // setShowLocationModal(true);
+          handleGetLocation();
         }, 3000);
       }
     };
@@ -375,12 +376,12 @@ const handleSelectCity = (city) => {
             <div className="container">
               <div className="row align-items-center justify-content-lg-start justify-content-between">
                 <div className="col-auto d-block">
-                  <div className="header-logo1 ">
+                  <div className="header-logo1 p-3">
                     <Link to="/">
                       <img
                         src="/assets/img/MyCarBuddy-Logo1.webp"
                         alt="MyCarBuddy"
-                        width={300}
+                        width={200}
                         height={100}
                       />
                     </Link>
@@ -579,6 +580,7 @@ const handleSelectCity = (city) => {
                           alignItems: "center",
                           justifyContent: "center",
                         }}
+                        id="GotoCart"
                       >
                         <span
                           className="header-grid-text"
@@ -752,6 +754,7 @@ const handleSelectCity = (city) => {
                 fontSize: "22px",
                 color: "#888",
                 cursor: "pointer",
+                display: "none",
               }}
               aria-label="Close"
             >

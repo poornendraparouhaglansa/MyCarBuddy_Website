@@ -50,7 +50,7 @@ const Terms = () => {
         </li>
         <li>
           Prepaid bookings not availed on time will be considered completed unless
-          cancelled as per our policy.
+          canceled as per our policy.
         </li>
       </ul>
 
@@ -115,8 +115,8 @@ const Terms = () => {
         <strong>Glansa Solutions Private Limited</strong> <br />
         Flat No. 102, Mahalaxmi Paradise, Aswini Colony, West Maredpally,{" "}
         Secunderabad, Hyderabad, Telangana – 500026, India. <br />
-        📧 Email: info@mycarbuddy.in <br />
-        📞 Phone: +91 98856 53865<br/>
+        📧 Email: info@glansa.com <br />
+        📞 Phone: +91 9885653865<br/>
         📞 Phone: +91 70752 43939
       </p>
     </div>

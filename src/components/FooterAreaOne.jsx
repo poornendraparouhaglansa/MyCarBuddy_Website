@@ -13,13 +13,13 @@ const FooterAreaOne = () => {
       <div className="container">
         <div className="widget-area p-4">
           <div className="col-md-12 text-center">
-               <img src="/assets/img/MyCarBuddy-Logo1.webp" alt="MyCarBuddy"  width={"300px"}/>
+               <img src="/assets/img/logoWhite.png" alt="MyCarBuddy"  width={"300px"}/>
           </div>
           <div className="row justify-content-between">
 
             
 
-            <div className="col-md-3 ">
+            <div className="col-md-3 pt-4">
               <div className="widget widget_nav_menu footer-widget text-center">
                 <h3 className="widget_title">Company</h3>
                 <div className="menu-all-pages-container">
@@ -49,7 +49,7 @@ const FooterAreaOne = () => {
               </div>
             </div>
 
-            <div className="col-md-3 ">
+            <div className="col-md-3 pt-4">
               <div className="widget footer-widget text-center">
                 <h3 className="widget_title">Contact</h3>
                 <div className="widget-contact">

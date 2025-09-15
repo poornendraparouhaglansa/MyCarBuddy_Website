@@ -72,11 +72,11 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
         try {
             const response = await axios.post(`${baseUrl}Auth/verify-otp`, {
                 loginId: identifier,
-                otp,
+                otp,  
                 deviceToken: "web-token",
                 deviceId
             });
-            // console.log("OTP verification response:", response.data);
+            console.log("OTP verification response:", response.data.custID);
           
             localStorage.setItem("user", JSON.stringify({
             id: CryptoJS.AES.encrypt(response.data?.custID.toString(), secretKey).toString(),
@@ -151,35 +151,53 @@ const getVehicleList = async () => {
                 <form onSubmit={otpSent ? handleVerifyOTP : handleSendOTP}>
                     <div className="mb-3 text-start">
                         <label className="form-label">Mobile Number</label>
-                        <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            className="form-control"
-                            placeholder="Enter mobile number"
-                            value={identifier}
-                            onChange={(e) => {
-                                const value = e.target.value.replace(/\D/g, "");
-                                if (value.length <= 10) setIdentifier(value);
-                            }}
-                            maxLength={10}
-                            required
-                        />
-                      </div>
-
-                    {otpSent && (
-                        <div className="mb-3 text-start">
-                            <label className="form-label">Enter OTP</label>
+                        <div className="input-group">
                             <input
                                 type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 className="form-control"
-                                placeholder="Enter OTP"
-                                value={otp}
-                                onChange={(e) => setOtp(e.target.value)}
+                                placeholder="Enter mobile number"
+                                value={identifier}
+                                onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, "");
+                                    if (value.length <= 10) setIdentifier(value);
+                                }}
+                                maxLength={10}
                                 required
                             />
+                            {otpSent && (
+                                <div className="input-group-append">
+                                    <button
+                                        type="button"
+                                        onClick={handleSendOTP}
+                                        disabled={loading}
+                                        className="btn btn-outline-secondary"
+                                        title="Resend OTP"
+                                        style={{ padding: "12px 17px" }}
+                                    >
+                                        <i className="fas fa-redo"></i>
+                                    </button>
+                                </div>
+                            )}
+
+                          
                         </div>
-                    )}
+                    </div>
+
+                       {otpSent && (
+                                <div className="mb-3 text-start">
+                                        <label className="form-label">Enter OTP</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="Enter OTP"
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                )}
 
                     <div className="text-center mb-3">
                         <button type="submit" className={`btn btn-primary btn-sm ${loading ? "disabled" : ""}`}>

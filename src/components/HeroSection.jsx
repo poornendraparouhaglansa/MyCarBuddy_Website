@@ -1,8 +1,21 @@
 // src/components/HeroSection.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const HeroSection = () => {
+  const [currentImage, setCurrentImage] = useState(0);
+  const images = [
+    "assets/img/hero/bannerdesign1.png",
+    "assets/img/hero/bannerdesign2.png"
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImage((prev) => (prev + 1) % images.length);
+    }, 5000); // Change image every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [images.length]);
   return (
     <section
       style={{
@@ -14,12 +27,16 @@ const HeroSection = () => {
         justifyContent: "space-between",
         padding: "80px 60px",
         // backgroundColor: "#ffffff",
-        backgroundImage: `url("assets/img/hero/hero_bg.webp")`,
+        backgroundImage: `url(${images[currentImage]})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
+        transition: "background-image 1s ease-in-out",
       }}
     >
+      <h2 className="d-none">My Car Buddy</h2>
+      <h1 className="d-none">MyCarBuddy</h1>
+
       {/* Background curve */}
        {/* <svg
         viewBox="0 0 350 600"
@@ -61,7 +78,7 @@ const HeroSection = () => {
                                Premium Car Care at Your Doorstep
                               </h1>
                               <p className="hero-text text-white" data-ani="slideinup" data-ani-delay="0.2s">
-                                We bring hassle-free service right when you need it, so you enjoy life while we care for your car.
+                              MyCarBuddy bring hassle-free service right when you need it, so you enjoy life while we care for your car.
                                </p>
                               <p className="hero-text text-white" data-ani="slideinup" data-ani-delay="0.2s">
                                 Our experts assess your car’s needs with clarity, no hidden costs, only genuine solutions.

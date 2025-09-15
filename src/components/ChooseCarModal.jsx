@@ -3,7 +3,6 @@ import "./ChooseCarModal.css";
 import BrandPopup from "./BrandPopup"; // new popup component
 import ModelPopup from "./ModelPopup";
 import axios from "axios";
-import { useAlert } from "../context/AlertContext";
 
 const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
   const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
@@ -16,15 +15,15 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
   const [fuel, setFuel] = useState("");
   const [showBrandPopup, setShowBrandPopup] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
+  const [loadingBrands, setLoadingBrands] = useState(true);
+  const [loadingModels, setLoadingModels] = useState(false);
   const modalRef = useRef();
   const imageBaseURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
   const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
 
-  const { showAlert } = useAlert();
-
-
   useEffect(() => {
     const fetchBrands = async () => {
+      setLoadingBrands(true);
       try {
         const token = JSON.parse(localStorage.getItem("user"))?.token;
         const response = await axios.get(
@@ -46,6 +45,8 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
         }
       } catch (err) {
         console.error("Failed to fetch brands", err);
+      } finally {
+        setLoadingBrands(false);
       }
     };
 
@@ -54,20 +55,25 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
   }, []);
 
   const fetchModels = async (brandId) => {
+    setLoadingModels(true);
     try {
       const token = JSON.parse(localStorage.getItem("user"))?.token;
-      const response = await axios.get(`${BASE_URL}VehicleModels/GetListVehicleModel`, {
+      const response = await axios.get(`${BASE_URL}VehicleModels/BrandId?brandid=${brandId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (response.data?.status && Array.isArray(response.data.data)) {
+
+      console.log("Raw models data:", response.data);
+      
+      if (Array.isArray(response.data)) {
+        console.log("Raw models data:", response.data);
         const getImageUrl = (path) => {
           if (!path) return "https://via.placeholder.com/100?text=No+Image";
           const fileName = path.split('/').pop();
-          return `${imageBaseURL}${path.startsWith("/") ? path.slice(1) : path}`;
+          return  `${imageBaseURL}${path.startsWith("/") ? path.slice(1) : path}`;
         };
-        const filteredModels = response.data.data
+        const filteredModels = response.data
           .filter((m) => m.BrandID === brandId && m.IsActive)
           .map((m) => ({
             id: m.ModelID,
@@ -77,8 +83,14 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 
         setModels(filteredModels);
       }
+      else {
+        setModels([]);
+        console.error("Error fetching models:", response.data);
+      }
     } catch (error) {
       console.error("Error fetching models:", error);
+    } finally {
+      setLoadingModels(false);
     }
   };
 
@@ -115,7 +127,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
     e.preventDefault();
 
     if (!brand || !model || !fuel) {
-       showAlert("Missing Info", "Please select brand, model, and fuel type.", 3000, "error");
+      alert("Please select brand, model, and fuel type.");
       return;
     }
 
@@ -137,9 +149,9 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
     }
     localStorage.removeItem("cartItems");
 
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
 
     console.log("Saved Car:", selectedCarDetails);
 
@@ -160,7 +172,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
     setModel(id);
     setShowModelPopup(false);
   };
-
+  
 
   return (
     <div className={`choose-car-modal ${isVisible ? "visible" : "hidden"}`}>
@@ -175,23 +187,35 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
               {/* Brand Card */}
               <div
                 onClick={() => {
-                  setShowBrandPopup(true);
+                  if (!loadingBrands) setShowBrandPopup(true);
                 }}
                 className={`rounded shadow-sm text-center p-3 car-box ${brand ? "border-primary border-2" : "border"
                   } bg-white hover-shadow`}
                 style={{
                   width: 120,
                   height: 120,
-                  cursor: "pointer",
+                  cursor: loadingBrands ? "not-allowed" : "pointer",
                   transition: "0.3s",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
+                  opacity: loadingBrands ? 0.6 : 1,
                 }}
               >
                 <div className="fw-semibold small mb-2 text-dark">Brand</div>
-                {brand ? (
+                {loadingBrands ? (
+                  <div
+                    className="skeleton-loader"
+                    style={{
+                      width: 70,
+                      height: 70,
+                      backgroundColor: "#e0e0e0",
+                      borderRadius: "4px",
+                      animation: "pulse 1.5s ease-in-out infinite",
+                    }}
+                  ></div>
+                ) : brand ? (
                   <img
                     src={brands.find((b) => b.id === brand)?.logo}
                     alt="Brand Logo"
@@ -205,15 +229,15 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
               {/* Model Card */}
               <div
                 onClick={() => {
-                  if (brand) setShowModelPopup(true);
+                  if (!loadingModels && brand) setShowModelPopup(true);
                 }}
                 className={`rounded shadow-sm text-center p-3 car-box ${model ? "border-primary border-2" : "border"
                   } bg-white hover-shadow`}
                 style={{
                   width: 120,
                   height: 120,
-                  cursor: brand ? "pointer" : "not-allowed",
-                  opacity: brand ? 1 : 0.6,
+                  cursor: loadingModels || !brand ? "not-allowed" : "pointer",
+                  opacity: loadingModels || !brand ? 0.6 : 1,
                   transition: "0.3s",
                   display: "flex",
                   flexDirection: "column",
@@ -222,7 +246,18 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
                 }}
               >
                 <div className="fw-semibold small mb-2 text-dark">Model</div>
-                {model ? (
+                {loadingModels ? (
+                  <div
+                    className="skeleton-loader"
+                    style={{
+                      width: 70,
+                      height: 70,
+                      backgroundColor: "#e0e0e0",
+                      borderRadius: "4px",
+                      animation: "pulse 1.5s ease-in-out infinite",
+                    }}
+                  ></div>
+                ) : model ? (
                   <img
                     src={models.find((m) => m.id === model)?.logo}
                     alt="Model Image"
@@ -298,6 +333,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
           selected={model}
           onSelect={handleModelSelect}
           onClose={() => setShowModelPopup(false)}
+          loading={loadingModels}
         />
       )}
     </div>

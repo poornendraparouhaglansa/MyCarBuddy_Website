@@ -1,7 +1,51 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const ContactArea = () => {
+  const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    number: '',
+    subject: '',
+    message: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setSuccess('');
+    setError('');
+    try {
+      await axios.post(`${BASE_URL}contact`, {
+        name: formData.name,
+        email: formData.email,
+        phoneNumber: formData.number,
+        subject: formData.subject,
+        message: formData.message,
+        type: 'contact'
+      });
+      setSuccess('Message sent successfully!');
+      setFormData({
+        name: '',
+        email: '',
+        number: '',
+        subject: '',
+        message: ''
+      });
+    } catch (err) {
+      setError('Failed to send message. Please try again.');
+    }
+    setLoading(false);
+  };
   return (
     <>
       <div className="contact-area space">
@@ -64,7 +108,7 @@ const ContactArea = () => {
       </div>
       <div className="space-bottom">
         <div className="container">
-          <div className="map-sec">
+          {/* <div className="map-sec">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d60902.88409628053!2d78.31117294863282!3d17.439109100000007!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb9a3e6c6874dd%3A0x7abfee772aee3875!2sGlansa%20Solutions!5e0!3m2!1sen!2sin!4v1756129461537!5m2!1sen!2sin"
               allowFullScreen=""
@@ -73,14 +117,26 @@ const ContactArea = () => {
               height={"250"}
               width={"100%"}
             />
-          </div>
+          </div> */}
         </div>
       </div>
-      <div className="space-bottom d-none">
+      <div className="space-bottom ">
         <div className="container">
           <div className="row flex-row-reverse">
             <div className="col-lg-6 text-lg-end">
-              <div className="faq-thumb2 mb-xl-0 mb-50">
+
+              <div className="map-sec">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d60902.88409628053!2d78.31117294863282!3d17.439109100000007!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb9a3e6c6874dd%3A0x7abfee772aee3875!2sGlansa%20Solutions!5e0!3m2!1sen!2sin!4v1756129461537!5m2!1sen!2sin"
+              allowFullScreen=""
+              loading="lazy"
+              title="address"
+              height={"250"}
+              width={"250"}
+            />
+          </div>
+
+              {/* <div className="faq-thumb2 mb-xl-0 mb-50">
                 <div className="about-counter-grid jump">
                   <img
                     src="assets/img/icon/faq2-counter-icon-1.svg"
@@ -94,17 +150,16 @@ const ContactArea = () => {
                   </div>
                 </div>
                 <img src="assets/img/normal/faq-thumb-2-1.webp" alt="MyCarBuddy" />
-              </div>
+              </div> */}
             </div>
             <div className="col-lg-6">
               <div className="contact-form-wrap p-0">
                 <div className="title-area">
                   <span className="sub-title">Contact form</span>
-                  <h2 className="sec-title">Car Repair The Best Services</h2>
+                  <h2 className="sec-title">Get In Touch</h2>
                 </div>
                 <form
-                  action="mail.php"
-                  method="POST"
+                  onSubmit={handleSubmit}
                   className="appointment-form ajax-contact"
                 >
                   <div className="row">
@@ -116,17 +171,37 @@ const ContactArea = () => {
                           name="name"
                           id="name"
                           placeholder="Your Name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          required
                         />
                       </div>
                     </div>
                     <div className="col-md-6">
                       <div className="form-group">
                         <input
-                          type="text"
+                          type="email"
                           className="form-control"
                           name="email"
                           id="email"
                           placeholder="Email Address"
+                          value={formData.email}
+                          onChange={handleChange}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <input
+                          type="tel"
+                          className="form-control"
+                          name="number"
+                          id="number"
+                          placeholder="Phone Number"
+                          value={formData.number}
+                          onChange={handleChange}
+                          required
                         />
                       </div>
                     </div>
@@ -135,25 +210,13 @@ const ContactArea = () => {
                         <input
                           type="text"
                           className="form-control"
-                          name="number"
-                          id="number"
-                          placeholder="Phone Number"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <select
                           name="subject"
                           id="subject"
-                          className="form-select"
-                          defaultValue={"Choose"}
-                        >
-                          <option value="Choose">Choose a Option</option>
-                          <option value="Construction">Auto Repair</option>
-                          <option value="Real Estate">Car Repair</option>
-                          <option value="Industry">Automotive</option>
-                        </select>
+                          placeholder="Subject"
+                          value={formData.subject}
+                          onChange={handleChange}
+                          required
+                        />
                       </div>
                     </div>
                   </div>
@@ -162,12 +225,17 @@ const ContactArea = () => {
                       placeholder="Message here.."
                       id="contactForm"
                       className="form-control"
-                      defaultValue={""}
+                      name="message"
+                      value={formData.message}
+                      onChange={handleChange}
+                      required
                     />
                   </div>
+                  {success && <div className="alert alert-success">{success}</div>}
+                  {error && <div className="alert alert-danger">{error}</div>}
                   <div className="form-btn col-12">
-                    <button className="btn style2">
-                      Appointment Now <i className="fas fa-arrow-right ms-2" />
+                    <button type="submit" className="btn style2" disabled={loading}>
+                      {loading ? 'Sending...' : 'Submit'} <i className="fas fa-arrow-right ms-2" />
                     </button>
                   </div>
                 </form>

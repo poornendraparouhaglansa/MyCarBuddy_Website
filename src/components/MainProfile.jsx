@@ -4,6 +4,7 @@ import Profile from "./Profile";
 import AddressTab from "./AddressTab";
 import MyBookings from "./MyBookings";
 import MyCarList from "./MyCarList";
+import InvoicesTab from "./InvoicesTab";
 import axios from "axios";
 import CryptoJS from "crypto-js";
 
@@ -68,6 +69,8 @@ const MainProfile = () => {
   const handleTabClick = (key) => {
     if (key === "logout") {
       localStorage.removeItem("user");
+      localStorage.clear();
+      sessionStorage.clear();
       navigate("/");
     } else {
       setActiveTab(key);
@@ -84,6 +87,8 @@ const MainProfile = () => {
         return <MyBookings />;
       case "mycars":
         return <MyCarList />;
+      case "invoices":
+        return <InvoicesTab />;
       default:
         return <Profile />;
     }
@@ -94,6 +99,7 @@ const MainProfile = () => {
     { key: "mybookings", label: "📅 My Bookings" },
     { key: "addresses", label: "🏠 Addresses" },
     { key: "mycars", label: "🚗 My Car List" },
+    { key: "invoices", label: "📄 Invoices" },
     { key: "logout", label: "🚪 Log Out" },
   ];
 

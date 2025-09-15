@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import HeaderOne from "../components/HeaderOne";
-
 import FooterAreaOne from "../components/FooterAreaOne";
 import Breadcrumb from "../components/Breadcrumb";
 import SubscribeOne from "../components/SubscribeOne";
-import Cart from "../components/Cart";
+import MyBookings from "../components/MyBookings";
 import Preloader from "../helper/Preloader";
 
 const MyBookingsPage = () => {
@@ -23,10 +22,10 @@ const MyBookingsPage = () => {
       <HeaderOne />
 
       {/* Breadcrumb */}
-      <Breadcrumb title={"Cart"} />
+      <Breadcrumb title={"My Bookings"} />
 
-      {/* Cart */}
-      <Cart />
+      {/* MyBookings */}
+      <MyBookings />
 
       {/* Subscribe One */}
       <SubscribeOne />

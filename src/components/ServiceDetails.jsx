@@ -4,10 +4,69 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";
 import ChooseCarModal from "./ChooseCarModal";
+import { Helmet } from "react-helmet-async";
 
 const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
 const ImageURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
 
+const SkeletonLoader = () => {
+  return (
+    <div className="service-details-area py-5">
+      <div className="container">
+        <div className="row gx-5 flex-row">
+          {/* Main Content Skeleton */}
+          <div className="col-lg-8">
+            <div className="service-page-single">
+              <div className="page-img mb-4">
+                <div className="skeleton-carousel mb-4" style={{ height: 400, backgroundColor: "#e0e0e0", borderRadius: "0.5rem" }}></div>
+                <div className="d-flex justify-content-between align-items-center px-4 py-3" style={{ backgroundColor: '#f1f1f1' }}>
+                  <div className="skeleton-price" style={{ width: "100px", height: 24, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                  <div className="skeleton-button" style={{ width: "120px", height: 36, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                </div>
+              </div>
+
+              <div className="page-content">
+                <div className="skeleton-title mb-3" style={{ width: "60%", height: 32, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                <div className="skeleton-text mb-2" style={{ width: "90%", height: 16, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                <div className="skeleton-text mb-4" style={{ width: "80%", height: 16, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+
+                <div className="skeleton-subtitle mb-2" style={{ width: "200px", height: 24, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                <div className="skeleton-list mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="skeleton-list-item mb-2" style={{ width: "90%", height: 20, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar Skeleton */}
+          <div className="col-lg-4">
+            <aside className="sidebar-area">
+              <div className="widget widget_service-list mb-4">
+                <div className="skeleton-sidebar-title mb-3" style={{ width: "150px", height: 24, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                <div className="skeleton-sidebar-list">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="skeleton-sidebar-item mb-2" style={{ width: "100%", height: 20, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="widget widget_contact bg-light p-3 rounded text-center">
+                <div className="skeleton-contact-title mb-2" style={{ width: "100px", height: 20, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                <div className="skeleton-contact-text mb-2" style={{ width: "100%", height: 16, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                <div className="skeleton-contact-text mb-2" style={{ width: "90%", height: 16, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                <div className="skeleton-contact-text mb-2" style={{ width: "80%", height: 16, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                <div className="skeleton-contact-icon mb-2" style={{ width: "40px", height: 40, backgroundColor: "#e0e0e0", borderRadius: "50%", margin: "0 auto" }}></div>
+                <div className="skeleton-contact-phone" style={{ width: "120px", height: 20, backgroundColor: "#e0e0e0", borderRadius: "0.25rem", margin: "0 auto" }}></div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ServiceDetails = () => {
   const { id } = useParams();
@@ -17,6 +76,8 @@ const ServiceDetails = () => {
   const [selectedCar, setSelectedCar] = useState(null);
   const [showCarModal, setShowCarModal] = useState(false);
   const [allServices, setAllServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [seoMeta, setSeoMeta] = useState(null);
 
   const selectedCarDetails = JSON.parse(localStorage.getItem("selectedCarDetails"));
   let brandId;
@@ -26,12 +87,7 @@ const ServiceDetails = () => {
     brandId = selectedCarDetails.brand?.id;
     modelId = selectedCarDetails.model?.id;
     fuelId = selectedCarDetails.fuel?.id;
-
-    console.log({ brandId, modelId, fuelId });
-  } else {
-    console.log("No car selected yet.");
   }
-
 
 
   useEffect(() => {
@@ -50,7 +106,6 @@ const ServiceDetails = () => {
 
     loadSelectedCar();
 
-    // Listen to custom event triggered after login
     const handleProfileUpdate = () => {
       loadSelectedCar();
     };
@@ -62,23 +117,23 @@ const ServiceDetails = () => {
     };
   }, []);
 
+  
 
   useEffect(() => {
     const fetchPackages = async () => {
+      setLoading(true);
       try {
         const response = await axios.get(
           `${BaseURL}PlanPackage/GetPlanPackagesByCategoryAndSubCategory`
         );
 
-        //         if (Array.isArray(response)) {
-        //  console.log("Fetched packages:", );
         setAllServices(response.data);
 
         const formatted = response.data
           .filter(pkg => pkg.PackageID === parseInt(id))
           .map(pkg => {
             const hours = pkg.EstimatedDurationMinutes
-              ? pkg.EstimatedDurationMinutes // 1 decimal place
+              ? pkg.EstimatedDurationMinutes
               : null;
 
             return {
@@ -99,21 +154,17 @@ const ServiceDetails = () => {
               ModelId: "",
               isActive: pkg.IsActive,
               EstimatedDurationMinutes: pkg.EstimatedDurationMinutes,
-              EstimatedDurationHours: hours, // Keep hours separately too if needed
+              EstimatedDurationHours: hours,
               Description: pkg.Description,
               categoryId: pkg.CategoryID,
             };
           });
 
-
         setServices(formatted);
-
-
-        // } else {
-        //   setPackages([]);
-        // }
       } catch (err) {
         console.error("Failed to fetch packages", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -122,19 +173,59 @@ const ServiceDetails = () => {
 
 
 
+
+useEffect(() => {
+  const fetchSeoData = async () => {
+    try {
+      const slug = services[0].title
+        .toLowerCase()
+        .replace(/\s+/g, "-"); // replace spaces with -
+
+      const res = await axios.get(
+        `${BaseURL}Seometa/page_slug?page_slug=${slug}`
+      );
+
+      if (res.data) {
+        setSeoMeta(res.data[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching SEO metadata:", error);
+    }
+  };
+
+  fetchSeoData();
+}, [services]);
+
+
   const service = services.find(s => s.id === parseInt(id));
+
+  if (loading) {
+    return <SkeletonLoader />;
+  }
 
   if (!service) {
     return '';
   }
 
   const categoryServices = allServices.filter(s => s.CategoryID === service.categoryId && s.PackageID !== service.id);
-  console.log(categoryServices);
 
   const isInCart = cartItems.some((i) => i.id === service.id);
 
+
+
+
+
   return (
     <>
+      {/* ✅ Dynamic SEO Meta Tags */}
+      {seoMeta && (
+          <Helmet>
+            <title>{seoMeta.seo_title || "About | MyCarBuddy"}</title>
+            <meta name="description" content={seoMeta.seo_description || ""} />
+            <meta name="keywords" content={seoMeta.seo_keywords || ""} />
+          </Helmet>
+      )}
+      {/* Service Details Area */}
       <div className="service-details-area py-5">
         <div className="container">
           <div className="row gx-5 flex-row">
@@ -148,7 +239,7 @@ const ServiceDetails = () => {
                         id="serviceCarousel"
                         className="carousel slide mb-4"
                         data-bs-ride="carousel"
-                        data-bs-interval="3000"  // 3 seconds
+                        data-bs-interval="3000"
                       >
                         <div className="carousel-inner">
                           {service.banners.map((img, idx) => (
@@ -186,24 +277,19 @@ const ServiceDetails = () => {
                           <span className="visually-hidden">Next</span>
                         </button>
                       </div>
-
                     </div>
 
                     <div className="w-50 d-flex flex-row justify-content-end gap-2">
-                      {/* <i className="bi bi-clock-fill text-muted">  </i> */}
-                      {/* <p className="mb-0 fw-regular text-muted"> {service.duration}</p> */}
                     </div>
                   </div>
 
-
                   <div className="d-flex justify-content-between align-items-center px-4 py-3" style={{ backgroundColor: '#f1f1f1' }}>
-
                     {selectedCar ? (
                       <>
                         <h5 className="mb-0 fw-bold text-dark">₹ {service.price}</h5>
                         {isInCart ? (
                           <button
-                            className="btn style-border2"
+                            className="btn style-border2 px-4 py-2"
                             onClick={(e) => {
                               e.stopPropagation();
                               navigate("/cart");
@@ -212,14 +298,13 @@ const ServiceDetails = () => {
                             ✔ View Cart
                           </button>
                         ) : (
-                          <button className="btn btn-danger fw-bold" onClick={(e) => {
+                          <button className="btn btn-danger fw-bold px-4 py-2" onClick={(e) => {
                             e.stopPropagation();
                             addToCart(service);
                             toast.success("Service added to cart");
                           }}>
                             + ADD TO CART
                           </button>
-
                         )}
                       </>
                     ) : (
@@ -236,11 +321,8 @@ const ServiceDetails = () => {
                         </button>
                       </>
                     )}
-
                   </div>
                 </div>
-
-
 
                 <div className="page-content">
                   <h2 className="page-title">{service.title}</h2>
@@ -258,40 +340,6 @@ const ServiceDetails = () => {
                       </li>
                     ))}
                   </ul>
-
-                  {/* <h4 className="mt-1 mb-3">Customer Comments</h4>
-
-                  <div className="bg-light p-3 rounded mb-3">
-                    <p className="mb-1 fw-semibold">Sourav Behuria</p>
-                    <p className="mb-1">⭐⭐⭐⭐☆ (4/5)</p>
-                    <small className="text-muted">“Very professional and quick service. My AC is now cooling perfectly.”</small>
-
-                    <div className="bg-white p-2 mt-3 border-start border-4 border-success rounded">
-                      <p className="mb-1 fw-semibold text-success">Admin Reply</p>
-                      <small className="text-muted">“Thank you for your feedback, Sourav! We're happy to hear your AC is performing well.”</small>
-                    </div>
-                  </div>
-
-                  <div className="bg-light p-3 rounded mb-3">
-                    <p className="mb-1 fw-semibold">Rohit Sharma</p>
-                    <p className="mb-1">⭐⭐⭐☆☆ (3/5)</p>
-                    <small className="text-muted">“Service was okay but the pickup was a bit late.”</small>
-
-                    <div className="bg-white p-2 mt-3 border-start border-4 border-success rounded">
-                      <p className="mb-1 fw-semibold text-success">Admin Reply</p>
-                      <small className="text-muted">“Thanks for your honest review, Rohit. We'll ensure timely pickup in the future.”</small>
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <h5 className="mb-2">Leave a Comment</h5>
-                    <textarea
-                      className="form-control mb-2"
-                      rows="4"
-                      placeholder="Write your comment here..."
-                    ></textarea>
-                    <button className="btn btn-primary">Submit</button>
-                  </div> */}
                 </div>
               </div>
             </div>
@@ -305,7 +353,6 @@ const ServiceDetails = () => {
                     {categoryServices.map(s => (
                       <li key={s.id} className="list-group-item d-flex justify-content-between align-items-center">
                         <Link to={`/servicedetails/${s.PackageID}`}>{s.PackageName}</Link>
-                        {/* <span className="badge bg-success">₹{s.price}</span> */}
                       </li>
                     ))}
                   </ul>
@@ -346,7 +393,6 @@ const ServiceDetails = () => {
           onCarSaved={(car) => setSelectedCar(car)}
         />
       </div>
-      {/* <SubscribeOne /> */}
     </>
   );
 };
