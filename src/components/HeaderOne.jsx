@@ -36,11 +36,76 @@ const HeaderOne = () => {
 
   const [showLocationSearchModal, setShowLocationSearchModal] = useState(false);
   const [cityList, setCityList] = useState([]);
-const [searchTerm, setSearchTerm] = useState("");
-const [filteredCities, setFilteredCities] = useState([]);
+  const [citySearchTerm, setCitySearchTerm] = useState("");
+  const [filteredCities, setFilteredCities] = useState([]);
+
+  const [categories, setCategories] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // New state for service search
+  const [serviceSearchTerm, setServiceSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  // Debounce timer
+  let debounceTimer = null;
+
+  // Function to fetch search results from API
+  const fetchSearchResults = async (query) => {
+    // if (!query) {
+    //   setSearchResults([]);
+    //   setSearchDropdownOpen(false);
+    //   return;
+    // }
+    // setSearchLoading(true);
+    try {
+      // Call API with query param if supported, else fetch all and filter client-side
+      const response = await axios.get(
+        `${API_URL}PlanPackage/GetPlanPackagesByCategoryAndSubCategory`
+      );
+      if (Array.isArray(response.data)) {
+        // Filter packages by name matching query (case-insensitive)
+        const filtered = response.data.filter(pkg =>
+          pkg.PackageName.toLowerCase().includes(query.toLowerCase()) && pkg.IsActive
+        );
+        setSearchResults(filtered);
+        // setSearchDropdownOpen(filtered.length > 0);
+      } else {
+        setSearchResults([]);
+        setSearchDropdownOpen(false);
+      }
+    } catch (error) {
+      console.error("Search API error:", error);
+      setSearchResults([]);
+      setSearchDropdownOpen(false);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Handle search input change with debounce
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setServiceSearchTerm(value);
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      fetchSearchResults(value);
+    }, 300);
+  };
+
+  // Handle click on search result item
+  const handleSearchSelect = (pkg) => {
+    setServiceSearchTerm("");
+    setSearchResults([]);
+    setSearchDropdownOpen(false);
+    // Navigate to service details page
+    navigate(`/servicedetails/${slugify(pkg.PackageName)}/${pkg.PackageID}`);
+  };
 
   useEffect(() => {
     let timeoutId;
+    fetchSearchResults(serviceSearchTerm);
 
     const handleScroll = () => {
       // Only show modal if it hasn't been shown yet
@@ -90,6 +155,22 @@ const [filteredCities, setFilteredCities] = useState([]);
 
     window.addEventListener("userProfileUpdated", loadUser);
     return () => window.removeEventListener("userProfileUpdated", loadUser);
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`${API_URL}Category`);
+        if (Array.isArray(response.data)) {
+          const activeCategories = response.data.filter(cat => cat.IsActive);
+          setCategories(activeCategories);
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -283,7 +364,7 @@ const [filteredCities, setFilteredCities] = useState([]);
 
 const handleCitySearch = (e) => {
   const value = e.target.value.toLowerCase();
-  setSearchTerm(value);
+  setCitySearchTerm(value);
   setFilteredCities(
     cityList.filter(c => c.CityName.toLowerCase().includes(value))
   );
@@ -295,6 +376,14 @@ const handleSelectCity = (city) => {
   localStorage.setItem("selectedCity", JSON.stringify(city));
   setIsServiceAvailable(true);
   setShowLocationSearchModal(false);
+};
+
+const slugify = (text) => {
+  return text
+    .toLowerCase()
+    .replace(/&/g, "and")     // replace "&" with "and"
+    .replace(/[^a-z0-9]+/g, "-") // replace all non-alphanumeric with "-"
+    .replace(/^-+|-+$/g, ""); // trim starting/ending "-"
 };
 
   return (
@@ -403,23 +492,35 @@ const handleSelectCity = (city) => {
                           About Us
                         </NavLink>
                       </li>
-                      <li>
-                        <Link
-                          to="/service"
-                          // onClick={(e) => {
-                          //   e.preventDefault();
-                          //   if (window.location.pathname !== "/") {
-                          //     window.location.href = "/#services";
-                          //   } else {
-                          //     window.dispatchEvent(
-                          //       new Event("scrollToService")
-                          //     );
-                          //   }
-                          // }}
-                        >
-                          Services
-                        </Link>
-                      </li>
+
+                        <li className="menu-item-has-children">
+                                            <Link  to="/service">Services</Link>
+                                             <ul
+                                              className='sub-menu'
+                                              // onMouseEnter={() => setDropdownOpen(true)}
+                                              // onMouseLeave={() => setDropdownOpen(false)}
+                                              style={{
+                                                padding: "10px 20px",
+                                                margin: 0,
+                                                minWidth: "500px",
+                                                display: "grid",
+                                                gridTemplateColumns: "repeat(2, 1fr)",
+                                                gap: "10px 20px",
+                                                borderRadius: "6px",
+                                              }}
+                                            >
+                                              {categories.map((category) => (
+                                                <li key={category.CategoryID} style={{ padding: "5px 0" }}>
+                                                  <Link
+                                                    to={`/${slugify(category.CategoryName)}/${category.CategoryID}`}
+                                                    style={{ color: "#333", textDecoration: "none", whiteSpace: "nowrap" }}
+                                                  >
+                                                    {category.CategoryName}
+                                                  </Link>
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          </li>
 
                       <li>
                         <NavLink
@@ -441,6 +542,69 @@ const handleSelectCity = (city) => {
                     >
                       <i className="fas fa-bars" />
                     </button>
+                  </div>
+                </div>
+                <div className="col-auto d-block  ms-auto">
+                  <div className="navbar-right-desc">
+                    <div className="header-search d-none d-xl-block">
+                      {/* Search input and dropdown */}
+                        <div style={{ position: "relative", marginLeft: "20px" }}>
+                          <input
+                            type="text"
+                            placeholder="Search packages..."
+                            value={serviceSearchTerm}
+                            onChange={handleSearchChange}
+                            onFocus={() => { setSearchDropdownOpen(true); }}
+                            onBlur={() => setTimeout(() => setSearchDropdownOpen(false), 200)}
+                            style={{
+                              padding: "5px 10px",
+                              borderRadius: "4px",
+                              border: "1px solid #ccc",
+                              width: "200px",
+                            }}
+                          />
+                          {searchDropdownOpen && (
+                            <ul
+                              style={{
+                                position: "absolute",
+                                top: "100%",
+                                left: 0,
+                                right: 0,
+                                backgroundColor: "#fff",
+                                border: "1px solid #ccc",
+                                borderRadius: "4px",
+                                maxHeight: "200px",
+                                overflowY: "auto",
+                                zIndex: 1100,
+                                listStyle: "none",
+                                margin: 0,
+                                padding: 0,
+                              }}
+                            >
+                              {searchLoading ? (
+                                <li style={{ padding: "10px", textAlign: "center" }}>Loading...</li>
+                              ) : searchResults.length === 0 ? (
+                                <li style={{ padding: "10px", textAlign: "center" }}>No results found</li>
+                              ) : (
+                                searchResults.map(pkg => (
+                                  <li
+                                    key={pkg.PackageID}
+                                    onClick={() => handleSearchSelect(pkg)}
+                                    style={{
+                                      padding: "8px 12px",
+                                      cursor: "pointer",
+                                      borderBottom: "1px solid #eee",
+                                    }}
+                                    onMouseDown={e => e.preventDefault()} // Prevent input blur before click
+                                  >
+                                    {pkg.PackageName}
+                                  </li>
+                                ))
+                              )}
+                            </ul>
+                           )} 
+                        </div>
+                    </div>
                   </div>
                 </div>
                 <div className="col-auto ms-auto d-xl-block d-none">
@@ -808,7 +972,7 @@ const handleSelectCity = (city) => {
             type="text"
             className="form-control mb-3"
             placeholder="Search city..."
-            value={searchTerm}
+            value={citySearchTerm}
             onChange={handleCitySearch}
           />
 

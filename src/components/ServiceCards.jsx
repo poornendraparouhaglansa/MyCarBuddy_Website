@@ -53,7 +53,7 @@ const SkeletonLoader = () => {
 };
 
 export default function ServiceCards() {
-  const { categoryId } = useParams();
+const { categoryname, categoryId } = useParams();
   const [subcategories, setSubcategories] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
   const [packages, setPackages] = useState([]);
@@ -228,9 +228,18 @@ useEffect(() => {
     setAnimationTrigger(false);
   };
 
+  const slugify = (text) => {
+  return text
+    .toLowerCase()
+    .replace(/&/g, "and")     // replace "&" with "and"
+    .replace(/[^a-z0-9]+/g, "-") // replace all non-alphanumeric with "-"
+    .replace(/^-+|-+$/g, ""); // trim starting/ending "-"
+};
+
   if (loadingSubcategories) {
     return <SkeletonLoader />;
   }
+  
 
   return (
     <div className="container my-4">
@@ -287,9 +296,9 @@ useEffect(() => {
               <>
                 <div className="col-md-6 mb-4">
                   <div className="pricing-card">
-                    <div className="pricing-card-price-wrap" onClick={() => navigate(`/servicedetails/${pkg.id}`)} style={{ cursor: "pointer" }}>
+                    <div className="pricing-card-price-wrap" onClick={() => navigate(`/servicedetails/${slugify(pkg.title)}/${pkg.id}`)} style={{ cursor: "pointer" }}>
 
-                    <div className="pricing-card-price-wrap position-relative" onClick={() => navigate(`/servicedetails/${pkg.id}`)} style={{ cursor: "pointer" }}>
+                    <div className="pricing-card-price-wrap position-relative" onClick={() => navigate(`/servicedetails/${slugify(pkg.title)}/${pkg.id}`)} style={{ cursor: "pointer" }}>
                       {/* <div className="pricing-badge">
                         10% OFF
                       </div> */}
@@ -317,7 +326,7 @@ useEffect(() => {
                             {pkg.includes.length > 3 && (
                               <li>
                                 <a
-                                  href={`/servicedetails/${pkg.id}`}
+                                  href={`/servicedetails/${slugify(pkg.title)}/${pkg.id}`}
                                   className="text-danger text-decoration-underline"
                                 >
                                   View More

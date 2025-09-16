@@ -1,0 +1,114 @@
+/* ServiceAreaTwo Hover Effect Styles */
+
+.ServiceAreaCard{
+  width: 20%;
+}
+.ServiceAreaCard:hover{
+  cursor: pointer;
+  width: 30%;
+}
+/* Minimal card: plain background, icon and title only */
+.service-card-minimal {
+  position: relative;
+  background-color: #f8f9fa; /* light gray background */
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease;
+}
+
+.service-card-minimal:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Minimal content: icon and title centered */
+.service-card-minimal-content {
+  padding: 30px 20px;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+  position: relative;
+}
+
+/* Full card: hidden by default */
+.service-card-full {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  border-radius: 8px;
+  color: white;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  z-index: 1;
+}
+.service-card-full:after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #313131 -1.06%, rgba(232, 9, 46, 0) 100%);
+    z-index: -1;
+}
+
+/* Show full card on hover */
+.service-card-minimal:hover .service-card-full {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+/* Hide minimal content on hover */
+.service-card-minimal:hover .service-card-minimal-content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Icon in full card */
+.service-card-full .icon {
+  max-width: 80px;
+  margin-bottom: 15px;
+}
+
+/* Title in full card */
+.service-card-full .link {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* Description text */
+.service-card-full .service-card_text {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: auto;
+}
+
+/* Button styling */
+.service-card-full .btn-wrap {
+  margin-top: 20px;
+}
+
+/* Responsive: on small screens, always show full card */
+@media (max-width: 768px) {
+  .service-card-full {
+    position: relative;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 1 !important;
+  }
+  .service-card-minimal-content {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .service-card-minimal {
+    box-shadow: none !important;
+    background-color: transparent !important;
+  }
+}

@@ -150,7 +150,7 @@ $fontsMap: map-merge(
   font-size: 15px !important;
 }
 .hero-style3 {
-    padding: 0px 0 90px  !important;
+    padding: 0px 0 0px  !important;
 }
 .counter-checklist-wrap:after {
     background: linear-gradient(90deg, #302e2e  -1.06%, rgba(232, 9, 46, 0) 100%) !important;
@@ -221,10 +221,11 @@ $fontsMap: map-merge(
 }
 
 .ribbon {
-  position: absolute;
-  top: 0;
-  right: 0;
-    background: #116d6e;
+ position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 99;
+    background: #e69110;
     color: white;
     padding: 6px 14px;
     font-weight: bold;

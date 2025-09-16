@@ -19,7 +19,7 @@ const InvoicesTab = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `${BaseURL}Payments`,
+          `${BaseURL}Payments?custid=${decryptedCustId}`,
           {
             headers: {
               Authorization: `Bearer ${user?.token}`,

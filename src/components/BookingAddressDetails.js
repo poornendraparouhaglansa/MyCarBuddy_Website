@@ -359,7 +359,35 @@ console.log(cityOptions,'cityOptions');
         </div>
         <div className="col-md-6 mb-3">
           <label className="form-label fw-semibold">City <span className="text-danger">*</span></label>
-          <Select
+          <input 
+          type="text"
+          name="CityName"
+          className="form-control"
+          value={formData.CityName}
+          onChange={handlereInputChange}
+          placeholder="City"
+          readOnly={!formData.StateID}
+          />
+              {showCitySuggestions && (
+                <div className="dropdown-menu dropdown-menu-end" style={{ zIndex: 1051 }}>
+                  {filteredCities.map((city) => (
+                    <div
+                      key={city.CityID}
+                      onClick={() => handleCitySelect(city)}
+                      className="dropdown-item"
+                    >
+                      {city.CityName}
+                    </div>
+                  ))}
+                  {filteredCities.length === 0 && (
+                    <div className="dropdown-item text-muted">No cities found</div>
+                  )}
+                  </div>
+              )}
+              <input type="hidden" name="CityID" value={formData.CityID} />
+          {/* </div> */}
+
+          {/* <Select
             name="CityID"
             value={formData.CityID ? cityOptions.find(option => option.value.toString() === formData.CityID.toString()) : null}
             onChange={(selectedOption) => {
@@ -435,7 +463,7 @@ console.log(cityOptions,'cityOptions');
                 padding: '8px',
               })
             }}
-          />
+          /> */}
         </div>
         <div className="col-md-6 mb-3">
           <label className="form-label fw-semibold">Pincode <span className="text-danger">*</span></label>

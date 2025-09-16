@@ -1,0 +1,342 @@
+# MyCarBuddy - Comprehensive Car Care and Service Booking Platform
+
+## Project Overview
+At My Car Buddy, we make car care effortless by bringing professional services straight to your doorstep. No more waiting at garages or service centers. Our expert mechanics and technicians come to you, whenever and wherever you need them.
+Whether it’s a routine service, car wash, detailing, oil change, battery replacement, or emergency breakdown support, we’ve got you covered. With just a few taps on our app or website, you can book a service at your convenience and relax while our team takes care of the rest.
+
+Premium Car Care at Your Doorstep
+MyCarBuddy bring hassle-free service right when you need it, so you enjoy life while we care for your car.
+
+Our experts assess your car’s needs with clarity, no hidden costs, only genuine solutions.
+
+Treat your car like our best buddy. Book now for expert care that keeps it running at its best!
+
+## Key Features
+
+### 1. User Authentication & Profile Management
+- Secure user login
+- Profile management with personal details
+- Multiple vehicle management 
+- Booking history and invoice tracking
+
+### 2. Service Discovery & Booking
+- Comprehensive service catalog with categories
+- Real-time service availability
+- Location-based service recommendations
+- Detailed service descriptions and pricing
+- Easy booking with time slot selection
+- Rescheduling and cancellation options
+
+### 3. Vehicle Management
+- Support for multiple car brands and models
+- Vehicle information storage 
+- Service history tracking per vehicle
+- Maintenance reminders and alerts
+
+### 4. Service Categories & Packages
+
+#### Core Service Categories:
+1. **AC Service and Repair**
+   - AC service keeps every drive fresh, cool, enjoyable
+   - AC System Recharge and Maintenance
+   - AC Compressor Replacement
+   - AC Filter Cleaning and Replacement
+   - Refrigerant Leak Detection and Repair
+
+2. **Batteries**
+   - Trusted car battery replacement with reliable service support
+   - Battery Testing and Diagnostics
+   - Battery Replacement
+   - Battery Terminal Cleaning
+   - Jump Start Services
+
+3. **Car Inspections**
+   - Expert car inspections detecting issues before major repairs
+   - Full Vehicle Inspection
+   - Pre-Purchase Inspection
+   - Safety System Check
+   - Emission Testing
+
+4. **Car Spa & Cleaning**
+   - Premium car spa and cleaning for spotless finish
+   - Exterior Car Wash
+   - Interior Vacuuming and Cleaning
+   - Waxing and Polishing
+   - Underbody Cleaning
+
+5. **Clutch and Body Parts**
+   - Smooth drive ensured with clutch and body parts
+   - Clutch Replacement
+   - Clutch Cable Adjustment
+   - Body Panel Repair
+   - Door and Window Mechanism Repair
+
+6. **Denting & Painting**
+   - Expert denting and painting for flawless car appearance
+   - Dent Removal
+   - Paint Touch-up and Repair
+   - Scratch Removal
+   - Full Body Painting
+
+7. **Detailing Services**
+   - Experience premium detailing service for ultimate car care
+   - Interior Detailing
+   - Exterior Detailing
+   - Engine Bay Cleaning
+   - Headlight Restoration
+
+8. **Insurance Claims**
+   - Insurance claims processed smoothly as per policy terms
+   - Claim Documentation
+   - Damage Assessment
+   - Repair Coordination
+   - Claim Status Tracking
+
+9. **Periodic Services**
+   - Expert periodic services designed for long-lasting vehicle health
+   - Oil Change and Filter Replacement
+   - Brake Inspection and Maintenance
+   - Tire Rotation and Balancing
+   - Fluid Level Checks
+
+10. **SOS Services**
+    - SOS service ready for breakdowns, accidents, or emergencies
+    - Emergency Towing
+    - Breakdown Assistance
+    - Accident Response
+    - 24/7 Roadside Support
+
+11. **Suspensions and Fitments**
+    - Professional suspension service with trusted fitments support
+    - Shock Absorber Replacement
+    - Suspension System Inspection
+    - Wheel Alignment
+    - Tire Fitting and Balancing
+
+12. **Tyres and Wheel Care**
+    - Professional tyre and wheel maintenance for lasting performance
+    - Tire Replacement
+    - Wheel Balancing
+    - Tire Pressure Monitoring
+    - Wheel Alignment
+
+13. **Windshields and Lights**
+    - Bright lights and crystal-clear windshield for safe driving
+    - Windshield Replacement
+    - Headlight Restoration
+    - Taillight Repair
+    - Window Tinting
+
+#### Service Packages:
+Based on the actual API data, here are the comprehensive service packages offered by MyCarBuddy:
+
+### 1. AC Service and Repair Packages:
+- Radiator Cleaning
+- Regular AC Service
+- Cooling Coil Replacement
+- Condenser Replacement
+- Heating Coil Replacement
+- V-Belt Replacement
+- AC Blower Motor Replacement
+- Radiator Replacement
+- Radiator Fan Motor Replacement
+- AC Inspection
+- AC Condenser Cleaner
+- Drive Belt Lubrication
+- Exterior Tyre Pack
+- High Performance AC Service
+
+### 2. Periodic Services Packages:
+- Wheel Cylinder Replacement
+- Headlight Adjustment
+- Wiper Fluid Replacement
+- Basic Service
+- Front Brake Pads Cleaning
+- Rear Brake Pads Cleaning
+- Caliper Pin Greasing
+- Front Brake Pads
+- Rear Brake Shoes
+- Front Brake Discs
+- Caliper Pin Replacement
+- Disc Turning
+- Handbrake Wire Replacement
+- Brake Drums Turning
+- Comprehensive Service
+- Standard Service
+
+### 3. Batteries Packages:
+- Amaron (55 Months Warranty)
+- Amaron (66 Months Warranty)
+- Exide (55 Months Warranty)
+- Exide (66 Months Warranty)
+- Battery Terminal Coating
+- MAF / O2 Sensor Cleaning
+- Alternator Replacement
+
+### 4. Tyres and Wheel Care Packages:
+- Apollo Alnac 4GS
+- Apollo Amazer 4G Life
+- MRF ZLX
+- MRF ZTX
+- MRF ZVTV
+- JK UX Royale
+- Bridgestone B290
+- Bridgestone Ecopia EP150
+- CEAT Milaze X3
+- CEAT Milaze
+- Complete Wheel Care
+- Mud Flaps
+
+### 5. Denting & Painting Packages:
+- Front Bumper Paint
+- Bonnet Paint
+- Rear Bumper Paint
+- Boot Paint
+- Left Fender Paint
+- Left Front Door Paint
+- Left Rear Door Paint
+- Left Quarter Panel Paint
+- Left Running Board Paint
+- Right Front Door Paint
+- Right Rear Door Paint
+- Right Quarter Panel Paint
+- Right Running Board Paint
+- Full Body Dent Paint
+- Alloy Paint
+
+### 6. Detailing Services Packages:
+- 3M™ Car Rubbing & Polishing
+- 3M™ Ceramic Coating
+- Anti Rust Underbody Coating
+- Graphene Coating – 10H
+- 3M™ Teflon Coating
+- Meguiar's Teflon Coating
+- PPF - Garware Plus
+- PPF - Garware Premium
+- Silencer Coating
+
+### 7. Car Spa & Cleaning Packages:
+- Premium Top Wash
+- Car Interior Spa (Free Car Inspection)
+- Deep All Round Spa (Recommended)
+- Interior Vacuuming
+- Car Wash & Wax
+- Car Rubbing & Polishing
+- Rat / Pest Repellent Treatment
+- 360° Deep Cleaning
+
+### 8. Car Inspections Packages:
+- Second Hand Car Inspection
+- Road Trip Inspection (NEW)
+- Engine Scanning
+- Top Assist
+- Complete Suspension Inspection
+- Car Fluids Check
+- Radiator Replacement
+- Radiator Fan Motor Replacement
+- Radiator Flush & Clean
+- Car Road Test with Expert
+- Damaged Car Body or Interiors
+- Problem with Car Brakes & Wheels
+- Car Waterlog Assistance
+- Car Engine Issues
+- Insurance Claim Inspection
+
+### 9. Windshields and Lights Packages:
+- Rear Windshield Replacement
+- Front Windshield Replacement
+- Door Glass Replacement
+- Front Headlight
+- Rear Taillight
+- Fog Light
+- Side Mirror Replacement
+
+### 10. Suspensions and Fitments Packages:
+- EPS Module Repair
+- Front Shock Absorber Replacement
+- Rear Shock Absorber Replacement
+- Steering Rack Repair
+- Front Shocker Mount Replacement
+- Front Axle Repair
+- Silencer Repair
+- Premium Top Wash
+- Radiator Replacement
+- Gear Box Mounting Replacement
+- Engine Mounting Replacement
+- Fuel Pump Replacement
+- Radiator Fan Motor Replacement
+- Water Pump Replacement
+- ECM Repair
+- Car Wash and Wax
+- Dickey Shocker Replacement
+- Starter Motor Repair
+- Mud Flaps
+- Door Latch Replacement
+- Power Window Repair
+- Noises with Car Suspension & Steering
+- Faulty Electricals
+- Seat Channel Lubrication
+
+### 11. Clutch and Body Parts Packages:
+- Complete Clutch Set Replacement
+- Clutch Bearing Replacement
+- Flywheel Replacement
+- Flywheel Turning
+- Clutch Overhaul
+- Front Bumper Replacement
+- Rear Bumper Replacement
+- Bonnet Replacement
+- Boot Replacement
+- Fender Replacement
+- Right Front Door Replacement
+- Right Rear Door Replacement
+- Left Front Door Replacement
+- Left Rear Door Replacement
+- Clutch & Transmission Troubles
+- Issue
+- Bumper Bracket Adjustment
+- All Doors Adjustment
+
+### 12. Insurance Claims Packages:
+- Know Your Policy
+- Accidental Denting & Painting
+- Car Flood Damage
+- Fire Damage Assistance
+- Windshield Replacement
+- Car Theft Claim
+- Doorstep Accidental Inspection
+- Insurance Claim Inspection
+
+### 13. SOS Services Packages:
+- Car Self Starter Issue
+- Clutch Breakdown
+- Car Flooding
+- Insurance Accident
+- Brake Failure
+- Wrong Fuel Emergency
+- Critical Dashboard Light
+- Flat-Bed Tow (20 Kms)
+- Flat Tyre Assistance
+- Wheel-Lift Tow (20 Kms)
+- Fuel Assistance
+- Car Engine Scanning
+- Car Fluid Leakage
+- Battery Jumpstart
+
+### 5. Booking & Scheduling
+- Real-time availability checking
+- Flexible time slot selection
+- Multiple service booking
+- Service provider selection
+
+### 6. Payment Integration
+- Secure online payments
+- Multiple payment methods (Credit/Debit Cards, UPI, Net Banking)
+- Invoice generation and email delivery
+- Payment history tracking
+- Refund processing
+
+### 7. Location Services
+- GPS-based location detection
+
+

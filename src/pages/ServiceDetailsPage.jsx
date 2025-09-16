@@ -9,9 +9,11 @@ import Preloader from "../helper/Preloader";
 import ServiceCards from "../components/ServiceCards";
 import axios from "axios";
 import { Helmet } from "react-helmet-async";
+import { useParams } from "react-router-dom";
 
 const ServiceDetailsPage = () => {
   let [active, setActive] = useState(true);
+  const { categoryname, categoryId } = useParams();
 
       const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
     const [seoMeta, setSeoMeta] = useState(null);
@@ -21,7 +23,7 @@ const ServiceDetailsPage = () => {
 
       try {
         const res = await axios.get(
-          `${BaseURL}Seometa/page_slug?page_slug=service`
+          `${BaseURL}Seometa/page_slug?page_slug=${categoryname}`
         );
         if (res.data) {
           setSeoMeta(res.data[0]);
@@ -44,7 +46,7 @@ const ServiceDetailsPage = () => {
        {/* Dynamic SEO Meta Tags */}
                   {seoMeta && (
                     <Helmet>
-                      <title>{seoMeta.seo_title || "Contact | MyCarBuddy"}</title>
+                      <title>{seoMeta.seo_title || `${categoryname} | MyCarBuddy`}</title>
                       <meta name="description" content={seoMeta.seo_description || ""} />
                       <meta name="keywords" content={seoMeta.seo_keywords || ""} />
                     </Helmet>

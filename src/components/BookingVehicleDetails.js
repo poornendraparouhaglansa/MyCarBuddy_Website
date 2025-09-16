@@ -195,7 +195,7 @@ const BookingVehicleDetails = ({
 
       {allowCarSelection && savedCars.length > 0 && (
         <div className="mb-3">
-          <label className="form-label fw-semibold">Choose from Saved Cars</label>
+          {/* <label className="form-label fw-semibold">Choose from Saved Cars</label>
           <select
             className="form-select"
             onChange={handleCarSelect}
@@ -209,7 +209,7 @@ const BookingVehicleDetails = ({
                 {car.BrandName} - {car.ModelName} ({car.VehicleNumber})
               </option>
             ))}
-          </select>
+          </select> */}
         </div>
       )}
 

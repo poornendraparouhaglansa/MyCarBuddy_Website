@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link , useNavigate } from "react-router-dom";
 import axios from "axios";
+import "./ServiceAreaTwo.css";
 
-const ServiceAreaTwo = () => {
+
+const ServiceAreaHomePage = () => {
   const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
   const ImageURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
   const [services, setServices] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -33,7 +36,7 @@ const ServiceAreaTwo = () => {
     fetchCategories();
   }, []);
 
-      const slugify = (text) => {
+    const slugify = (text) => {
   return text
     .toLowerCase()
     .replace(/&/g, "and")     // replace "&" with "and"
@@ -47,7 +50,7 @@ const ServiceAreaTwo = () => {
       <div className="container">
         <div className="row justify-content-center">
           <div className="col-lg-6">
-            <div className="title-area text-center">
+            <div className="title-area text-center mb-0">
               <span className="sub-title">Our Services</span>
               <h2 className="sec-title">
                 Trusted Car Repair the Professionals{" "}
@@ -57,10 +60,11 @@ const ServiceAreaTwo = () => {
                   alt="Fixturbo"
                 />
               </h2>
+             
             </div>
           </div>
         </div>
-          <div className="text-end mb-4">
+        <div className="text-end mb-4">
            <input
                 type="text"
                 placeholder="Search services..."
@@ -78,20 +82,31 @@ const ServiceAreaTwo = () => {
         </div>
       </div>
 
-      {services.length === 2 ? (
-        <div className="container">
-          <div className="counter-area-1 space-bottom">
-            <div className="row gx-0 align-items-center justify-content-center gap-3">
-              {services
+      <div className="container">
+        <div className="row gy-4 justify-content-center">
+          {services
             .filter((service) =>
               service.title.toLowerCase().includes(searchTerm.toLowerCase())
-            ).map((service) => (
-                <div key={service.id} className="col-lg-5">
+            )
+            .map((service) => (
+              <div key={service.id} className="col-lg-3">
+                <div
+                  className="service-card-minimal d-flex flex-column"
+                  style={{ minHeight: '150px' }}
+                >
+                  <div className="service-card-minimal-content d-flex flex-column align-items-center justify-content-center h-100">
+                    <div className="icon">
+                      <img src={service.icon} alt="icon" style={{ width: '140px', height: '66px' , objectFit: 'contain' }} />
+                    </div>
+                    <p className="service-title text-center mt-3">
+                      {service.title}
+                    </p>
+                  </div>
                   <div
-                    className="counter-checklist-wrap d-flex flex-column"
-                    style={{ backgroundImage: `url(${service.image})`, minHeight: '400px' }}
+                    className="service-card-full d-flex flex-column"
+                    style={{ backgroundImage: `url(${service.image})` }}
                   >
-                    <div className="call-media-wrap flex-grow-1">
+                    <div className="call-media-wrap flex-grow-1" onClick={() => navigate(`/${slugify(service.title)}/${service.id}`)}>
                       <div className="icon">
                         <img src={service.icon} alt="icon" />
                       </div>
@@ -105,49 +120,6 @@ const ServiceAreaTwo = () => {
                           {service.description}
                         </p>
                       </div>
-
-                    </div>
-                    <div className="checklist style-white">
-                      <div className="btn-wrap mt-20">
-                        <Link className="btn style4 px-4 py-2" to={`/${slugify(service.title)}/${service.id}`}>
-                      Book Service <i className="fas fa-arrow-right ms-2" />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="container">
-          <div className="row gy-4 justify-content-center">
-            {services
-            .filter((service) =>
-              service.title.toLowerCase().includes(searchTerm.toLowerCase())
-            ).map((service) => (
-              <div key={service.id} className="col-lg-4">
-                <Link className=" " to={`/${slugify(service.title)}/${service.id}`}>
-                  <div
-                    className="counter-checklist-wrap d-flex flex-column"
-                    style={{ backgroundImage: `url(${service.image})`, minHeight: '250px' }}
-                  >
-                    <div className="call-media-wrap flex-grow-1">
-                      <div className="icon">
-                        <img src={service.icon} alt="icon"  style={{maxWidth: '80%'} }/>
-                      </div>
-                      <div className="media-body">
-                        <h4 className="link">
-                          <Link className="text-white" to={`/${slugify(service.title)}/${service.id}`}>
-                            {service.title}
-                          </Link>
-                        </h4>
-                        <p className="service-card_text text-white mt-2">
-                          {service.description}
-                        </p>
-                      </div>
-
                     </div>
                     <div className="checklist style-white">
                       <div className="btn-wrap mt-20">
@@ -157,14 +129,13 @@ const ServiceAreaTwo = () => {
                       </div>
                     </div>
                   </div>
-                  </Link>
                 </div>
+              </div>
             ))}
-          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
 
-export default ServiceAreaTwo;
+export default ServiceAreaHomePage;

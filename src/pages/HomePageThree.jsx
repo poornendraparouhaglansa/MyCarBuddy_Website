@@ -11,7 +11,7 @@ import Preloader from "../helper/Preloader";
 import AboutFour from "../components/AboutFour";
 import HeroSection from "../components/HeroSection";
 import ChooseCarModal from "../components/ChooseCarModal";
-import ServiceAreaTwo from "../components/ServiceAreaTwo";
+import ServiceAreaHomePage from "../components/ServiceAreaHomePage";
 import ProcessAreaTwo from "../components/ProcessAreaTwo";
 import axios from "axios";
 import { Helmet } from "react-helmet-async";
@@ -95,7 +95,7 @@ const HomePageThree = () => {
 
       {/* Service Area Two */}
       <div ref={serviceRef}>
-        <ServiceAreaTwo />
+        <ServiceAreaHomePage />
       </div>
 
       {/* Choose Car Modal */}

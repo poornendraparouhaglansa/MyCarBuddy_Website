@@ -7,9 +7,9 @@ const Breadcrumb = ({ title }) => {
       <div className="container">
         <div className="row">
           <div className="col-lg-6">
-            <div className="breadcumb-content">
+            <div className="breadcumb-content d-flex justify-content-between">
               <h1 className="breadcumb-title">{title}</h1>
-              <ul className="breadcumb-menu">
+              <ul className="breadcumb-menu mt-0">
                 <li>
                   <Link to="/">Home</Link>
                 </li>

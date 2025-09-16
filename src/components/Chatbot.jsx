@@ -7,13 +7,18 @@ const Chatbot = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [rules, setRules] = useState("");
 
-  // Load rules.txt from public folder
-  useEffect(() => {
-    fetch("/MyCarBuddy_Terms.txt")
-      .then((res) => res.text())
-      .then((text) => setRules(text));
-      console.log(rules);
-  }, []);
+ // Load rules.txt from public folder
+useEffect(() => {
+  fetch("/MyCarBuddy.txt")
+    .then((res) => res.text())
+    .then((text) => {
+      setRules(text);
+      console.log("Rules loaded:", text);
+    })
+    .catch((err) => {
+      console.error("Error loading rules.txt:", err);
+    });
+}, []);
 
   const groqApiKey = process.env.REACT_APP_GROQ_API_KEY; // replace with your key
 
@@ -44,9 +49,13 @@ const Chatbot = () => {
           },
           body: JSON.stringify({
             model: 'openai/gpt-oss-120b',
-            messages: [{ role: "user", content: prompt }],
+            messages: [
+              { role: "system", content: prompt || "You are MyCarBuddy AI Assistant. Only answer about car services, bookings, and FAQs. If user asks unrelated, politely redirect." },
+              { role: "user", content: input }
+            ],
             temperature: 0,
-            max_tokens: 200,
+            // max_tokens: 200,
+
             top_p: 1,
             stream: false,
           }),

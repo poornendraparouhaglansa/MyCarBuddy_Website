@@ -106,7 +106,7 @@ const ContactArea = () => {
           </div>
         </div>
       </div>
-      <div className="space-bottom">
+      <div className="space-bottom1">
         <div className="container">
           {/* <div className="map-sec">
             <iframe

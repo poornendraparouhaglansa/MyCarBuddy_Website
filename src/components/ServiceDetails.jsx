@@ -69,7 +69,7 @@ const SkeletonLoader = () => {
 };
 
 const ServiceDetails = () => {
-  const { id } = useParams();
+  const { packagename ,id } = useParams();
   const navigate = useNavigate();
   const { cartItems, addToCart } = useCart();
   const [services, setServices] = React.useState([]);
@@ -212,7 +212,13 @@ useEffect(() => {
   const isInCart = cartItems.some((i) => i.id === service.id);
 
 
-
+  const slugify = (text) => {
+  return text
+    .toLowerCase()
+    .replace(/&/g, "and")     // replace "&" with "and"
+    .replace(/[^a-z0-9]+/g, "-") // replace all non-alphanumeric with "-"
+    .replace(/^-+|-+$/g, ""); // trim starting/ending "-"
+};
 
 
   return (
@@ -352,7 +358,7 @@ useEffect(() => {
                   <ul className="list-group">
                     {categoryServices.map(s => (
                       <li key={s.id} className="list-group-item d-flex justify-content-between align-items-center">
-                        <Link to={`/servicedetails/${s.PackageID}`}>{s.PackageName}</Link>
+                        <Link to={`/servicedetails/${slugify(s.PackageName)}/${s.PackageID}`}>{s.PackageName}</Link>
                       </li>
                     ))}
                   </ul>

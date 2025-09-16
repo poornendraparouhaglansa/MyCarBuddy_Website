@@ -4,7 +4,7 @@ import ServiceAreaTwo from "./ServiceAreaTwo";
 
 const ServiceAreaOneMultiImg = () => {
   return (
-    <div className="service-area-1 space overflow-hidden">
+    <div className="service-area-1 space overflow-hidden pt-0">
       <div className="container">
         <div className="row gy-4 justify-content-center">
           <ServiceAreaTwo />

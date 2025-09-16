@@ -10,7 +10,7 @@ const ProcessAreaTwo = () => {
       <div className="container mb-4">
         <div className="row justify-content-center ">
           <div className="col-xl-5 col-lg-7">
-            <div className="title-area text-center">
+            <div className="title-area text-center mb-0">
               <h3 className="sub-title">Why Choose Us?</h3>
               <h2 className="sec-title text-dark">
                 Reliable Car Care, Right Where You Need It{" "}

@@ -43,8 +43,9 @@ function App() {
           <Route exact path="/" element={<HomePageThree />} />
           <Route exact path="/about" element={<AboutPage />} />
           <Route exact path="/service" element={<ServicePage />} />
-          <Route exact path="/service-details/:categoryId" element={<ServiceDetailsPage />} />
-          <Route path="/servicedetails/:id" element={<ServiceInDetailsPage />} />
+          {/* <Route exact path="/service-details/:categoryId" element={<ServiceDetailsPage />} /> */}
+           <Route path="/:categoryname/:categoryId" element={<ServiceDetailsPage />} />
+          <Route path="/servicedetails/:packagename/:id" element={<ServiceInDetailsPage />} />
           <Route exact path="/cart" element={<CartPage />} />
           <Route exact path="/checkout" element={<CheckoutPage />} />
           <Route exact path="/contact" element={<ContactPage />} />
