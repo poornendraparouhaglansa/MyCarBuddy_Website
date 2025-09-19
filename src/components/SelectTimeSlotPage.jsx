@@ -40,7 +40,7 @@ const SelectTimeSlotPage = () => {
     othersPhoneNumber: "",
     pincode: "",
     StateID: "",
-    CityID: "0",
+    CityID: "79",
     CityName: "",
     addressLine1: "",
     addressLine2: "",
@@ -226,10 +226,11 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
             setFormData((prev) => ({
               ...prev,
               StateID: "",
-              CityID: "0",
+              CityID: "79",
               pincode: "",
               addressLine1: "",
               CityName: "",
+              area:""
             }));
             return;
           }
@@ -330,7 +331,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
       setFormData((prev) => ({
         ...prev,
         StateID: "",
-        CityID: "0",
+        CityID: "79",
         pincode: "",
         addressLine1: "",
       }));
@@ -483,7 +484,8 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
           .sort((a, b) => a.StartTime.localeCompare(b.StartTime));
 
         const now = new Date();
-        const isToday = new Date(nextDate).toDateString() === now.toDateString();
+        const nowPlusTwoHours = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+        const isToday = new Date(nextDate).toDateString() === nowPlusTwoHours.toDateString();
         
         let hasAvailableSlots = false;
 
@@ -492,7 +494,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
           const startDate = new Date(nextDate);
           startDate.setHours(startHour, startMinute, 0, 0);
           
-          const isExpired = isToday && startDate <= now;
+          const isExpired = isToday && startDate <= nowPlusTwoHours;
           
           if (!isExpired) {
             hasAvailableSlots = true;
@@ -535,10 +537,13 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
         evening: [],
       };
 
-      const now = new Date();
+      const now  = new Date();
+      const nowPlusTwoHours = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+      // const now = new Date();
       const isToday =
         selectedDate &&
-        new Date(selectedDate).toDateString() === now.toDateString();
+        new Date(selectedDate).toDateString() === nowPlusTwoHours.toDateString();
 
       let allSlotsDisabled = true;
 
@@ -553,7 +558,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
         endDate.setHours(endHour, endMinute, 0, 0);
 
         // const isExpired = isToday && endDate <= now;
-        const isExpired = isToday && startDate <= now;
+        const isExpired = isToday && startDate <= nowPlusTwoHours;
 
         const timeFormat = (date) =>
           date.toLocaleTimeString("en-US", {
@@ -866,12 +871,12 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     form.append("PaymentMethod", paymentMethod);
     form.append("BookingFrom", "web");
 
-    form.append("FullAddress", formData.addressLine1);
+    form.append("FullAddress", formData.floorNumber + " " + formData.addressLine1);
     form.append("StateID", formData.StateID);
     form.append("CityID", formData.CityID);
     form.append("Pincode", formData.pincode);
-    form.append("FloorNumber", formData.floorNumber);
-    form.append("Area", formData.area);
+    // form.append("FloorNumber", formData.floorNumber);
+    form.append("CityName", formData.area);
 
     form.append("Longitude", formData.mapLocation.longitude);
     form.append("Latitude", formData.mapLocation.latitude);

@@ -143,6 +143,7 @@ const { categoryname, categoryId } = useParams();
             BrandId: '',
             ModelId: '',
             isActive: pkg.IsActive,
+            categoryId: categoryId,
           }));
 
           setPackages(formatted);
@@ -318,12 +319,12 @@ useEffect(() => {
                       <h4 className="pricing-card_title">{pkg.title}</h4>
                       <div className="checklist style2">
                         <ul className="list-unstyled small mb-2">
-                         {pkg.includes.slice(0, 5).map((item, idx) => (
+                         {pkg.includes.slice(0, 4).map((item, idx) => (
                               <li key={idx}>
                                 <i className="fas fa-angle-right"></i> {item}
                               </li>
                             ))}
-                            {pkg.includes.length > 3 && (
+                            {pkg.includes.length > 4 && (
                               <li>
                                 <a
                                   href={`/servicedetails/${slugify(pkg.title)}/${pkg.id}`}

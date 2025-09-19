@@ -9,6 +9,7 @@ const FooterAreaOne = () => {
       // style={{ backgroundImage: "url(assets/img/bg/footer-bg1-1.png)" }}
       style={{ backgroundColor: "url(assets/img/bg/footer-top-bg1-1.png)" }}
     >
+      
       {/* <Chatbot/> */}
       <div className="container">
         <div className="widget-area p-4">
@@ -50,7 +51,7 @@ const FooterAreaOne = () => {
             </div>
 
             <div className="col-md-3 pt-4">
-              <div className="widget footer-widget text-center">
+              <div className="widget footer-widget ">
                 <h3 className="widget_title">Contact</h3>
                 <div className="widget-contact">
                   <p>
@@ -87,6 +88,34 @@ const FooterAreaOne = () => {
           </div>
         </div>
       </div>
+      {/* Floating WhatsApp Chat Button */}
+      {/* <a
+        href="https://wa.me/9885653865"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          backgroundColor: '#25D366',
+          color: 'white',
+          borderRadius: '50%',
+          width: '55px',
+          height: '55px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+          zIndex: 1000,
+          textDecoration: 'none',
+          transition: 'all 0.3s ease',
+        }}
+        onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
+        onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+        aria-label="Chat on WhatsApp"
+      >
+        <i className="fab fa-whatsapp" style={{ fontSize: '30px' }}></i>
+      </a> */}
     </footer>
   );
 };

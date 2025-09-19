@@ -101,7 +101,7 @@ const Reschedule = () => {
           endDate.setHours(eh, em, 0, 0);
 
           // Check if slot is at least 2 hours from now
-          const isExpired = isToday && endDate <= twoHoursLater;
+          const isExpired = isToday && startDate <= twoHoursLater;
 
           const fmt = (d) =>
             d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });

@@ -25,7 +25,7 @@ const HeroSection = () => {
         flexWrap: "wrap",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "80px 60px",
+        padding: "40px 20px",
         // backgroundColor: "#ffffff",
         backgroundImage: `url(${images[currentImage]})`,
         backgroundSize: "cover",
@@ -33,6 +33,7 @@ const HeroSection = () => {
         backgroundRepeat: "no-repeat",
         transition: "background-image 1s ease-in-out",
       }}
+      className="hero-section-mobile-fix"
     >
       <h2 className="d-none">My Car Buddy</h2>
       <h1 className="d-none">MyCarBuddy</h1>

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
 import { Link, useNavigate } from "react-router-dom";
 import SignIn from "./SignIn";
+import RelatedPackagesSlider from "./RelatedPackagesSlider";
 
 const CartPage = () => {
   const { cartItems, removeFromCart } = useCart();
@@ -108,6 +109,9 @@ const CartPage = () => {
               </button>
             </div>
           )}
+
+          {/* Related Packages Slider */}
+          {cartItems.length > 0 && <RelatedPackagesSlider />}
         </>
       )}
       <SignIn

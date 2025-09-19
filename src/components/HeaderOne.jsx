@@ -2,13 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import SignIn from "./SignIn";
 import RegisterModal from "./RegisterModal";
-import { FaCarSide } from "react-icons/fa";
+import { FaCarSide, FaSearch } from "react-icons/fa";
 import ChooseCarModal from "./ChooseCarModal";
 import { FaShoppingCart } from "react-icons/fa";
 import { useCart } from "../context/CartContext";
 import ProfileModal from "./ProfileModal";
 import { useAlert } from "../context/AlertContext";
 import axios from "axios";
+import { FaCar } from 'react-icons/fa';
 
 const API_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
 
@@ -388,7 +389,7 @@ const slugify = (text) => {
 
   return (
     <>
-      <header className="nav-header header-layout1">
+      <header className={`nav-header header-layout1 ${scroll ? "m-180" : ""}`}>
         <div className="header-top">
           <div className="container">
             <div className="row justify-content-center justify-content-lg-between align-items-center gy-2">
@@ -454,7 +455,7 @@ const slugify = (text) => {
             </div>
           </div>
         </div>
-        <div className={`sticky-wrapper ${scroll && "sticky"}`}>
+        <div className={`sticky-wrapper ${scroll ? "sticky" : ""}`}>
           {/* Main Menu Area */}
           <div className="menu-area">
             {/* <div className="header-navbar-logo ">
@@ -544,11 +545,14 @@ const slugify = (text) => {
                     </button>
                   </div>
                 </div>
-                <div className="col-auto d-block  ms-auto">
+                <div className="col-auto d-block  ms-auto d-xl-block d-sm-none">
                   <div className="navbar-right-desc">
-                    <div className="header-search d-none d-xl-block">
+                    <div className="header-search d-xl-block">
                       {/* Search input and dropdown */}
-                        <div style={{ position: "relative", marginLeft: "20px" }}>
+                        <div className="position-relative ml-20">
+                          <FaSearch
+                           className="fasearch"
+                          />
                           <input
                             type="text"
                             placeholder="Search packages..."
@@ -557,29 +561,14 @@ const slugify = (text) => {
                             onFocus={() => { setSearchDropdownOpen(true); }}
                             onBlur={() => setTimeout(() => setSearchDropdownOpen(false), 200)}
                             style={{
-                              padding: "5px 10px",
-                              borderRadius: "4px",
-                              border: "1px solid #ccc",
+                              padding: "5px 10px 5px 35px",
+                              borderRadius: "20px",
+                              border: "1px solid #116d6e",
                               width: "200px",
                             }}
                           />
                           {searchDropdownOpen && (
-                            <ul
-                              style={{
-                                position: "absolute",
-                                top: "100%",
-                                left: 0,
-                                right: 0,
-                                backgroundColor: "#fff",
-                                border: "1px solid #ccc",
-                                borderRadius: "4px",
-                                maxHeight: "200px",
-                                overflowY: "auto",
-                                zIndex: 1100,
-                                listStyle: "none",
-                                margin: 0,
-                                padding: 0,
-                              }}
+                            <ul className="search-dropdown"
                             >
                               {searchLoading ? (
                                 <li style={{ padding: "10px", textAlign: "center" }}>Loading...</li>
@@ -623,8 +612,7 @@ const slugify = (text) => {
                         className="navbar-right-desc-details"
                         style={{
                           display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-start",
+                          alignItems: "center",
                           cursor: "pointer",
                         }}
                         onClick={() => {
@@ -635,29 +623,71 @@ const slugify = (text) => {
                           }
                         }}
                       >
-                        <span
-                          className="header-grid-text"
-                          style={{
-                            fontSize: "13px",
-                            color: "#555",
-                            marginBottom: "2px",
-                          }}
-                        >
-                          {user?.name || user?.identifier
-                            ? "Hello,"
-                            : "Sign In"}
-                        </span>
-                        <h6
-                          className="header-grid-title"
-                          style={{
-                            fontSize: "15px",
-                            fontWeight: 600,
-                            color: "#116d6e",
-                            textDecoration: "underline",
-                          }}
-                        >
-                          {user?.name || user?.identifier || "Account"}
-                        </h6>
+                        {user?.name || user?.identifier ? (
+                          <>
+                            <div
+                              style={{
+                                width: "35px",
+                                height: "35px",
+                                borderRadius: "50%",
+                                backgroundColor: "#f0f8ff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginBottom: "4px",
+                                border: "2px solid #116d6e",
+                                fontSize: "15px",
+                                fontWeight: "600",
+                                color: "#116d6e",
+                              }}
+                            >
+                              {(user.name || user.identifier)
+                                .split(" ")
+                                .map(word => word.charAt(0).toUpperCase())
+                                .slice(0, 2)
+                                .join("")}
+                            </div>
+                            <span
+                              className="header-grid-text1 fw-bold"
+                              style={{
+                                fontSize: "12px",
+                                color: "#555",
+                                // textAlign: "center",
+                                marginLeft: "5px",
+                              }}
+                            >
+                              Hello,
+                              <h6 class="header-grid-title" style={{ fontSize: "15px", color: "#136d6e" , textDecoration: "underline" }}>
+                                {user.name || user.identifier}
+                              </h6>
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span
+                              className="header-grid-text1 fw-bold"
+                              style={{
+                                fontSize: "13px",
+                                color: "#555",
+                                marginBottom: "2px",
+                              }}
+                            >
+                              Sign In
+                            <h6
+                              className="header-grid-title"
+                              style={{
+                                fontSize: "15px",
+                                fontWeight: 600,
+                                color: "#116d6e",
+                                textDecoration: "underline",
+                              }}
+                            >
+                              Account
+                            </h6>
+                            </span>
+                           
+                          </>
+                        )}
                       </div>
 
                       <div
@@ -855,7 +885,8 @@ const slugify = (text) => {
                         >Service</Link>
                 </li>
 
-                {user?.id && (
+                {user?.id ? (
+                  <>
                   <li>
                     <NavLink
                       to="/profile"
@@ -864,6 +895,46 @@ const slugify = (text) => {
                       }
                     >
                       Profile
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink
+                      to="/cart"
+                      className={(navData) =>
+                        navData.isActive ? "active" : ""
+                      }
+                    >
+                      Cart
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink
+                      to="/logout"
+                      className={(navData) =>
+                        navData.isActive ? "active" : ""
+                      }
+                    >
+                      Logout
+                    </NavLink>
+                  </li>
+                  </>
+                ) : (
+                  <li>
+                    <NavLink
+                      // to="/login"
+                      className={(navData) =>
+                        navData.isActive ? "active" : ""
+                      }
+                       onClick={() => {
+                          if (user && (user.name || user.identifier)) {
+                            navigate("/profile");
+                          } else {
+                            setSignInVisible(true); // Show sign-in modal
+                          }
+                          setActive(false); // Close mobile menu
+                        }}
+                    >
+                      Login
                     </NavLink>
                   </li>
                 )}
@@ -1005,6 +1076,33 @@ const slugify = (text) => {
     </div>
   </div>
 )}
+
+
+ {/* Floating Car Damage Analysis Button */}
+      <div style={{
+        position: 'fixed',
+        right: '-20px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        zIndex: 1000
+      }}>
+        <button
+          onClick={() => navigate('/car-damage-analysis')}
+          className="floating-right-button"
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'scale(1.05)';
+            e.target.style.boxShadow = '0 12px 35px rgba(17, 109, 110, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'scale(1)';
+            e.target.style.boxShadow = '0 8px 25px rgba(17, 109, 110, 0.3)';
+          }}
+          title="AI Car Damage Analysis"
+        >
+          <FaCar size={20} />
+          <span>AI Damage Analysis</span>
+        </button>
+      </div>
 
     </>
   );

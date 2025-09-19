@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import {FaSearch} from "react-icons/fa";
 
 const ServiceAreaTwo = () => {
   const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
@@ -61,20 +62,24 @@ const ServiceAreaTwo = () => {
           </div>
         </div>
           <div className="text-end mb-4">
-           <input
-                type="text"
-                placeholder="Search services..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+             <div className="position-relative ml-20">
+                                      <FaSearch
+                                       className="fasearch"
+                                       style={{left : "85%"}}
+                                      />
+            <input
+                  type="text"
+                  placeholder="Search services..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
-                  marginTop: '15px',
-                  padding: '8px 12px',
-                  width: '15%',
-                  borderRadius: '4px',
-                  border: '1px solid #ccc',
-                  fontSize: '16px',
-                }}
+                                padding: "5px 10px 5px 35px",
+                                borderRadius: "20px",
+                                border: "1px solid #116d6e",
+                                width: "200px",
+                              }}
               />
+              </div>
         </div>
       </div>
 

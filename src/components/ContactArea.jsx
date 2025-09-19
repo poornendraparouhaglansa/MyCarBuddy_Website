@@ -53,28 +53,38 @@ const ContactArea = () => {
           <div className="row gy-4 justify-content-center">
             <div className=" col-lg-4 col-md-6">
               <div className="contact-info">
-                <div className="contact-info_icon">
-                  <i className="fas fa-map-marker-alt" />
+                <div className="row">
+                  <div className="col-md-2">
+                    <div className="contact-info_icon">
+                      <i className="fas fa-map-marker-alt" />
+                    </div>
+                  </div>
+                  <div className="col-md-10 pl-3">
+                      <h6 className="contact-info_title">Address</h6>
+                      <p className="contact-info_text">
+                        Unit # B1, Second Floor Spaces & More Business Park, Madhapur #3 D.No# 1-89/A/8, C/2, Vittal Rao Nagar Rd, Madhapur, Telangana 500081 
+                      </p>
+                      {/* <p className="contact-info_text"> </p> */}
+                  </div>
                 </div>
-                <h6 className="contact-info_title">Address</h6>
-                <p className="contact-info_text">
-                  Unit # B1, Second Floor Spaces & More Business Park, Madhapur #3 D.No# 1-89/A/8, C/2,
-                </p>
-                <p className="contact-info_text"> Vittal Rao Nagar Rd, Madhapur, Telangana 500081 </p>
               </div>
+              
             </div>
             <div className=" col-lg-4 col-md-6">
               <div className="contact-info">
-                <div className="contact-info_icon">
-                  <i className="fas fa-phone-alt" />
+                <div className="row">
+                  <div className="col-md-2">
+                    <div className="contact-info_icon">
+                      <i className="fas fa-phone-alt" />
+                    </div>
+                  </div>
+                  <div className="col-md-10 pl-3">
+                      <h6 className="contact-info_title">Phone Number</h6>
+                      <p className="contact-info_text">
+                        <Link to="tel:7075243939">+91 70752 43939</Link><br /> <Link to="tel:9885653865"> +91 98856 53865</Link>
+                      </p>
+                  </div>
                 </div>
-                <h6 className="contact-info_title">Phone Number</h6>
-                <p className="contact-info_text">
-                  <Link to="tel:7075243939">+91 70752 43939</Link><br /> <Link to="tel:9885653865"> +91 98856 53865</Link>
-                </p>
-                <p className="contact-info_text">
-                  {/* <a href="tel:01254693326">01254693326</a> */}
-                </p>
               </div>
             </div>
             {/* <div className="col-xxl-3 col-lg-4 col-md-6">
@@ -88,20 +98,27 @@ const ContactArea = () => {
               </div>
             </div> */}
             <div className=" col-lg-4 col-md-6">
-              <div className="contact-info">
-                <div className="contact-info_icon">
-                  <i className="fas fa-envelope" />
+               <div className="contact-info">
+                <div className="row">
+                  <div className="col-md-2">
+                    <div className="contact-info_icon">
+                      <i className="fas fa-envelope" />
+                    </div>
+                  </div>
+                  <div className="col-md-10 pl-3">
+                      <h6 className="contact-info_title">E-mail</h6>
+                        <p className="contact-info_text">
+                          <a href="mailto:info@mycarbuddy.in">
+                            info@mycarbuddy.in
+                          </a>
+                        </p>
+                        <p className="contact-info_text">
+                          {/* <a href="mailto:nafiz 0121@gmail.com">nafiz 0121@gmail.com</a> */}
+                        </p>
+                  </div>
                 </div>
-                <h6 className="contact-info_title">E-mail</h6>
-                <p className="contact-info_text">
-                  <a href="mailto:info@mycarbuddy.in">
-                    info@mycarbuddy.in
-                  </a>
-                </p>
-                <p className="contact-info_text">
-                  {/* <a href="mailto:nafiz 0121@gmail.com">nafiz 0121@gmail.com</a> */}
-                </p>
               </div>
+
             </div>
           </div>
         </div>
@@ -234,7 +251,7 @@ const ContactArea = () => {
                   {success && <div className="alert alert-success">{success}</div>}
                   {error && <div className="alert alert-danger">{error}</div>}
                   <div className="form-btn col-12">
-                    <button type="submit" className="btn style2" disabled={loading}>
+                    <button type="submit" className="btn style2 btn-contact" disabled={loading}>
                       {loading ? 'Sending...' : 'Submit'} <i className="fas fa-arrow-right ms-2" />
                     </button>
                   </div>

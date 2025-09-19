@@ -237,7 +237,8 @@ useEffect(() => {
       const categorized = { morning: [], afternoon: [], evening: [] };
 
       const now = new Date();
-      const isToday = dateStr && new Date(dateStr).toDateString() === now.toDateString();
+      const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+      const isToday = dateStr && new Date(dateStr).toDateString() === twoHoursLater.toDateString();
 
       sorted.forEach(({ StartTime, EndTime }) => {
         const [sh, sm] = StartTime.split(":").map(Number);
@@ -247,7 +248,7 @@ useEffect(() => {
         startDate.setHours(sh, sm, 0, 0);
         const endDate = new Date(dateStr);
         endDate.setHours(eh, em, 0, 0);
-        const isExpired = isToday && endDate <= now;
+        const isExpired = isToday && startDate <= twoHoursLater;
 
         const fmt = (d) =>
           d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
@@ -479,32 +480,38 @@ const openCancelModal = () => {
       });
 
       if (response.status === 200) {
-        showAlert("Booking cancellation submitted successfully.");
+       
+        setShowCancelSection(false);
        
        if(selectedBooking.paymentMethod === 'Razorpay' || selectedBooking.paymentMethod === 'razorpay'){
+         showAlert("Booking cancellation submitted successfully. Please wait for refund.");
+       }
+       else{
+         showAlert("Booking cancellation submitted successfully.");
+       }
 
-            const res_refund = await axios.post(`${BaseURL}Refund/Refund`, {
-              paymentId: selectedBooking.TransactionID,
-              amount: selectedBooking.TotalPrice + selectedBooking.GSTAmount - selectedBooking.CouponAmount
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${user?.token}`,
-                "Content-Type": "application/json",
-              },
-            }
-            );
+      //       const res_refund = await axios.post(`${BaseURL}Refund/Refund`, {
+      //         paymentId: selectedBooking.TransactionID,
+      //         amount: selectedBooking.TotalPrice + selectedBooking.GSTAmount - selectedBooking.CouponAmount
+      //       },
+      //       {
+      //         headers: {
+      //           Authorization: `Bearer ${user?.token}`,
+      //           "Content-Type": "application/json",
+      //         },
+      //       }
+      //       );
 
-            if(res_refund.status === 200 ){
-              if(res_refund.data.status === 'success'){
-                 setShowCancelSection(false);
-                showAlert("Refund has been initiated");
-              }
-            }
-        }
-        else{
-            setShowCancelSection(false);
-        }
+      //       if(res_refund.status === 200 ){
+      //         if(res_refund.data.status === 'success'){
+      //            setShowCancelSection(false);
+      //           showAlert("Refund has been initiated");
+      //         }
+      //       }
+      //   }
+      //   else{
+      //       setShowCancelSection(false);
+      //   }
         setBookings(prevBookings => prevBookings.map(booking =>
           booking.BookingID === selectedBooking.BookingID ? {...booking, BookingStatus: 'Cancelled'} : booking
         ));
@@ -781,6 +788,9 @@ const BookingSkeleton = () => {
             ...(booking.BookingStatus === "Failed"
               ? [{ label: "Failed", date: new Date() }]
               : []),
+            ...(booking.Payments === null
+              ? [{ label: "Resume", date: new Date() }]
+              : []),
           ].map((step, index, array) => {
             const isCompleted = !!step.date;
             return (
@@ -809,7 +819,9 @@ const BookingSkeleton = () => {
         </div>
 
         {/* Booking Info */}
-        <div className="row g-3 p-3">
+
+     {booking?.Payments ? (
+       <div className="row g-3 p-3">
           <div className="col-md-4">
             <div className="d-flex align-items-center gap-2">
               <i className="bi bi-calendar-event text-muted fs-5" />
@@ -859,7 +871,41 @@ const BookingSkeleton = () => {
               </div>
             </div>
           </div>
+
+        {booking?.Payments
+        ? (
+          booking.BookingStatus !== "Completed" &&
+          booking.BookingStatus !== "Cancelled" &&
+          booking.BookingStatus !== "Refunded" &&
+          booking.BookingStatus !== "Failed" &&
+          !showCancelSection ? (
+          <div className="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+            <div>Need a different time? Go ahead and reschedule your booking.</div>
+            <button
+                  className="tab-pill pill border-warning text-warning px-3 py-1"
+                  onClick={() => navigate(`/reschedule?bookingId=${booking.BookingID}`)}
+                >
+                  Reschedule
+            </button>
+          </div>
+        ) : null
+        ) : null}
+
         </div>
+     ) : (
+      <>
+        <div className="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+          <div>Your payment is pending. Please resume your booking to complete the payment.</div>
+          <button
+            className="btn btn-primary px-3 py-1"
+            onClick={() => { setSelectedBooking(booking); handleOpenResume(); }}
+          >
+            Resume Booking
+          </button>
+        </div>
+      </>
+     )}
+       
       </div>
     );
   })
@@ -942,12 +988,12 @@ const BookingSkeleton = () => {
     selectedBooking.BookingStatus !== "Failed" &&
     !showCancelSection ? (
       <div className="d-flex gap-2">
-        <button
+        {/* <button
           className="tab-pill pill border-warning text-warning px-3 py-1"
           onClick={() => navigate(`/reschedule?bookingId=${selectedBooking.BookingID}`)}
         >
           Reschedule
-        </button>
+        </button> */}
         <button
           className="tab-pill pill border-danger text-danger px-3 py-1"
           onClick={() => openCancelModal()}
@@ -972,12 +1018,12 @@ const BookingSkeleton = () => {
             >
               Reschedule
             </button> */}
-            <button
+            {/* <button
               className="tab-pill pill border-success text-success px-3 py-1"
               onClick={handleRequestRefund}
             >
               Request for Refund
-            </button>
+            </button> */}
           </div>
         ) : (
           selectedBooking.BookingStatus !== "Completed" &&

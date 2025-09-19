@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link , useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./ServiceAreaTwo.css";
+import { FaSearch } from "react-icons/fa";
 
 
 const ServiceAreaHomePage = () => {
@@ -47,7 +48,7 @@ const ServiceAreaHomePage = () => {
 
   return (
     <div className="service-area-2 space overflow-hidden">
-      <div className="container">
+      <div className="container px-2 px-sm-3 px-md-4">
         <div className="row justify-content-center">
           <div className="col-lg-6">
             <div className="title-area text-center mb-0">
@@ -65,73 +66,77 @@ const ServiceAreaHomePage = () => {
           </div>
         </div>
         <div className="text-end mb-4">
-           <input
-                type="text"
-                placeholder="Search services..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  marginTop: '15px',
-                  padding: '8px 12px',
-                  width: '15%',
-                  borderRadius: '4px',
-                  border: '1px solid #ccc',
-                  fontSize: '16px',
-                }}
-              />
+           <div className="position-relative ml-20">
+                                                 <FaSearch
+                                                  className="fasearch"
+                                                  style={{left : "85%"}}
+                                                 />
+                       <input
+                             type="text"
+                             placeholder="Search services..."
+                             value={searchTerm}
+                             onChange={(e) => setSearchTerm(e.target.value)}
+                           style={{
+                                           padding: "5px 10px 5px 35px",
+                                           borderRadius: "20px",
+                                           border: "1px solid #116d6e",
+                                           width: "200px",
+                                         }}
+                         />
+                         </div>
         </div>
       </div>
 
       <div className="container">
         <div className="row gy-4 justify-content-center">
-          {services
-            .filter((service) =>
-              service.title.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-            .map((service) => (
-              <div key={service.id} className="col-lg-3">
-                <div
-                  className="service-card-minimal d-flex flex-column"
-                  style={{ minHeight: '150px' }}
-                >
-                  <div className="service-card-minimal-content d-flex flex-column align-items-center justify-content-center h-100">
-                    <div className="icon">
-                      <img src={service.icon} alt="icon" style={{ width: '140px', height: '66px' , objectFit: 'contain' }} />
-                    </div>
-                    <p className="service-title text-center mt-3">
-                      {service.title}
-                    </p>
-                  </div>
-                  <div
-                    className="service-card-full d-flex flex-column"
-                    style={{ backgroundImage: `url(${service.image})` }}
-                  >
-                    <div className="call-media-wrap flex-grow-1" onClick={() => navigate(`/${slugify(service.title)}/${service.id}`)}>
-                      <div className="icon">
-                        <img src={service.icon} alt="icon" />
-                      </div>
-                      <div className="media-body">
-                        <h4 className="link">
-                          <Link className="text-white" to={`/${slugify(service.title)}/${service.id}`}>
-                            {service.title}
-                          </Link>
-                        </h4>
-                        <p className="service-card_text text-white mt-2">
-                          {service.description}
+              {services
+                .filter((service) =>
+                  service.title.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .map((service) => (
+                  <div key={service.id} className="col-6 col-sm-6 col-md-4 col-lg-3">
+                    <div
+                      className="service-card-minimal d-flex flex-column"
+                      style={{ minHeight: '150px' }}
+                    >
+                      <div className="service-card-minimal-content d-flex flex-column align-items-center justify-content-center h-100">
+                        <div className="icon">
+                          <img src={service.icon} alt="icon" className="service-icon" />
+                        </div>
+                        <p className="service-title text-center mt-3">
+                          {service.title}
                         </p>
                       </div>
-                    </div>
-                    <div className="checklist style-white">
-                      <div className="btn-wrap mt-20">
-                        <Link className="btn style4 px-4 py-2" to={`/${slugify(service.title)}/${service.id}`}>
-                          Book Service <i className="fas fa-arrow-right ms-2" />
-                        </Link>
+                      <div
+                        className="service-card-full d-flex flex-column"
+                        style={{ backgroundImage: `url(${service.image})` }}
+                      >
+                        <div className="call-media-wrap flex-grow-1" onClick={() => navigate(`/${slugify(service.title)}/${service.id}`)}>
+                          <div className="icon">
+                            <img src={service.icon} alt="icon" />
+                          </div>
+                          <div className="media-body">
+                            <h4 className="link">
+                              <Link className="text-white" to={`/${slugify(service.title)}/${service.id}`}>
+                                {service.title}
+                              </Link>
+                            </h4>
+                            <p className="service-card_text text-white mt-2">
+                              {service.description}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="checklist style-white">
+                          <div className="btn-wrap mt-20">
+                            <Link className="btn style4 px-4 py-2" to={`/${slugify(service.title)}/${service.id}`}>
+                              Book Service <i className="fas fa-arrow-right ms-2" />
+                            </Link>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                ))}
         </div>
       </div>
     </div>

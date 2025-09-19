@@ -51,6 +51,61 @@ const BookingAddressDetails = ({
 
 console.log(cityOptions,'cityOptions');
 
+  // Function to reverse geocode and update form fields
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
+      );
+      const data = await response.json();
+      if (data.results && data.results.length > 0) {
+        const addressComponents = data.results[0].address_components;
+
+        const cityComp = addressComponents.find((c) =>
+          c.types.includes("locality")
+        );
+        const stateComp = addressComponents.find((c) =>
+          c.types.includes("administrative_area_level_1")
+        );
+        const postalCodeComp = addressComponents.find((c) =>
+          c.types.includes("postal_code")
+        );
+        const streetComp = addressComponents.find((c) =>
+          c.types.includes("route")
+        );
+        const areaComp = addressComponents.find((c) =>
+          c.types.includes("sublocality") || c.types.includes("neighborhood")
+        );
+
+        setFormData((prev) => ({
+          ...prev,
+          CityName: cityComp ? cityComp.long_name : prev.CityName,
+          StateID: stateComp ? prev.StateID : prev.StateID,
+          pincode: postalCodeComp ? postalCodeComp.long_name : prev.pincode,
+          addressLine1: streetComp ? streetComp.long_name : prev.addressLine1,
+          area: areaComp ? areaComp.long_name : prev.area,
+        }));
+
+        // Optionally, you can update StateID by matching with states list
+        if (stateComp) {
+          const matchedState = states.find(
+            (s) =>
+              s.StateName.replace(/\s+/g, "").toLowerCase() ===
+              stateComp.long_name.replace(/\s+/g, "").toLowerCase()
+          );
+          if (matchedState) {
+            setFormData((prev) => ({
+              ...prev,
+              StateID: matchedState.StateID,
+            }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error reverse geocoding:", error);
+    }
+  };
+
   // Get current location and update form fields
   useEffect(() => {
     if (navigator.geolocation) {
@@ -68,54 +123,8 @@ console.log(cityOptions,'cityOptions');
             },
           }));
 
-          // Reverse geocode to get address details
-          try {
-            const response = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
-            );
-            const data = await response.json();
-            if (data.results && data.results.length > 0) {
-              const addressComponents = data.results[0].address_components;
-
-              const cityComp = addressComponents.find((c) =>
-                c.types.includes("locality")
-              );
-              const stateComp = addressComponents.find((c) =>
-                c.types.includes("administrative_area_level_1")
-              );
-              const postalCodeComp = addressComponents.find((c) =>
-                c.types.includes("postal_code")
-              );
-              const streetComp = addressComponents.find((c) =>
-                c.types.includes("route")
-              );
-
-              setFormData((prev) => ({
-                ...prev,
-                CityName: cityComp ? cityComp.long_name : "",
-                StateID: stateComp ? prev.StateID : "",
-                pincode: postalCodeComp ? postalCodeComp.long_name : "",
-                addressLine1: streetComp ? streetComp.long_name : "",
-              }));
-
-              // Optionally, you can update StateID by matching with states list
-              if (stateComp) {
-                const matchedState = states.find(
-                  (s) =>
-                    s.StateName.replace(/\s+/g, "").toLowerCase() ===
-                    stateComp.long_name.replace(/\s+/g, "").toLowerCase()
-                );
-                if (matchedState) {
-                  setFormData((prev) => ({
-                    ...prev,
-                    StateID: matchedState.StateID,
-                  }));
-                }
-              }
-            }
-          } catch (error) {
-            console.error("Error reverse geocoding current location:", error);
-          }
+          // Reverse geocode
+          await reverseGeocode(lat, lng);
         },
         (error) => {
           console.error("Error getting current location:", error);
@@ -123,6 +132,13 @@ console.log(cityOptions,'cityOptions');
       );
     }
   }, [setFormData, states]);
+
+  // Reverse geocode when map location changes
+  useEffect(() => {
+    if (formData.mapLocation.latitude && formData.mapLocation.longitude) {
+      reverseGeocode(formData.mapLocation.latitude, formData.mapLocation.longitude);
+    }
+  }, [formData.mapLocation.latitude, formData.mapLocation.longitude]);
 
   // Fetch saved addresses
   useEffect(() => {
@@ -263,6 +279,49 @@ console.log(cityOptions,'cityOptions');
     <div className="card shadow-sm p-4 mb-4">
       <h5 className="mb-3 text-primary fw-bold">📦 Address</h5>
 
+      {/* Instruction Section */}
+      <div className="mb-4">
+        <h6 className="text-muted mb-3">How would you like to add your location?</h6>
+        <div className="row">
+          <div className="col-md-4 mb-3">
+            <div className="card border-primary" style={{cursor: 'pointer'}}>
+              <div className="card-body p-2 d-flex align-items-center justify-content-between gap-3">
+                <i className="fas fa-map-marker-alt fa-2x text-primary"></i>
+                <div>
+                  <h6 className="card-title mb-1">Choose from Map</h6>
+                  <p className="card-text small mb-0">Click on the map to select your location</p>
+                </div>
+                
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4 mb-3">
+            <div className="card border-success" style={{cursor: 'pointer'}}>
+              <div className="card-body p-2 d-flex align-items-center justify-content-between gap-3">
+                 <i className="fas fa-search fa-2x text-success"></i>
+                <div>
+                  <h6 className="card-title mb-1">Search Location</h6>
+                  <p className="card-text small mb-0">Use the search bar to find your address</p>
+                </div>
+               
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4 mb-3">
+            <div className="card border-info" style={{cursor: 'pointer'}}>
+              <div className="card-body p-2 d-flex align-items-center justify-content-between gap-3">
+                <i className="fas fa-edit fa-2x text-info"></i>
+                <div>
+                  <h6 className="card-title mb-1">Manual Entry</h6>
+                  <p className="card-text small mb-0">Enter your address details manually</p>
+                </div>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Map Search + Map */}
       {isLoaded && (
         <>
@@ -357,7 +416,37 @@ console.log(cityOptions,'cityOptions');
             ))}
           </select>
         </div>
+
         <div className="col-md-6 mb-3">
+          <label className="form-label fw-semibold">Pincode <span className="text-danger">*</span></label>
+          <input
+            type="text"
+            name="pincode"
+            className="form-control"
+            placeholder="Pincode"
+            value={formData.pincode}
+            maxLength={6} // Restricts to 6 characters
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, ""); // Allow only numbers
+              if (value.length <= 6) {
+                handlereInputChange({ target: { name: "pincode", value } });
+              }
+            }}
+          />
+        </div>
+
+        <div className="col-md-6 mb-3">
+          <label className="form-label fw-semibold">City <span className="text-danger">*</span></label>
+          <input
+            type="text"
+            name="area"
+            className="form-control"
+            placeholder="e.g., Banjara Hills, Jubilee Hills, HITEC City"
+            value={formData.area}
+            onChange={handlereInputChange}
+          />
+        </div>
+        <div className="col-md-6 mb-3 d-none">
           <label className="form-label fw-semibold">City <span className="text-danger">*</span></label>
           <input 
           type="text"
@@ -384,9 +473,9 @@ console.log(cityOptions,'cityOptions');
                   )}
                   </div>
               )}
-              <input type="hidden" name="CityID" value={formData.CityID} />
+              <input type="text" name="CityID" value={formData.CityID} />
           {/* </div> */}
-
+t
           {/* <Select
             name="CityID"
             value={formData.CityID ? cityOptions.find(option => option.value.toString() === formData.CityID.toString()) : null}
@@ -465,21 +554,16 @@ console.log(cityOptions,'cityOptions');
             }}
           /> */}
         </div>
+        
         <div className="col-md-6 mb-3">
-          <label className="form-label fw-semibold">Pincode <span className="text-danger">*</span></label>
+          <label className="form-label fw-semibold">Floor Number</label>
           <input
             type="text"
-            name="pincode"
+            name="floorNumber"
             className="form-control"
-            placeholder="Pincode"
-            value={formData.pincode}
-            maxLength={6} // Restricts to 6 characters
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, ""); // Allow only numbers
-              if (value.length <= 6) {
-                handlereInputChange({ target: { name: "pincode", value } });
-              }
-            }}
+            placeholder="e.g., Ground Floor, 1st Floor, 2nd Floor"
+            value={formData.floorNumber}
+            onChange={handlereInputChange}
           />
         </div>
         <div className="col-md-12 mb-3">
@@ -493,28 +577,8 @@ console.log(cityOptions,'cityOptions');
             onChange={handlereInputChange}
           ></textarea>
         </div>
-        <div className="col-md-6 mb-3">
-          <label className="form-label fw-semibold">Floor Number</label>
-          <input
-            type="text"
-            name="floorNumber"
-            className="form-control"
-            placeholder="e.g., Ground Floor, 1st Floor, 2nd Floor"
-            value={formData.floorNumber}
-            onChange={handlereInputChange}
-          />
-        </div>
-        <div className="col-md-6 mb-3">
-          <label className="form-label fw-semibold">Area</label>
-          <input
-            type="text"
-            name="area"
-            className="form-control"
-            placeholder="e.g., Banjara Hills, Jubilee Hills, HITEC City"
-            value={formData.area}
-            onChange={handlereInputChange}
-          />
-        </div>
+        
+        
       </div>
     </div>
   );

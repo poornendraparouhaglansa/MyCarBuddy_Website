@@ -95,6 +95,52 @@
   margin-top: 20px;
 }
 
+/* Service icon responsive styles */
+.service-icon {
+  width: 65px;
+  height: 65px;
+  object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .service-icon {
+    width: 100px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 576px) {
+  .service-icon {
+    width: 80px;
+    height: 40px;
+  }
+}
+
+/* Search input responsive styles */
+.search-input-mobile {
+  width: 100%;
+  max-width: 300px;
+}
+
+@media (min-width: 576px) {
+  .search-input-mobile {
+    width: 250px;
+  }
+}
+
+@media (min-width: 768px) {
+  .search-input-mobile {
+    width: 200px;
+  }
+}
+
+@media (min-width: 992px) {
+  .search-input-mobile {
+    width: 15%;
+    min-width: 200px;
+  }
+}
+
 /* Responsive: on small screens, always show full card */
 @media (max-width: 768px) {
   .service-card-full {
@@ -102,6 +148,7 @@
     opacity: 1 !important;
     pointer-events: auto !important;
     z-index: 1 !important;
+    display: none !important; /* Hide full card on mobile */
   }
   .service-card-minimal-content {
     opacity: 1 !important;
@@ -110,5 +157,67 @@
   .service-card-minimal {
     box-shadow: none !important;
     background-color: transparent !important;
+  }
+
+  /* Adjust icon sizes for mobile */
+  .service-card-minimal-content .icon img {
+    width: 100px !important;
+    height: 50px !important;
+  }
+
+  .service-card-full .icon img {
+    max-width: 60px !important;
+  }
+
+  /* Adjust padding for mobile */
+  .service-card-minimal-content {
+    padding: 20px 15px !important;
+  }
+
+  .service-card-full {
+    padding: 15px !important;
+  }
+
+  /* Adjust title font size for mobile */
+  .service-card-full .link {
+    font-size: 1.1rem !important;
+  }
+
+  .service-card-full .service-card_text {
+    font-size: 0.85rem !important;
+  }
+
+  /* Adjust button for mobile */
+  .service-card-full .btn-wrap {
+    margin-top: 15px !important;
+  }
+
+  .service-card-full .btn {
+    padding: 8px 16px !important;
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 576px) {
+  .service-card-minimal-content .icon img {
+    width: 80px !important;
+    height: 40px !important;
+  }
+
+  .service-card-minimal-content {
+    padding: 15px 10px !important;
+  }
+
+  .service-card-full {
+    padding: 12px !important;
+  }
+
+  .service-card-full .link {
+    font-size: 1rem !important;
+  }
+
+  .service-card-full .service-card_text {
+    font-size: 0.8rem !important;
   }
 }
