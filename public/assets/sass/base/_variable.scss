@@ -177,8 +177,9 @@ $fontsMap: map-merge(
   background: #ffffff !important;
 }
 .pricing-card {
-    padding: 25px 30px !important;
-    gap: 40px !important;
+    padding: 25px 24px !important;
+    gap: 35px !important;
+    height: 330px;
 }
 // .main-menu > ul > li > a {
 //     padding: 0 0 !important;
@@ -233,7 +234,7 @@ $fontsMap: map-merge(
 }
 .text-muted1 {
   font-size: 12px;
-  color: #aeb1b5 !important;
+  color: #37383b !important ;
   text-decoration: line-through !important;
 }
 .btn-sm-icon{
@@ -400,9 +401,70 @@ button.tab.tab-pill.active.btn-lg.px-4.py-2.btn-confirm:disabled {
     width: 18px;
     border-radius: 10px;
 }
+.fasearch{
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  color: #116d6e;
+  pointer-events: none;
+  font-size: 16px;
+}
+ .search-dropdown{
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border: 1px solid #116d6e;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1100;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.cta-area-1 .sec-title{
+  font-size: 35px !important;
+}
+.testimonial-area-1 .sub-title{
+  color: #ea9300;
+}
+.testimonialOne.arrow .testimonialOne-button-next, .testimonialOne.arrow .testimonialOne-button-prev{
+  background-color: #ffffff;
+}
+
+.floating-right-button{
+  background: linear-gradient(135deg, rgb(211, 10, 28) 0%, rgb(231, 129, 7) 100%);
+    color: rgb(255, 255, 255);
+    border: none;
+    border-radius: 50px;
+    padding: 15px 20px 20px 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: rgba(17, 109, 110, 0.3) 0px 8px 25px;
+    transition: 0.3s;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    white-space: nowrap;
+    display: flex
+;
+    align-items: center;
+    gap: 8px;
+    transform: scale(1);
+}
+// #ea9300
 @media screen and (max-width: 768px) {
   .timeline-container  {
     overflow: auto;
   }
   
+}
+
+@media (min-width: 1200px) {
+    .container, .container-lg, .container-md, .container-sm, .container-xl {
+        max-width: 97%;
+    }
 }
