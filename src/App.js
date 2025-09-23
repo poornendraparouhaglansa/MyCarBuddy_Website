@@ -25,6 +25,7 @@ import ServiceInDetailsPage from "./pages/ServiceInDetailsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ReschedulePage from "./pages/ReschedulePage";
 import CarDamageAnalysisPage from "./pages/CarDamageAnalysisPage";
+import SearchPage from "./pages/SearchPage";
 
 function App() {
   useEffect(() => {
@@ -58,6 +59,7 @@ function App() {
           <Route exact path="/refund-cancellation" element={<RefundPage />} />
           <Route exact path="/reschedule" element={<ReschedulePage />} />
           <Route exact path="/car-damage-analysis" element={<CarDamageAnalysisPage />} />
+          <Route exact path="/search" element={<SearchPage />} />
           <Route path="*" element={<NotFoundPage />} />
 
         </Routes>

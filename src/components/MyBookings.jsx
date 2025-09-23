@@ -742,8 +742,8 @@ const BookingSkeleton = () => {
       { label: "Buddy Assigned", date: booking.TechAssignDate },
       { label: "Buddy Started", date: tracking?.JourneyStartedAt },
       { label: "Buddy Reached", date: tracking?.ReachedAt },
-      { label: "Buddy Started", date: tracking?.ServiceStartedAt },
-      { label: "Buddy Completed", date: tracking?.ServiceEndedAt },
+      { label: "Service Started", date: tracking?.ServiceStartedAt },
+      { label: "Service Completed", date: tracking?.ServiceEndedAt },
     ];
 
     return (
@@ -763,7 +763,9 @@ const BookingSkeleton = () => {
             </div>
           </div>
           <div>
-            <small className="text-white">Booking OTP:</small>
+            {booking.Status !== "Completed" && booking.Status !== 'Cancelled' && booking.Status !== 'Failed' ? 
+            <small className="text-white">Booking {booking.CompletedOTP ? "Completion" : "Start"} OTP:</small>
+            : null}
             <div className="fw-bold text-primary">
               <span className="bg-warning px-2 py-1 rounded text-dark">
                 {booking.BookingOTP}

@@ -19,19 +19,7 @@ const HeroSection = () => {
   return (
     <section
       style={{
-        position: "relative",
-        overflow: "hidden",
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "40px 20px",
-        // backgroundColor: "#ffffff",
         backgroundImage: `url(${images[currentImage]})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        transition: "background-image 1s ease-in-out",
       }}
       className="hero-section-mobile-fix"
     >

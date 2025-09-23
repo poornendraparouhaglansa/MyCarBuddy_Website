@@ -16,6 +16,10 @@ const SelectTimeSlotPage = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const token = user?.token || "";
   const { cartItems, clearCart } = useCart();
+  const [validatedItems, setValidatedItems] = useState(cartItems);
+  const [validatingPrices, setValidatingPrices] = useState(false);
+  const apiBase = process.env.REACT_APP_CARBUDDY_BASE_URL || "https://api.mycarsbuddy.com/api/";
+  const imageBase = process.env.REACT_APP_CARBUDDY_IMAGE_URL || "https://api.mycarsbuddy.com/";
   // cartItems.length === 0 && navigate("/cart");
   const [step, setStep] = useState(1);
   const baseUrl = process.env.REACT_APP_CARBUDDY_BASE_URL;
@@ -87,6 +91,7 @@ const SelectTimeSlotPage = () => {
   const paymentRef = useRef(null);
 
   const [pincode, setPincode] = useState("");
+  const geocodeDebounceRef = useRef(null);
 
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [registrationNumber, setRegistrationNumber] = useState("");
@@ -369,7 +374,53 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
   const isToday =
     format(new Date(), "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
 
-  const totalAmount = cartItems.reduce((sum, i) => sum + i.price, 0);
+  // Validate item prices from API based on selected car details
+  useEffect(() => {
+    const validate = async () => {
+      try {
+        setValidatingPrices(true);
+        const selectedCarDetails = JSON.parse(localStorage.getItem("selectedCarDetails"));
+        if (!selectedCarDetails?.brand?.id || !selectedCarDetails?.model?.id || !selectedCarDetails?.fuel?.id) {
+          setValidatedItems(cartItems);
+          return;
+        }
+
+        const brandId = selectedCarDetails.brand.id;
+        const modelId = selectedCarDetails.model.id;
+        const fuelTypeId = selectedCarDetails.fuel.id;
+
+        const updated = await Promise.all(
+          cartItems.map(async (item) => {
+            const url = `${apiBase}PlanPackage/GetPlanPackagesByCategoryAndSubCategory?BrandId=${brandId}&ModelId=${modelId}&fuelTypeId=${fuelTypeId}&packageId=${item.id}`;
+            try {
+              const res = await axios.get(url);
+              const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+              if (!Array.isArray(list) || list.length === 0) return item;
+              const pkg = list.find((p) => String(p.PackageID) === String(item.id)) || list[0];
+              const imagePath = pkg?.BannerImage || "";
+              const resolvedImage = imagePath ? `${imageBase}${imagePath.startsWith("/") ? imagePath.slice(1) : imagePath}` : item.image;
+              return {
+                ...item,
+                title: pkg.PackageName ?? item.title,
+                price: pkg.Serv_Off_Price ?? item.price,
+                image: resolvedImage,
+              };
+            } catch (e) {
+              return item;
+            }
+          })
+        );
+
+        setValidatedItems(updated);
+      } finally {
+        setValidatingPrices(false);
+      }
+    };
+
+    validate();
+  }, [cartItems]);
+
+  const totalAmount = validatedItems.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
 
   const getBookingDateTime = () => {
     // For multiple time slots, we'll use the first selected time slot for the date
@@ -415,9 +466,21 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
         name === "mapLocation" ||
         name === "StateID"
       ) {
-        updateMapFromAddress(updatedForm); // trigger map update
-      if( name === "pincode" && value.length === 6 )
-        fetchCities(value);
+        // Immediate triggers
+        if (name === "pincode" && value.length === 6) {
+          updateMapFromAddress(updatedForm);
+          fetchCities(value);
+        } else if (name === "StateID") {
+          updateMapFromAddress(updatedForm);
+        } else if (name === "CityName" || name === "addressLine1") {
+          // Debounce geocoding while typing address/city
+          if (geocodeDebounceRef.current) {
+            clearTimeout(geocodeDebounceRef.current);
+          }
+          geocodeDebounceRef.current = setTimeout(() => {
+            updateMapFromAddress(updatedForm);
+          }, 600);
+        }
       }
       return updatedForm;
     });
@@ -430,6 +493,11 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     const state = states.find((s) => s.StateID === parseInt(StateID));
     // const city = cities.find((c) => c.CityID === parseInt(CityID));
     const city = CityName;
+
+    // Avoid geocoding until pincode is complete (6 digits) if it's present
+    if (pincode && String(pincode).length !== 6) {
+      return;
+    }
 
     const fullAddress = `${addressLine1 || ""}, ${pincode || ""}, ${
       city?.replace(/\s+/g, "").toLowerCase() || ""
@@ -784,8 +852,8 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     const token = user?.token;
 
     const bookingDateTime = getBookingDateTime();
-    const packageIds = cartItems.map((item) => item.id).join(",");
-    const packagePrice = cartItems.map((item) => item.price).join(",");
+    const packageIds = validatedItems.map((item) => item.id).join(",");
+    const packagePrice = validatedItems.map((item) => item.price).join(",");
 
     if (
       !decryptedCustId ||
@@ -1467,11 +1535,11 @@ const getGST = () => {
             <div className="card p-4">
               <h5 className="mb-4">Services in Cart</h5>
 
-              {cartItems.length === 0 ? (
+              {validatedItems.length === 0 ? (
                 <p className="text-muted">No services in cart.</p>
               ) : (
                 <div className="vstack gap-3">
-                  {cartItems.map((item, idx) => (
+                  {validatedItems.map((item, idx) => (
                     <div
                       key={idx}
                       className="d-flex gap-3 align-items-center border-bottom pb-3"
@@ -1491,7 +1559,7 @@ const getGST = () => {
                         <div className="text-muted small">{item.duration}</div>
                       </div>
                       <div className="fw-bold text-success text-nowrap">
-                        ₹{item.price}
+                        {validatingPrices ? <span className="text-muted">Validating...</span> : <>₹{item.price}</>}
                       </div>
                     </div>
                   ))}

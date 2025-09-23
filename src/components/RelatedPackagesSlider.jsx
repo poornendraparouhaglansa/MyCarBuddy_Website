@@ -25,6 +25,7 @@ const RelatedPackagesSlider = () => {
         );
         const formatted = response.data
           .filter((pkg) => pkg.IsActive === true)
+          .filter((pkg) => !cartItems.some((item) => item.id === pkg.PackageID)) 
           .slice(0, 8) // Show at least 4, up to 8 packages
           .map((pkg) => ({
             id: pkg.PackageID,

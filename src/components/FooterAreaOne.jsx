@@ -61,7 +61,7 @@ const FooterAreaOne = () => {
                     <Link to="mailto:info@mycarbuddy.in">info@mycarbuddy.in</Link>
                   </p>
                   <p>
-                   Unit #B1, Second Floor Spaces & More Business Park,<br></br> Madhapur #3 D.No# 1-89/A/8, C/2, Vittal Rao Nagar Rd, Madhapur,  Hyderabad India, 500081
+                   Unit #B1, Second Floor Spaces & More Business Park,Madhapur #3 D.No# 1-89/A/8, C/2, Vittal Rao Nagar Rd, Madhapur,  Hyderabad India, 500081
                   </p>
                 </div>
               </div>

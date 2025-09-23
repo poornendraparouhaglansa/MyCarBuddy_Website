@@ -3,7 +3,9 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import SignIn from "./SignIn";
 import RegisterModal from "./RegisterModal";
 import { FaCarSide, FaSearch } from "react-icons/fa";
-import ChooseCarModal from "./ChooseCarModal";
+// import ChooseCarModal from "./ChooseCarModal";
+import ChooseCarModal from "./ChooseCarModalWithRegLookup";
+
 import { FaShoppingCart } from "react-icons/fa";
 import { useCart } from "../context/CartContext";
 import ProfileModal from "./ProfileModal";
@@ -45,68 +47,21 @@ const HeaderOne = () => {
 
   // New state for service search
   const [serviceSearchTerm, setServiceSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
 
-  // Debounce timer
-  let debounceTimer = null;
-
-  // Function to fetch search results from API
-  const fetchSearchResults = async (query) => {
-    // if (!query) {
-    //   setSearchResults([]);
-    //   setSearchDropdownOpen(false);
-    //   return;
-    // }
-    // setSearchLoading(true);
-    try {
-      // Call API with query param if supported, else fetch all and filter client-side
-      const response = await axios.get(
-        `${API_URL}PlanPackage/GetPlanPackagesByCategoryAndSubCategory`
-      );
-      if (Array.isArray(response.data)) {
-        // Filter packages by name matching query (case-insensitive)
-        const filtered = response.data.filter(pkg =>
-          pkg.PackageName.toLowerCase().includes(query.toLowerCase()) && pkg.IsActive
-        );
-        setSearchResults(filtered);
-        // setSearchDropdownOpen(filtered.length > 0);
-      } else {
-        setSearchResults([]);
-        setSearchDropdownOpen(false);
-      }
-    } catch (error) {
-      console.error("Search API error:", error);
-      setSearchResults([]);
-      setSearchDropdownOpen(false);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
-  // Handle search input change with debounce
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setServiceSearchTerm(value);
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      fetchSearchResults(value);
-    }, 300);
   };
 
-  // Handle click on search result item
-  const handleSearchSelect = (pkg) => {
-    setServiceSearchTerm("");
-    setSearchResults([]);
-    setSearchDropdownOpen(false);
-    // Navigate to service details page
-    navigate(`/servicedetails/${slugify(pkg.PackageName)}/${pkg.PackageID}`);
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (serviceSearchTerm.trim()) {
+      navigate(`/search?q=${encodeURIComponent(serviceSearchTerm.trim())}`);
+    }
   };
 
   useEffect(() => {
     let timeoutId;
-    fetchSearchResults(serviceSearchTerm);
 
     const handleScroll = () => {
       // Only show modal if it hasn't been shown yet
@@ -549,54 +504,21 @@ const slugify = (text) => {
                   <div className="navbar-right-desc">
                     <div className="header-search d-xl-block">
                       {/* Search input and dropdown */}
-                        <div className="position-relative ml-20">
-                          <FaSearch
-                           className="fasearch"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Search packages..."
-                            value={serviceSearchTerm}
-                            onChange={handleSearchChange}
-                            onFocus={() => { setSearchDropdownOpen(true); }}
-                            onBlur={() => setTimeout(() => setSearchDropdownOpen(false), 200)}
-                            style={{
-                              padding: "5px 10px 5px 35px",
-                              borderRadius: "20px",
-                              border: "1px solid #116d6e",
-                              width: "200px",
-                            }}
-                          />
-                          {searchDropdownOpen && (
-                            <ul className="search-dropdown"
-                            >
-                              {searchLoading ? (
-                                <li style={{ padding: "10px", textAlign: "center" }}>Loading...</li>
-                              ) : searchResults.length === 0 ? (
-                                <li style={{ padding: "10px", textAlign: "center" }}>No results found</li>
-                              ) : (
-                                searchResults.map(pkg => (
-                                  <li
-                                    key={pkg.PackageID}
-                                    onClick={() => handleSearchSelect(pkg)}
-                                    style={{
-                                      padding: "8px 12px",
-                                      cursor: "pointer",
-                                      borderBottom: "1px solid #eee",
-                                    }}
-                                    onMouseDown={e => e.preventDefault()} // Prevent input blur before click
-                                  >
-                                    {pkg.PackageName}
-                                  </li>
-                                ))
-                              )}
-                            </ul>
-                           )} 
-                        </div>
+                      <form onSubmit={handleSearchSubmit} className="position-relative ml-20">
+                        <FaSearch className="fasearch" />
+                        <input
+                          type="text"
+                          placeholder="Search packages..."
+                          value={serviceSearchTerm}
+                          onChange={handleSearchChange}
+                          className="searchInput"
+                         
+                        />
+                      </form>
                     </div>
                   </div>
                 </div>
-                <div className="col-auto ms-auto d-xl-block d-none">
+                <div className="col-auto ms-auto d-xl-block ">
                   <div className="navbar-right-desc">
                     <div
                       className="header-grid-wrap"
@@ -609,7 +531,7 @@ const slugify = (text) => {
                       }}
                     >
                       <div
-                        className="navbar-right-desc-details"
+                        className="navbar-right-desc-details signDiv"
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -691,7 +613,7 @@ const slugify = (text) => {
                       </div>
 
                       <div
-                        className="navbar-right-desc-details"
+                        className="navbar-right-desc-details "
                         style={{
                           display: "flex",
                           flexDirection: "column",
@@ -909,7 +831,13 @@ const slugify = (text) => {
                   </li>
                   <li>
                     <NavLink
-                      to="/logout"
+                      to="/"
+                        onClick={() => {
+                          localStorage.removeItem("user");
+                          localStorage.removeItem("cartItems");
+                          localStorage.removeItem("selectedCarDetails");
+                          sessionStorage.clear();
+                        }} 
                       className={(navData) =>
                         navData.isActive ? "active" : ""
                       }
@@ -1079,13 +1007,7 @@ const slugify = (text) => {
 
 
  {/* Floating Car Damage Analysis Button */}
-      <div style={{
-        position: 'fixed',
-        right: '-20px',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        zIndex: 1000
-      }}>
+      <div className="carAnalysisButton">
         <button
           onClick={() => navigate('/car-damage-analysis')}
           className="floating-right-button"

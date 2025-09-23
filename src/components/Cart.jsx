@@ -1,5 +1,6 @@
 // CartPage.jsx
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { useCart } from "../context/CartContext";
 import { Link, useNavigate } from "react-router-dom";
 import SignIn from "./SignIn";
@@ -7,8 +8,56 @@ import RelatedPackagesSlider from "./RelatedPackagesSlider";
 
 const CartPage = () => {
   const { cartItems, removeFromCart } = useCart();
+  const [validatedItems, setValidatedItems] = useState(cartItems);
+  const [validating, setValidating] = useState(false);
+  const API_BASE = process.env.REACT_APP_CARBUDDY_BASE_URL || "https://api.mycarsbuddy.com/api/";
+  const IMAGE_BASE = process.env.REACT_APP_CARBUDDY_IMAGE_URL || "https://api.mycarsbuddy.com/";
 
-  const total = cartItems.reduce((sum, i) => sum + i.price, 0);
+  useEffect(() => {
+    const validatePrices = async () => {
+      try {
+        setValidating(true);
+        const selectedCarDetails = JSON.parse(localStorage.getItem("selectedCarDetails"));
+        if (!selectedCarDetails?.brand?.id || !selectedCarDetails?.model?.id || !selectedCarDetails?.fuel?.id) {
+          setValidatedItems(cartItems);
+          return;
+        }
+
+        const brandId = selectedCarDetails.brand.id;
+        const modelId = selectedCarDetails.model.id;
+        const fuelTypeId = selectedCarDetails.fuel.id;
+
+        const fetches = cartItems.map(async (item) => {
+          const url = `${API_BASE}PlanPackage/GetPlanPackagesByCategoryAndSubCategory?BrandId=${brandId}&ModelId=${modelId}&fuelTypeId=${fuelTypeId}&packageId=${item.id}`;
+          try {
+            const res = await axios.get(url);
+            const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+            if (!Array.isArray(list) || list.length === 0) return item;
+            const pkg = list.find((p) => String(p.PackageID) === String(item.id)) || list[0];
+            const imagePath = pkg?.BannerImage || "";
+            const resolvedImage = imagePath ? `${IMAGE_BASE}${imagePath.startsWith("/") ? imagePath.slice(1) : imagePath}` : item.image;
+            return {
+              ...item,
+              title: pkg.PackageName ?? item.title,
+              price: pkg.Serv_Off_Price ?? item.price,
+              image: resolvedImage,
+            };
+          } catch (e) {
+            return item;
+          }
+        });
+
+        const updated = await Promise.all(fetches);
+        setValidatedItems(updated);
+      } finally {
+        setValidating(false);
+      }
+    };
+
+    validatePrices();
+  }, [cartItems]);
+
+  const total = validatedItems.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
 
   const navigate = useNavigate();
 
@@ -38,7 +87,7 @@ const CartPage = () => {
     <div className="container py-4">
       {/* <h3 className="mb-4">Your Cart</h3> */}
 
-      {cartItems.length === 0 ? (
+      {validatedItems.length === 0 ? (
         <div className=" no-services-cart" style={{ textAlign: "center" }}>
           <img src="/assets/img/nocart.png" alt="No Cart" style={{ maxWidth: "200px", marginBottom: "20px" }} />
           <h4>Your Garage  is empty</h4>
@@ -63,8 +112,7 @@ const CartPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {
-                cartItems.map((item) => (
+                {validatedItems.map((item) => (
                   <tr key={item.id}>
                     <td>
                       <span >{cartItems.indexOf(item) + 1}</span>
@@ -80,7 +128,13 @@ const CartPage = () => {
                         <strong>{item.title}</strong>
                       </div>
                     </td>
-                    <td>₹{item.price}</td>
+                    <td>
+                      {validating ? (
+                        <span className="text-muted">Validating...</span>
+                      ) : (
+                        <>₹{item.price}</>
+                      )}
+                    </td>
                     <td>
                       <button
                         className="btn btn-outline-danger btn-sm-icon"

@@ -161,7 +161,7 @@ $fontsMap: map-merge(
 // }
 
 .arrow-btn.left , .arrow-btn.right{
-  background-color: var(--secondary-color);
+  background-color: #e69110;
 }
 
 .pricing-card-details .btn.style-border2{
@@ -455,16 +455,74 @@ button.tab.tab-pill.active.btn-lg.px-4.py-2.btn-confirm:disabled {
     gap: 8px;
     transform: scale(1);
 }
+.searchInput{
+  padding: 5px 10px 5px 35px;
+    border-radius: 20px;
+    border: 1px solid rgb(17, 109, 110);
+    width: 200px;
+}
+.hero-section-mobile-fix{
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40px 20px;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  transition: background-image 1s ease-in-out;
+}
+.carAnalysisButton{
+  position: fixed;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+}
 // #ea9300
 @media screen and (max-width: 768px) {
   .timeline-container  {
     overflow: auto;
   }
-  
+  .modalWidth{
+    padding: 30px 14px;
+  }
+  .pricing-card{
+    height: 100%;
+  }
+  .pricing-card_icon{
+    width: 100% !important;
+  }
+  .breadcumb-wrapper {
+    text-align: center;
+    padding: 70px 0 75px !important;
+  }
+  .menu-area .ms-auto.d-sm-none{
+    margin-left: 0 !important;
+    margin-bottom: 20px;
+  }
+  .searchInput{
+    width: 130px;
+  }
+  .signDiv{
+    display: none;
+  }
+  .hero-section-mobile-fix{
+    padding: 40px 0px;
+  }
 }
 
 @media (min-width: 1200px) {
     .container, .container-lg, .container-md, .container-sm, .container-xl {
         max-width: 97%;
     }
+    .modalWidth{
+      max-width: 50%;
+    }
+}
+
+.line-none{
+  text-decoration: none !important;
 }

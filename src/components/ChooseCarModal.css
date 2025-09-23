@@ -30,6 +30,13 @@
   width: 90%;
   max-width: 400px;
   text-align: center;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+.modal-content.modalWidth {
+  max-width: 920px;
+  text-align: left;
 }
 .modal-close {
   position: absolute;
@@ -56,4 +63,34 @@
   100% {
     opacity: 1;
   }
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    max-width: 95%;
+    padding: 20px;
+  }
+  .modal-content.modalWidth {
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 16px;
+    border-radius: 10px;
+  }
+}
+
+/* Sticky actions at bottom */
+.modal-actions {
+  position: sticky;
+  bottom: -30px;
+  padding-bottom: 20px;
+  background: #fff;
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid rgba(0,0,0,0.08);
 }

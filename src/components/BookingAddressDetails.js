@@ -36,6 +36,7 @@ const BookingAddressDetails = ({
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [filteredCities, setFilteredCities] = useState([]);
   const cityInputRef = useRef(null);
+  const [locating, setLocating] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
@@ -60,6 +61,7 @@ console.log(cityOptions,'cityOptions');
       const data = await response.json();
       if (data.results && data.results.length > 0) {
         const addressComponents = data.results[0].address_components;
+        
 
         const cityComp = addressComponents.find((c) =>
           c.types.includes("locality")
@@ -76,13 +78,14 @@ console.log(cityOptions,'cityOptions');
         const areaComp = addressComponents.find((c) =>
           c.types.includes("sublocality") || c.types.includes("neighborhood")
         );
+        const address = data.results[0].formatted_address;
 
         setFormData((prev) => ({
           ...prev,
           CityName: cityComp ? cityComp.long_name : prev.CityName,
           StateID: stateComp ? prev.StateID : prev.StateID,
           pincode: postalCodeComp ? postalCodeComp.long_name : prev.pincode,
-          addressLine1: streetComp ? streetComp.long_name : prev.addressLine1,
+          addressLine1: address ? address : prev.addressLine1,
           area: areaComp ? areaComp.long_name : prev.area,
         }));
 
@@ -114,7 +117,6 @@ console.log(cityOptions,'cityOptions');
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
 
-          // Update map location in formData
           setFormData((prev) => ({
             ...prev,
             mapLocation: {
@@ -123,15 +125,46 @@ console.log(cityOptions,'cityOptions');
             },
           }));
 
-          // Reverse geocode
           await reverseGeocode(lat, lng);
         },
         (error) => {
           console.error("Error getting current location:", error);
-        }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
   }, [setFormData, states]);
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        setFormData((prev) => ({
+          ...prev,
+          mapLocation: {
+            latitude: lat,
+            longitude: lng,
+          },
+        }));
+
+        await reverseGeocode(lat, lng);
+        setLocating(false);
+      },
+      (error) => {
+        console.error("Error using current location:", error);
+        setLocating(false);
+        alert("Unable to fetch your location. Please allow location access and try again.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
   // Reverse geocode when map location changes
   useEffect(() => {
@@ -325,7 +358,28 @@ console.log(cityOptions,'cityOptions');
       {/* Map Search + Map */}
       {isLoaded && (
         <>
-         
+          <div className="d-flex justify-content-end mb-2">
+            <button
+              type="button"
+              className="btn btn-outline-primary btn-sm"
+              onClick={handleUseMyLocation}
+              disabled={locating}
+              title="Use my current location"
+            >
+              {locating ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                  Locating...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-geo-alt me-1"></i>
+                  Use Current Location
+                </>
+              )}
+            </button>
+          </div>
+
           <GoogleMap
             mapContainerStyle={containerStyle}
             center={{
