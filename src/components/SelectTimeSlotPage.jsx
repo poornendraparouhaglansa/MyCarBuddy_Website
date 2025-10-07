@@ -26,7 +26,7 @@ const SelectTimeSlotPage = () => {
   const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
   const location =
     JSON.parse(localStorage.getItem("location")) ||
-    '{"lat": 17.385044, "lng": 78.486671}';
+    '{"latitude": 17.385044, "longitude": 78.486671}';
   let decryptedCustId = null;
   if (cartItems.length > 0) {
     const bytes =
@@ -57,8 +57,8 @@ const SelectTimeSlotPage = () => {
     paymentMethod: "COS",
     savedAddresses: [],
     mapLocation: {
-      latitude: '17.385044', // Default to Hyderabad
-      longitude: '78.486671',
+      latitude: location.latitude, // Default to Hyderabad
+      longitude: location.longitude,
     },
     registrationNumber: "",
     yearOfPurchase: "",
@@ -131,7 +131,45 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     setShowCalendar(false); // hide calendar after selecting time
   };
 
-  const handleNext = () => {
+  const ensureVehicleSaved = async () => {
+    if (formData.VehicleID) return true;
+    try {
+      const saveCarResponse = await axios.post(
+        `${baseUrl}CustomerVehicles/InsertCustomerVehicle`,
+        {
+          custID: decryptedCustId,
+          brandID: formData.brandID,
+          modelID: formData.modelID,
+          fuelTypeID: formData.fuelTypeID,
+          VehicleNumber: formData.registrationNumber,
+          yearOfPurchase: formData.yearOfPurchase,
+          engineType: formData.engineType,
+          kilometersDriven: formData.kilometerDriven,
+          transmissionType: formData.transmissionType,
+          CreatedBy: decryptedCustId,
+        }
+      );
+      const apiData = saveCarResponse?.data || {};
+      if (apiData?.status === false || apiData?.vehicleID === -1) {
+        const errorMessage = apiData?.message || "Unable to save vehicle. Please check details.";
+        showAlert(errorMessage);
+        return false;
+      }
+      const newVehicleId = apiData?.vehicleID;
+      if (!newVehicleId) throw new Error("Vehicle ID missing in response");
+      setFormData((prev) => ({ ...prev, VehicleID: newVehicleId }));
+      let selectedCar = JSON.parse(localStorage.getItem("selectedCarDetails")) || {};
+      selectedCar.VehicleID = newVehicleId;
+      localStorage.setItem("selectedCarDetails", JSON.stringify(selectedCar));
+      return true;
+    } catch (error) {
+      console.error("Error inserting customer vehicle:", error);
+      showAlert("Error saving vehicle details. Please try again.");
+      return false;
+    }
+  };
+
+  const handleNext = async () => {
      scrollToTop();
     if (step === 1 && selectedTimes.length === 0) {
       showAlert("Please select at least one time slot.");
@@ -145,10 +183,11 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
 
       if (
         !formData.CityName ||
+        !formData.pincode ||
         !formData.StateID ||
         !formData.addressLine1.trim()
       ) {
-        showAlert("Please complete the address (state, city, and address).");
+        showAlert("Please complete the address (state, city, pincode, and address).");
 
         return;
       }
@@ -158,13 +197,13 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
       }
 
     }
-     if (step === 3) {
-
-        if (!formData.registrationNumber || !formData.yearOfPurchase) {
-          showAlert("Please enter car registration number and year of purchase.");
-          return;
-        }
-    
+    if (step === 3) {
+      if (!formData.registrationNumber || !formData.yearOfPurchase) {
+        showAlert("Please enter car registration number and year of purchase.");
+        return;
+      }
+      const saved = await ensureVehicleSaved();
+      if (!saved) return;
     }
 
     setStep((prev) => prev + 1);
@@ -223,7 +262,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
         // If Pincode is provided, find matching city
         if (Pincode !== undefined && Pincode !== null && Pincode !== "") {
           const matchedCity = response.data.filter(
-            (c) => Number(c.Pincode) === Number(Pincode)
+            (c) => Number(c.Pincode) === Number(Pincode) && c.IsActive
           );
 
           if (matchedCity.length === 0) {
@@ -325,7 +364,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     );
 
     
-    const matchedCity = cities.find((c) => Number(c.Pincode) === Number(Pincode));
+    const matchedCity = cities.find((c) => Number(c.Pincode) === Number(Pincode) && c.IsActive);
 
     fetchCities(Pincode);
 
@@ -357,7 +396,13 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     if (matchedState) setSelectedState(matchedState.StateID);
     if (matchedCity) setSelectedCity(matchedCity.CityID);
     if (result?.postalCode) setPincode(result.postalCode);
-    if (result?.address) setAddressLine1(result.address);
+    // Do not overwrite typed address; only set if empty
+    if (result?.address) {
+      setFormData((prev) => ({
+        ...prev,
+        addressLine1: prev.addressLine1?.trim() ? prev.addressLine1 : result.address,
+      }));
+    }
   };
 
   const handleModalClose = () => {
@@ -461,8 +506,6 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
 
       if (
         name === "pincode" ||
-        name === "CityName" ||
-        name === "addressLine1" ||
         name === "mapLocation" ||
         name === "StateID"
       ) {
@@ -472,14 +515,6 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
           fetchCities(value);
         } else if (name === "StateID") {
           updateMapFromAddress(updatedForm);
-        } else if (name === "CityName" || name === "addressLine1") {
-          // Debounce geocoding while typing address/city
-          if (geocodeDebounceRef.current) {
-            clearTimeout(geocodeDebounceRef.current);
-          }
-          geocodeDebounceRef.current = setTimeout(() => {
-            updateMapFromAddress(updatedForm);
-          }, 600);
         }
       }
       return updatedForm;
@@ -870,28 +905,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     }
 
 
-    if (!formData.VehicleID) {
-      const saveCarResponse = await axios.post(
-        `${baseUrl}CustomerVehicles/InsertCustomerVehicle`,
-        {
-          custID: decryptedCustId,
-          brandID: formData.brandID,
-          modelID: formData.modelID,
-          fuelTypeID: formData.fuelTypeID,
-          VehicleNumber: formData.registrationNumber,
-          yearOfPurchase: formData.yearOfPurchase,
-          engineType: formData.engineType,
-          kilometersDriven: formData.kilometerDriven,
-          transmissionType: formData.transmissionType,
-          CreatedBy: decryptedCustId,
-        }
-      );
-      formData.VehicleID = saveCarResponse.data?.vehicleID;
-      let selectedCar =
-        JSON.parse(localStorage.getItem("selectedCarDetails")) || {};
-      selectedCar.VehicleID = formData.VehicleID;
-      localStorage.setItem("selectedCarDetails", JSON.stringify(selectedCar));
-    }
+    // Vehicle save now happens in step 3 advance
 
     if (user?.name === "GUEST") {
       try {
@@ -1270,7 +1284,12 @@ const getGST = () => {
                 {selectedTimes.length > 0 && (
                   <div className="mt-3 p-3 bg-light rounded">
                     <div className="d-flex justify-content-between align-items-center mb-2">
-                      <h6 className="mb-0">Selected Time Slots ({selectedTimes.length}):</h6>
+                    <div className="d-block ">
+														<h6 className="mb-0">Selected Time Slots ({selectedTimes.length}):</h6>
+														<div className="ml-5">
+															{selectedDate && `${selectedDate.toDateString()} - ${selectedTimes.join(", ")}`}
+														</div>
+													</div>
                       <button 
                         className="btn btn-outline-danger px-3 py-1"
                         onClick={() => setSelectedTimes([])}

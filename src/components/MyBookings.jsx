@@ -469,7 +469,8 @@ const openCancelModal = () => {
         bookingID: selectedBooking.BookingID,
         cancelledBy: decryptedCustId || '',
         reason: reasonToSend,
-        refundStatus: 'Pending'
+        refundStatus: 'Pending',
+        paymentStatus: selectedBooking.Payments?.[0]?.PaymentStatus || '', 
       };
 
       const response = await axios.post(`${BaseURL}Cancellations`, payload, {
@@ -762,16 +763,17 @@ const BookingSkeleton = () => {
               #{booking.BookingTrackID}
             </div>
           </div>
+          {booking.Status !== "Completed" && booking.Status !== 'Cancelled' && booking.Status !== 'Failed' ?
           <div>
-            {booking.Status !== "Completed" && booking.Status !== 'Cancelled' && booking.Status !== 'Failed' ? 
+             
             <small className="text-white">Booking {booking.CompletedOTP ? "Completion" : "Start"} OTP:</small>
-            : null}
+           
             <div className="fw-bold text-primary">
               <span className="bg-warning px-2 py-1 rounded text-dark">
-                {booking.BookingOTP}
+                {booking.CompletedOTP ? booking.CompletedOTP : booking.BookingOTP}
               </span>
             </div>
-          </div>
+          </div> : null}
           <button
             className="btn btn-yellow px-3 py-1"
             onClick={() => setSelectedBooking(booking)}

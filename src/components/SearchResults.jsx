@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./ServiceCards.css";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -9,7 +9,7 @@ import AddToCartAnimation from "./AddToCartAnimation";
 
 const SkeletonLoader = () => {
   return (
-    <div className="container my-4">
+    <div className="container my-4 search-results">
       <div className="row">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="col-md-6 mb-4">
@@ -46,6 +46,14 @@ const SearchResults = ({ searchTerm }) => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
+  // Filters & Sorting
+  const [selectedCategories, setSelectedCategories] = useState([]); // array of strings
+  const [priceMin, setPriceMin] = useState(0);
+  const [priceMax, setPriceMax] = useState(0);
+  const [effectiveMin, setEffectiveMin] = useState(0);
+  const [effectiveMax, setEffectiveMax] = useState(0);
+  const [sortOption, setSortOption] = useState("relevance"); // name_asc, name_desc, price_asc, price_desc
+
   const navigate = useNavigate();
   const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
   const baseUrlImage = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
@@ -71,10 +79,11 @@ const SearchResults = ({ searchTerm }) => {
           `${BASE_URL}PlanPackage/GetPlanPackagesByCategoryAndSubCategory?searchTerm=${encodeURIComponent(searchTerm)}&page=1&pageSize=10`
         );
 
-        const formatted = response.data.filter(pkg => pkg.IsActive === true).map(pkg => ({
+        const formatted = response.data.filter(pkg => pkg.IsActive === true && pkg.Serv_Off_Price > 300).map(pkg => ({
           id: pkg.PackageID,
           title: pkg.PackageName,
           description: pkg.SubCategoryName,
+          categoryName: pkg.CategoryName,
           image: `${baseUrlImage}${pkg.PackageImage}`,
           price: pkg.Serv_Off_Price,
           originalPrice: pkg.Serv_Reg_Price,
@@ -83,6 +92,21 @@ const SearchResults = ({ searchTerm }) => {
 
         setPackages(formatted);
         setHasMore(formatted.length === 10); // Assuming pageSize=10
+        // initialize price bounds
+        if (formatted.length > 0) {
+          const prices = formatted.map(p => Number(p.price) || 0);
+          const minP = Math.min(...prices);
+          const maxP = Math.max(...prices);
+          setEffectiveMin(minP);
+          setEffectiveMax(maxP);
+          setPriceMin(minP);
+          setPriceMax(maxP);
+        } else {
+          setEffectiveMin(0);
+          setEffectiveMax(0);
+          setPriceMin(0);
+          setPriceMax(0);
+        }
       } catch (err) {
         console.error("Failed to fetch search results", err);
         setPackages([]);
@@ -107,6 +131,7 @@ const SearchResults = ({ searchTerm }) => {
         id: pkg.PackageID,
         title: pkg.PackageName,
         description: pkg.SubCategoryName,
+        categoryName: pkg.CategoryName,
         image: `${baseUrlImage}${pkg.PackageImage}`,
         price: pkg.Serv_Off_Price,
         originalPrice: pkg.Serv_Reg_Price,
@@ -188,6 +213,66 @@ const SearchResults = ({ searchTerm }) => {
       .replace(/^-+|-+$/g, "");
   };
 
+  // Derived: unique category list from description (SubCategoryName)
+  const categories = useMemo(() => {
+    const set = new Set(packages.map(p => p.categoryName).filter(Boolean));
+    console.log(packages);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [packages]);
+
+  // Apply filters and sorting
+  const filteredAndSortedPackages = useMemo(() => {
+    let result = packages;
+
+    // Category filter
+    if (selectedCategories.length > 0) {
+      const set = new Set(selectedCategories);
+      result = result.filter(p => set.has(p.categoryName));
+    }
+
+    // Price filter - only apply when car is selected
+    if (selectedCar) {
+      result = result.filter(p => {
+        const price = Number(p.price) || 0;
+        return (price >= priceMin && price <= priceMax);
+      });
+    }
+
+    // Sorting
+    switch (sortOption) {
+      case "name_asc":
+        result = [...result].sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "name_desc":
+        result = [...result].sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case "price_asc":
+        result = [...result].sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+        break;
+      case "price_desc":
+        result = [...result].sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+        break;
+      default:
+        break; // relevance = API order
+    }
+
+    return result;
+  }, [packages, selectedCategories, priceMin, priceMax, sortOption, selectedCar]);
+
+  const toggleCategory = (cat) => {
+    console.log(selectedCategories);
+    setSelectedCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
+  };
+
+  const clearFilters = () => {
+    setSelectedCategories([]);
+    if (selectedCar) {
+      setPriceMin(effectiveMin);
+      setPriceMax(effectiveMax);
+    }
+    setSortOption("relevance");
+  };
+
   return (
     <div className="container my-4">
       <h4 className="mb-3">Search Results for "{searchTerm}"</h4>
@@ -198,11 +283,100 @@ const SearchResults = ({ searchTerm }) => {
         <p className="text-muted">No packages found for "{searchTerm}".</p>
       ) : (
         <div className="row">
-          {packages.map((pkg) => {
+          {/* Sidebar Filters */}
+          <div className="col-lg-3 mb-4">
+            <div className="card p-3 sticky-top" style={{ top: 90 }}>
+              <h6 className="mb-3">Filters</h6>
+
+              {/* Category Filter */}
+              <div className="mb-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <strong>Categories</strong>
+                  {/* <span className="badge bg-light text-dark">{categories.length}</span> */}
+                </div>
+                <div className="mt-2" style={{ maxHeight: 220, overflowY: 'auto' , padding:'10px 0px' }}>
+                  {categories.map(cat => (
+                    <div key={cat} className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id={`cat-${cat}`}
+                        checked={selectedCategories.includes(cat)}
+                        onChange={() => toggleCategory(cat)}
+                      />
+                      <label className="form-check-label" htmlFor={`cat-${cat}`}>
+                        {cat}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Filter - Only show when car is selected */}
+              {selectedCar && (
+                <div className="mb-3">
+                  <strong>Price Range</strong>
+                  <div className="d-flex gap-2 align-items-center mt-2">
+                    <div className="input-group input-group-sm">
+                      <span className="input-group-text">₹</span>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={priceMin}
+                        min={effectiveMin}
+                        max={priceMax}
+                        onChange={e => setPriceMin(Number(e.target.value))}
+                      />
+                    </div>
+                    <span className="text-muted">to</span>
+                    <div className="input-group input-group-sm">
+                      <span className="input-group-text">₹</span>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={priceMax}
+                        min={priceMin}
+                        max={effectiveMax}
+                        onChange={e => setPriceMax(Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                  <div className="small text-muted mt-1">Min: ₹{effectiveMin} • Max: ₹{effectiveMax}</div>
+                </div>
+              )}
+
+              {/* Sort Options */}
+              <div className="mb-3">
+                <strong>Sort By</strong>
+                <select
+                  className="form-select form-select-sm mt-2"
+                  value={sortOption}
+                  onChange={e => setSortOption(e.target.value)}
+                >
+                  <option value="relevance">Relevance</option>
+                  <option value="name_asc">Name: A to Z</option>
+                  <option value="name_desc">Name: Z to A</option>
+                 { selectedCar ? (<>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                 </>):(
+                  <></>
+                 )}
+                </select>
+              </div>
+
+              <button className="btn btn-warning px-3 py-2" onClick={clearFilters}>Clear Filters</button>
+            </div>
+          </div>
+
+          {/* Results */}
+          <div className="col-lg-9 search-results-container">
+            <div className="row">
+              {filteredAndSortedPackages.map((pkg) => {
             const isInCart = cartItems.some((i) => i.id === pkg.id);
             return (
-              <div key={pkg.id} className="col-md-6 mb-4">
-                <div className="pricing-card">
+              <div key={pkg.id} className="col-12 col-md-6 col-lg-4 mb-4">
+                <div className="pricing-card d-flex flex-column h-100">
                   <div
                     className="pricing-card-price-wrap position-relative"
                     onClick={() => navigate(`/servicedetails/${slugify(pkg.title)}/${pkg.id}`)}
@@ -213,19 +387,20 @@ const SearchResults = ({ searchTerm }) => {
                         src={pkg.image}
                         className="img-fluid rounded service-img"
                         alt={pkg.title}
+                        style={{ width: '100%', height: 190 , objectFit: 'cover' }}
                       />
                     </div>
                   </div>
-                  <div className="pricing-card-details">
-                    <h4 className="pricing-card_title">{pkg.title}</h4>
+                  <div className="pricing-card-details d-flex flex-column" style={{ minHeight: 180 }}>
+                    <h4 className="pricing-card_title mb-2">{pkg.title}</h4>
                     <div className="checklist style2">
                       <ul className="list-unstyled small mb-2">
-                        {pkg.includes.slice(0, 4).map((item, idx) => (
+                        {pkg.includes.slice(0, 3).map((item, idx) => (
                           <li key={idx}>
                             <i className="fas fa-angle-right"></i> {item}
                           </li>
                         ))}
-                        {pkg.includes.length > 4 && (
+                        {pkg.includes.length > 3 && (
                           <li>
                             <a
                               href={`/servicedetails/${slugify(pkg.title)}/${pkg.id}`}
@@ -251,29 +426,33 @@ const SearchResults = ({ searchTerm }) => {
 
                         {isInCart ? (
                           <>
-                            <button
-                              className="btn style-border2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate("/cart");
-                              }}
-                            >
-                              ✔ View Cart
-                            </button>
-                            <button
-                              className="btn style-border2 ml-5"
-                              onClick={() => removeFromCart(pkg.id)}
-                            >
-                              <i className="bi bi-trash" />
-                            </button>
+                            <div className="mt-auto d-flex align-items-center gap-2">
+                              <button
+                                className="btn style-border2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate("/cart");
+                                }}
+                              >
+                                ✔ View Cart
+                              </button>
+                              <button
+                                className="btn style-border2 ml-2"
+                                onClick={() => removeFromCart(pkg.id)}
+                              >
+                                <i className="bi bi-trash" />
+                              </button>
+                            </div>
                           </>
                         ) : (
-                          <button
-                            className="btn style-border2"
-                            onClick={(e) => handleAddToCartClick(e, pkg)}
-                          >
-                            + ADD TO CART
-                          </button>
+                          <div className="mt-auto">
+                            <button
+                              className="btn style-border2"
+                              onClick={(e) => handleAddToCartClick(e, pkg)}
+                            >
+                              + ADD TO CART
+                            </button>
+                          </div>
                         )}
                       </>
                     ) : (
@@ -281,22 +460,26 @@ const SearchResults = ({ searchTerm }) => {
                         <div className="text-muted fst-italic mb-2">
                           Select your car to see price
                         </div>
-                        <button
-                          className="btn style-border2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowCarModal(true);
-                          }}
-                        >
-                          Choose Your Car
-                        </button>
+                        <div className="mt-auto">
+                          <button
+                            className="btn style-border2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowCarModal(true);
+                            }}
+                          >
+                            Choose Your Car
+                          </button>
+                        </div>
                       </>
                     )}
                   </div>
                 </div>
               </div>
             );
-          })}
+            })}
+            </div>
+          </div>
         </div>
       )}
 

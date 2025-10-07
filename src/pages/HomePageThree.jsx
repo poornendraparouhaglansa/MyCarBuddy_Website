@@ -47,22 +47,22 @@ const HomePageThree = () => {
   }, []);
 
   useEffect(() => {
-    setTimeout(() => setActive(false), 2000);
+    setTimeout(() => setActive(false), 500);
     // const selectedCar = localStorage.getItem("selectedCarType");
     // if (!selectedCar) setShowModal(true);
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // Only show modal if not dismissed before
-      const dismissed = localStorage.getItem('carDamageModalDismissed');
-      if (dismissed !== 'true') {
-        setShowCarDamageModal(true);
-      }
-    }, 10000); // 10 seconds delay
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     // Only show modal if not dismissed before
+  //     const dismissed = localStorage.getItem('carDamageModalDismissed');
+  //     if (dismissed !== 'true') {
+  //       setShowCarDamageModal(true);
+  //     }
+  //   }, 10000); // 10 seconds delay
 
-    return () => clearTimeout(timer);
-  }, []);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   useEffect(() => {
     const handleScrollToService = () => {

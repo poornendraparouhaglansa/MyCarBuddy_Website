@@ -3,6 +3,7 @@ import { GoogleGenAI, createUserContent } from "@google/genai";
 import { FaCar, FaUpload, FaSearch, FaExclamationTriangle } from "react-icons/fa";
 import { useAlert } from "../context/AlertContext";
 import SignIn from "./SignIn";
+import { useNavigate } from "react-router-dom";
 
 const CarDamageAnalysis = () => {
 	const [images, setImages] = useState([]);
@@ -13,7 +14,8 @@ const CarDamageAnalysis = () => {
 	const { showAlert } = useAlert();
 	const [signInVisible, setSignInVisible] = useState(false);
 	const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
-	const ai = new GoogleGenAI({ apiKey: "AIzaSyAjQkNYws_C4FaDg6JOK0EdRq3yxg-k-Q4" }); // Replace with your actual API key
+	const ai = new GoogleGenAI({ apiKey: "AIzaSyANYyBfF19iL8GMTGUwg_JTrwCBP-n8Ft0" }); // Replace with your actual API key
+	const navigate = useNavigate();
 
 	const handleImagesChange = (event) => {
 		const files = Array.from(event.target.files);
@@ -32,7 +34,8 @@ const CarDamageAnalysis = () => {
 	};
 
 	const handleAnalyze = async () => {
-		if (!user || user.name === "GUEST") {
+		console.log(user,'user');
+		if (!user && user?.id !=="") {
 			// showAlert('Please login to analyze damage', 'warning');
 			setSignInVisible(true);
 			return;
@@ -323,6 +326,14 @@ const CarDamageAnalysis = () => {
 									}}
 								>
 									{result}
+
+									<div className="mt-4">
+										<button className="btn btn-warning px-4 py-2" onClick={
+											() => {
+												navigate("/service");
+											}
+										}>Go to Services</button>
+									</div>
 								</div>
 							</div>
 						) : (

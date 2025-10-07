@@ -19,7 +19,7 @@ const ServicePage = () => {
 
       try {
         const res = await axios.get(
-          `${BaseURL}Seometa/page_slug?page_slug=service`
+          `${BaseURL}Seometa/page_slug?page_slug=services`
         );
         if (res.data) {
           setSeoMeta(res.data[0]);
@@ -45,6 +45,7 @@ const ServicePage = () => {
               <title>{seoMeta.seo_title || "Home | MyCarBuddy"}</title>
               <meta name="description" content={seoMeta.seo_description || ""} />
               <meta name="keywords" content={seoMeta.seo_keywords || ""} />
+              <link rel="canonical" href="https://mycarbuddy.in/service" />
             </Helmet>
           )}
     

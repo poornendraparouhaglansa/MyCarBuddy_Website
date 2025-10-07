@@ -353,9 +353,9 @@ useEffect(() => {
             {/* Sidebar */}
             <div className="col-lg-4">
               <aside className="sidebar-area">
-                <div className="widget widget_service-list mb-4">
+                <div className="widget widget_service-list mb-4 d-flex flex-column" style={{ height: "70vh" }}>
                   <h4 className="widget_title mb-3">Other Services</h4>
-                  <ul className="list-group">
+                  <ul className="overflow-auto p-0 m-0" style={{ listStyle: "none" }}>
                     {categoryServices.map(s => (
                       <li key={s.id} className="list-group-item d-flex justify-content-between align-items-center">
                         <Link to={`/servicedetails/${slugify(s.PackageName)}/${s.PackageID}`}>{s.PackageName}</Link>
@@ -363,7 +363,6 @@ useEffect(() => {
                     ))}
                   </ul>
                 </div>
-
                 <div className="widget widget_contact bg-light p-3 rounded text-center">
                   <h5 className="widget_title mb-2">Need Help?</h5>
                   <p className="text-muted mb-2">Have questions about this service?</p>

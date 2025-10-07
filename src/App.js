@@ -26,6 +26,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import ReschedulePage from "./pages/ReschedulePage";
 import CarDamageAnalysisPage from "./pages/CarDamageAnalysisPage";
 import SearchPage from "./pages/SearchPage";
+import AppRedirectPage from "./pages/AppRedirectPage";
 
 function App() {
   useEffect(() => {
@@ -46,7 +47,7 @@ function App() {
           <Route exact path="/about" element={<AboutPage />} />
           <Route exact path="/service" element={<ServicePage />} />
           {/* <Route exact path="/service-details/:categoryId" element={<ServiceDetailsPage />} /> */}
-           <Route path="/:categoryname/:categoryId" element={<ServiceDetailsPage />} />
+           <Route path="/service/:categoryname/:categoryId" element={<ServiceDetailsPage />} />
           <Route path="/servicedetails/:packagename/:id" element={<ServiceInDetailsPage />} />
           <Route exact path="/cart" element={<CartPage />} />
           <Route exact path="/checkout" element={<CheckoutPage />} />
@@ -60,6 +61,7 @@ function App() {
           <Route exact path="/reschedule" element={<ReschedulePage />} />
           <Route exact path="/car-damage-analysis" element={<CarDamageAnalysisPage />} />
           <Route exact path="/search" element={<SearchPage />} />
+          <Route exact path="/redirect" element={<AppRedirectPage />} />
           <Route path="*" element={<NotFoundPage />} />
 
         </Routes>

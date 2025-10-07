@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import DatePicker from "react-datepicker";
-import { addDays, startOfWeek, format, addWeeks } from "date-fns";
+import { addDays, startOfWeek, format, addWeeks, startOfDay } from "date-fns";
 
 const WeeklyCalendar = ({ selectedDate, onDateSelect }) => {
     const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -17,13 +17,22 @@ const WeeklyCalendar = ({ selectedDate, onDateSelect }) => {
         }
     };
 
-    const getWeekDates = (offset = 0) => {
-        const today = new Date();
-        const baseDate = addDays(today, offset * 7);
-        return Array.from({ length: 7 }, (_, i) => addDays(baseDate, i));
-    };;
+    // Base is today (rolling 7-day window from today)
+    const baseRefDate = startOfDay(new Date());
 
-    const weekDates = getWeekDates(weekOffset);
+    const getWeekDates = (offset = 0, referenceDate = baseRefDate) => {
+        // Start from today, move by 7-day windows
+        const start = addDays(referenceDate, offset * 7);
+        return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+    };
+    const weekDates = getWeekDates(weekOffset, baseRefDate);
+
+    // const getWeekDates = (offset = 0) => {
+    //     const today = new Date();
+    //     const baseDate = addDays(today, offset * 7);
+    //     return Array.from({ length: 7 }, (_, i) => addDays(baseDate, i));
+    // };;
+    // const weekDates = getWeekDates(weekOffset);
 
     const handleDatePick = (date) => {
         if (date && !isNaN(date.getTime())) {
@@ -85,7 +94,7 @@ const WeeklyCalendar = ({ selectedDate, onDateSelect }) => {
                         selected={new Date(selectedDate)}
                         onChange={handleDatePick}
                         inline
-                        minDate={new Date()}
+                        minDate={baseRefDate}
                     />
                 </div>
             )}

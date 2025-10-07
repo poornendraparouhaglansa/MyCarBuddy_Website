@@ -5,9 +5,11 @@ import { useCart } from "../context/CartContext";
 import { Link, useNavigate } from "react-router-dom";
 import SignIn from "./SignIn";
 import RelatedPackagesSlider from "./RelatedPackagesSlider";
+import { useAlert } from "../context/AlertContext";
 
 const CartPage = () => {
   const { cartItems, removeFromCart } = useCart();
+  const { showAlert } = useAlert();
   const [validatedItems, setValidatedItems] = useState(cartItems);
   const [validating, setValidating] = useState(false);
   const API_BASE = process.env.REACT_APP_CARBUDDY_BASE_URL || "https://api.mycarsbuddy.com/api/";
@@ -36,11 +38,15 @@ const CartPage = () => {
             const pkg = list.find((p) => String(p.PackageID) === String(item.id)) || list[0];
             const imagePath = pkg?.BannerImage || "";
             const resolvedImage = imagePath ? `${IMAGE_BASE}${imagePath.startsWith("/") ? imagePath.slice(1) : imagePath}` : item.image;
+            const subCatName = pkg?.SubCategoryName || "";
+            const subCatId = pkg?.SubCategoryID;
+            const isValueAdded = Number(subCatId) === 58 || /value\s*added/i.test(String(subCatName));
             return {
               ...item,
               title: pkg.PackageName ?? item.title,
               price: pkg.Serv_Off_Price ?? item.price,
               image: resolvedImage,
+              isValueAdded,
             };
           } catch (e) {
             return item;
@@ -49,6 +55,25 @@ const CartPage = () => {
 
         const updated = await Promise.all(fetches);
         setValidatedItems(updated);
+
+        // Enforce value-added only rule (< 300 auto-remove)
+        const totalAmt = updated.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
+        const nonValueAdded = updated.filter(i => !i.isValueAdded);
+        const onlyValueAddedRemain = nonValueAdded.length === 0 && updated.length > 0;
+        if (onlyValueAddedRemain && totalAmt < 300) {
+          // remove all value-added items
+          updated
+            .filter(i => i.isValueAdded)
+            .forEach(i => {
+              try { removeFromCart(i.id); } catch (_) {}
+            });
+          setValidatedItems([]);
+          if (showAlert) {
+            showAlert(
+              "Value-added services require a minimum order of ₹300 or at least one main service. They were removed from your cart.",
+            );
+          }
+        }
       } finally {
         setValidating(false);
       }
@@ -112,10 +137,11 @@ const CartPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {validatedItems.map((item) => (
+                {validatedItems.map((item, index) => (
                   <tr key={item.id}>
                     <td>
-                      <span >{cartItems.indexOf(item) + 1}</span>
+                      {/* <span >{cartItems.indexOf(item) + 1}</span> */}
+                      <span >{index + 1}</span>
                     </td>
                     <td>
                       <div className="d-flex align-items-center">

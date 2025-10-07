@@ -105,3 +105,21 @@
     border-radius: 4px;
     z-index: 1;
   }
+
+  /* Search page specific title styling */
+  .search-results .pricing-card_title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+    line-height: 1.3;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .search-results .pricing-card_title:hover {
+    color: #116d6e;
+  }

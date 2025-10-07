@@ -34,10 +34,10 @@
   overflow-y: auto;
   position: relative;
 }
-.modal-content.modalWidth {
+/* .modal-content.modalWidth {
   max-width: 920px;
   text-align: left;
-}
+} */
 .modal-close {
   position: absolute;
   top: 12px;

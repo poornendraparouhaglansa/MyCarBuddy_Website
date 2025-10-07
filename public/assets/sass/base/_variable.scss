@@ -481,6 +481,23 @@ button.tab.tab-pill.active.btn-lg.px-4.py-2.btn-confirm:disabled {
   transform: translateY(-50%);
   z-index: 1000;
 }
+#tawk-chat-message-container{
+  display: none !important;
+}
+.tawk-icon-right img{
+  display: none !important;
+}
+
+.search-results-container .service-img{
+  height: 190px !important;
+}
+.search-results-container .pricing-card_icon{
+  height: 100% !important;
+  width: 100% !important;
+}
+.choose-car-modal .modal-content{
+  max-width: 35% !important;
+}
 // #ea9300
 @media screen and (max-width: 768px) {
   .timeline-container  {
@@ -525,4 +542,11 @@ button.tab.tab-pill.active.btn-lg.px-4.py-2.btn-confirm:disabled {
 
 .line-none{
   text-decoration: none !important;
+}
+
+
+@media (min-width: 320px) and (max-width: 375px) {
+   .menu-area .col-auto.d-block.ms-auto.d-xl-block.d-sm-block{
+    width: 48% !important;
+   }
 }

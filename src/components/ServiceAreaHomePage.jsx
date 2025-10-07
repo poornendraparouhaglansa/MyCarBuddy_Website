@@ -99,7 +99,7 @@ const ServiceAreaHomePage = () => {
                       className="service-card-minimal d-flex flex-column"
                       style={{ minHeight: '150px' }}
                     >
-                      <div className="service-card-minimal-content d-flex flex-column align-items-center justify-content-center h-100">
+                      <div className="service-card-minimal-content d-flex flex-column align-items-center justify-content-center h-100" onClick={() => navigate(`/service/${slugify(service.title)}/${service.id}`)}>
                         <div className="icon">
                           <img src={service.icon} alt="icon" className="service-icon" />
                         </div>
@@ -111,13 +111,13 @@ const ServiceAreaHomePage = () => {
                         className="service-card-full d-flex flex-column"
                         style={{ backgroundImage: `url(${service.image})` }}
                       >
-                        <div className="call-media-wrap flex-grow-1" onClick={() => navigate(`/${slugify(service.title)}/${service.id}`)}>
+                        <div className="call-media-wrap flex-grow-1" onClick={() => navigate(`/service/${slugify(service.title)}/${service.id}`)}>
                           <div className="icon">
                             <img src={service.icon} alt="icon" />
                           </div>
                           <div className="media-body">
                             <h4 className="link">
-                              <Link className="text-white" to={`/${slugify(service.title)}/${service.id}`}>
+                              <Link className="text-white" to={`/service/${slugify(service.title)}/${service.id}`}>
                                 {service.title}
                               </Link>
                             </h4>
@@ -128,7 +128,7 @@ const ServiceAreaHomePage = () => {
                         </div>
                         <div className="checklist style-white">
                           <div className="btn-wrap mt-20">
-                            <Link className="btn style4 px-4 py-2" to={`/${slugify(service.title)}/${service.id}`}>
+                            <Link className="btn style4 px-4 py-2" to={`/service/${slugify(service.title)}/${service.id}`}>
                               Book Service <i className="fas fa-arrow-right ms-2" />
                             </Link>
                           </div>

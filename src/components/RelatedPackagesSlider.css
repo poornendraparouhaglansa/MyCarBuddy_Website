@@ -1,0 +1,114 @@
+/* RelatedPackagesSlider Custom Styles */
+
+.related-packages-container {
+  position: relative;
+  /* overflow: hidden; */
+}
+
+.carousel-control-custom {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background-color: #116d6e;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.carousel-control-custom:hover {
+  background-color: #0e5a5b;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.carousel-control-custom:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.carousel-control-prev-custom {
+  left: -50px;
+}
+
+.carousel-control-next-custom {
+  right: -50px;
+}
+
+.carousel-control-icon {
+  color: rgb(240, 119, 44);
+  font-size: 25px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .carousel-control-custom {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .carousel-control-prev-custom {
+    left: -40px;
+  }
+  
+  .carousel-control-next-custom {
+    right: -40px;
+  }
+  
+  .carousel-control-icon {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 576px) {
+  .carousel-control-custom {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .carousel-control-prev-custom {
+    left: -35px;
+  }
+  
+  .carousel-control-next-custom {
+    right: -35px;
+  }
+  
+  .carousel-control-icon {
+    font-size: 14px;
+  }
+}
+
+/* Hide controls on very small screens if needed */
+@media (max-width: 480px) {
+  .carousel-control-custom {
+    display: none;
+  }
+}
+
+/* Ensure carousel items are properly spaced */
+.carousel-item .row {
+  margin: 0;
+}
+
+.carousel-item .col-md-3 {
+  padding: 0 8px;
+}
+
+/* Card hover effects */
+.related-packages-container .card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.related-packages-container .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}

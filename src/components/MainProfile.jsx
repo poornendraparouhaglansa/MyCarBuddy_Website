@@ -7,6 +7,7 @@ import MyCarList from "./MyCarList";
 import InvoicesTab from "./InvoicesTab";
 import axios from "axios";
 import CryptoJS from "crypto-js";
+import { useAlert } from "../context/AlertContext";
 
 const ImageURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
 const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
@@ -29,6 +30,7 @@ const MainProfile = () => {
   const userIdentifier = user?.identifier || "No identifier";
   const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
     const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
+    const { showAlert } = useAlert();
 
   if (!user) {
     navigate("/");
@@ -56,6 +58,13 @@ const MainProfile = () => {
             AlternateNumber: data.AlternateNumber || "",
             ProfileImage: data.ProfileImage || "",
           });
+
+            const updatedUser = { ...user,
+              profileImage: data.ProfileImage || "" ,
+              name: data.FullName || user.name,
+            };
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+            window.dispatchEvent(new Event("userProfileUpdated"));
 
           // localStorage.setItem("user", JSON.stringify({ ...parsed, ...data }));
         } catch (err) {
@@ -89,6 +98,49 @@ const MainProfile = () => {
         return <MyCarList />;
       case "invoices":
         return <InvoicesTab />;
+      case "DeleteAccount":
+        const handleDelete = async () => {
+          const confirmed = window.confirm(
+            "Are you sure you want to delete your account? This action cannot be undone, and you will lose all your data."
+          );
+          if (confirmed) {
+            try {
+              const response = await axios.delete(
+                `${process.env.REACT_APP_CARBUDDY_BASE_URL}Customer/CustId?CustId=${decryptedCustId}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${user.token}`,
+                  },
+                }
+              );
+              if (response.status === 200) {
+                showAlert("Account deleted successfully.", "success");
+                localStorage.clear();
+                sessionStorage.clear();
+                navigate("/");
+              } else {
+                showAlert("Failed to delete account. Please try again.", "error");
+              }
+            } catch (error) {
+              console.error("Error deleting account:", error);
+              showAlert("Error deleting account. Please try again.", "error");
+            }
+          }
+        };
+        return (
+          <div className="text-center">
+            <h5 className="text-danger">Delete Account</h5>
+            <p className="text-muted">
+              Are you sure you want to delete your account? This action cannot be undone, and you will lose all your data.
+            </p>
+            <button
+              className="btn btn-danger px-4 py-3"
+              onClick={handleDelete}
+            >
+              Delete Account
+            </button>
+          </div>
+        );
       default:
         return <Profile />;
     }
@@ -101,6 +153,7 @@ const MainProfile = () => {
     { key: "mycars", label: "🚗 My Car List" },
     { key: "invoices", label: "📄 Invoices" },
     { key: "logout", label: "🚪 Log Out" },
+    { key: "DeleteAccount", label: "🗑️ Delete Account" },
   ];
 
   return (

@@ -8,6 +8,7 @@ import {
   StandaloneSearchBox
 } from "@react-google-maps/api";
 import Select from "react-select";
+import { useAlert } from "../context/AlertContext";
 
 const libraries = ["places"];
 const containerStyle = {
@@ -30,6 +31,7 @@ const BookingAddressDetails = ({
   const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
   const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
   const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
+  const { showAlert } = useAlert();
 
   const [searchBox, setSearchBox] = useState(null);
   const [savedAddresses, setSavedAddresses] = useState([]);
@@ -37,6 +39,7 @@ const BookingAddressDetails = ({
   const [filteredCities, setFilteredCities] = useState([]);
   const cityInputRef = useRef(null);
   const [locating, setLocating] = useState(false);
+  const isSavedChosen = !!formData.selectedSavedAddressID;
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
@@ -54,6 +57,7 @@ console.log(cityOptions,'cityOptions');
 
   // Function to reverse geocode and update form fields
   const reverseGeocode = async (lat, lng) => {
+
     try {
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
@@ -80,13 +84,43 @@ console.log(cityOptions,'cityOptions');
         );
         const address = data.results[0].formatted_address;
 
+        // Validate pincode against available service cities
+        const detectedPincode = postalCodeComp ? postalCodeComp.long_name : "";
+        if (detectedPincode) {
+          const matchedCity = cities.find(
+            (c) => Number(c.Pincode) === Number(detectedPincode) && c.IsActive
+          );
+
+          if (!matchedCity) {
+            showAlert("Service is not available in your selected location.");
+            setFormData((prev) => ({
+              ...prev,
+              StateID: "",
+              CityID: "79",
+              CityName: "",
+              pincode: "",
+              addressLine1: "",
+              area: "",
+            }));
+            return;
+          } else {
+            // If matched, set State/City from matched city
+            setFormData((prev) => ({
+              ...prev,
+              StateID: prev.StateID || matchedCity.StateID,
+              CityID: matchedCity.CityID,
+              CityName: matchedCity.CityName,
+            }));
+          }
+        }
+
         setFormData((prev) => ({
           ...prev,
-          CityName: cityComp ? cityComp.long_name : prev.CityName,
-          StateID: stateComp ? prev.StateID : prev.StateID,
-          pincode: postalCodeComp ? postalCodeComp.long_name : prev.pincode,
-          addressLine1: address ? address : prev.addressLine1,
-          area: areaComp ? areaComp.long_name : prev.area,
+          CityName: prev.CityName?.trim() ? prev.CityName : (cityComp ? cityComp.long_name : prev.CityName),
+          StateID: prev.StateID,
+          pincode: prev.pincode?.trim() ? prev.pincode : (postalCodeComp ? postalCodeComp.long_name : prev.pincode),
+          addressLine1: prev.addressLine1?.trim() ? prev.addressLine1 : (address ? address : prev.addressLine1),
+          area: prev.area?.trim() ? prev.area : (areaComp ? areaComp.long_name : prev.area),
         }));
 
         // Optionally, you can update StateID by matching with states list
@@ -99,7 +133,7 @@ console.log(cityOptions,'cityOptions');
           if (matchedState) {
             setFormData((prev) => ({
               ...prev,
-              StateID: matchedState.StateID,
+              StateID: prev.StateID || matchedState.StateID,
             }));
           }
         }
@@ -109,31 +143,8 @@ console.log(cityOptions,'cityOptions');
     }
   };
 
-  // Get current location and update form fields
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-
-          setFormData((prev) => ({
-            ...prev,
-            mapLocation: {
-              latitude: lat,
-              longitude: lng,
-            },
-          }));
-
-          await reverseGeocode(lat, lng);
-        },
-        (error) => {
-          console.error("Error getting current location:", error);
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    }
-  }, [setFormData, states]);
+  // Do NOT auto-use current location on mount; wait for explicit user action
+  // (prevents auto-filling without user entry)
 
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) {
@@ -200,8 +211,33 @@ console.log(cityOptions,'cityOptions');
               lng: addr.Longitude,
               floorNumber: addr.FloorNumber || "",
               area: addr.Area || "",
-            }));
+            }))
+            // sort DESC by id (assumed newest last by ID)
+            .sort((a, b) => Number(b.id) - Number(a.id));
           setSavedAddresses(formatted);
+
+          // Auto-select last saved address on load if none selected
+          if (!formData.selectedSavedAddressID && formatted.length > 0) {
+            const newest = formatted[0];
+            setFormData((prev) => ({
+              ...prev,
+              StateID: newest.stateId,
+              CityID: newest.cityId,
+              pincode: newest.pincode,
+              addressLine1: newest.address1,
+              floorNumber: newest.floorNumber || "",
+              area: newest.area || "",
+              cityName: newest.cityName || "",
+              selectedSavedAddressID: String(newest.id),
+              mapLocation: {
+                latitude: newest.lat,
+                longitude: newest.lng,
+              },
+            }));
+            if (newest.lat && newest.lng) {
+              handleMapClick(newest.lat, newest.lng);
+            }
+          }
         }
 
 
@@ -264,6 +300,26 @@ console.log(cityOptions,'cityOptions');
     }
   };
 
+  // On blur of addressLine1, geocode and update map center
+  const handleAddressBlur = async () => {
+    const addressText = (formData.addressLine1 || "").trim();
+    if (!addressText) return;
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(addressText)}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
+      );
+      const data = await res.json();
+      const first = data?.results?.[0];
+      if (!first) return;
+      const loc = first.geometry?.location;
+      if (loc?.lat && loc?.lng) {
+        handleMapClick(loc.lat, loc.lng);
+      }
+    } catch (e) {
+      console.error("Geocoding on address blur failed", e);
+    }
+  };
+
   // When user selects saved address → populate form
   const handleSavedAddressChange = (e) => {
     const selectedId = e.target.value;
@@ -297,6 +353,7 @@ console.log(cityOptions,'cityOptions');
         addressLine1: addr.address1,
         floorNumber: addr.floorNumber || "",
         area: addr.area || "",
+        cityName: addr.cityName || "",
         selectedSavedAddressID: selectedId,
         mapLocation: {
           latitude: addr.lat,
@@ -313,73 +370,12 @@ console.log(cityOptions,'cityOptions');
       <h5 className="mb-3 text-primary fw-bold">📦 Address</h5>
 
       {/* Instruction Section */}
-      <div className="mb-4">
-        <h6 className="text-muted mb-3">How would you like to add your location?</h6>
-        <div className="row">
-          <div className="col-md-4 mb-3">
-            <div className="card border-primary" style={{cursor: 'pointer'}}>
-              <div className="card-body p-2 d-flex align-items-center justify-content-between gap-3">
-                <i className="fas fa-map-marker-alt fa-2x text-primary"></i>
-                <div>
-                  <h6 className="card-title mb-1">Choose from Map</h6>
-                  <p className="card-text small mb-0">Click on the map to select your location</p>
-                </div>
-                
-              </div>
-            </div>
-          </div>
-          <div className="col-md-4 mb-3">
-            <div className="card border-success" style={{cursor: 'pointer'}}>
-              <div className="card-body p-2 d-flex align-items-center justify-content-between gap-3">
-                 <i className="fas fa-search fa-2x text-success"></i>
-                <div>
-                  <h6 className="card-title mb-1">Search Location</h6>
-                  <p className="card-text small mb-0">Use the search bar to find your address</p>
-                </div>
-               
-              </div>
-            </div>
-          </div>
-          <div className="col-md-4 mb-3">
-            <div className="card border-info" style={{cursor: 'pointer'}}>
-              <div className="card-body p-2 d-flex align-items-center justify-content-between gap-3">
-                <i className="fas fa-edit fa-2x text-info"></i>
-                <div>
-                  <h6 className="card-title mb-1">Manual Entry</h6>
-                  <p className="card-text small mb-0">Enter your address details manually</p>
-                </div>
-                
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+     
 
       {/* Map Search + Map */}
       {isLoaded && (
         <>
-          <div className="d-flex justify-content-end mb-2">
-            <button
-              type="button"
-              className="btn btn-outline-primary btn-sm"
-              onClick={handleUseMyLocation}
-              disabled={locating}
-              title="Use my current location"
-            >
-              {locating ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                  Locating...
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-geo-alt me-1"></i>
-                  Use Current Location
-                </>
-              )}
-            </button>
-          </div>
-
+          <div className="position-relative">
           <GoogleMap
             mapContainerStyle={containerStyle}
             center={{
@@ -392,6 +388,7 @@ console.log(cityOptions,'cityOptions');
               }}
             zoom={15}
             onClick={(e) => {
+              if (isSavedChosen) return; // disable map edits when using saved address
               if (!e || !e.latLng) return;
               handleMapClick(e.latLng.lat(), e.latLng.lng());
             }}
@@ -407,26 +404,45 @@ console.log(cityOptions,'cityOptions');
                 }}
             />
           </GoogleMap>
-
-           <div className="mb-3 mt-3">
-            <StandaloneSearchBox
-              onLoad={(ref) => setSearchBox(ref)}
-              onPlacesChanged={onPlacesChanged}
+          {!isSavedChosen && (
+            <button
+              type="button"
+              onClick={handleUseMyLocation}
+              disabled={locating}
+              className="btn btn-primary shadow position-absolute"
+              style={{ top: 10, right: 10, borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title="Use my current location"
             >
-              <input
-                type="text"
-                placeholder="Search for location"
-                className="form-control"
-              />
-            </StandaloneSearchBox>
+              {locating ? (
+                <span className="spinner-border spinner-border-sm" role="status"></span>
+              ) : (
+                <i className="fas fa-location-arrow"></i>
+              )}
+            </button>
+          )}
           </div>
+
+          {!isSavedChosen && (
+            <div className="mb-3 mt-3">
+              <StandaloneSearchBox
+                onLoad={(ref) => setSearchBox(ref)}
+                onPlacesChanged={onPlacesChanged}
+              >
+                <input
+                  type="text"
+                  placeholder="Search for location"
+                  className="form-control"
+                />
+              </StandaloneSearchBox>
+            </div>
+          )}
 
         </>
       )}
 
       {/* Saved Address Dropdown */}
         {savedAddresses.length > 0 ? (
-     <div className="mb-3">
+     <div className="mb-3 mt-2">
   <label className="form-label fw-semibold">Choose Saved Address</label>
 
     <select
@@ -436,6 +452,7 @@ console.log(cityOptions,'cityOptions');
       style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
     >
       <option value="">Select Saved Address</option>
+      <option value="">New Address</option>
       {savedAddresses.map((addr) => {
         const fullAddress = `${addr.address1}, ${addr.cityName}, ${addr.stateName}`;
         const truncated = fullAddress.length > 30 ? fullAddress.slice(0, 30) + "..." : fullAddress;
@@ -461,6 +478,7 @@ console.log(cityOptions,'cityOptions');
             name="StateID"
             value={formData.StateID}
             onChange={handlereInputChange}
+            disabled={isSavedChosen}
           >
             <option value="">Select State</option>
             {states.map((state) => (
@@ -486,6 +504,7 @@ console.log(cityOptions,'cityOptions');
                 handlereInputChange({ target: { name: "pincode", value } });
               }
             }}
+            disabled={isSavedChosen}
           />
         </div>
 
@@ -498,6 +517,7 @@ console.log(cityOptions,'cityOptions');
             placeholder="e.g., Banjara Hills, Jubilee Hills, HITEC City"
             value={formData.area}
             onChange={handlereInputChange}
+            disabled={isSavedChosen}
           />
         </div>
         <div className="col-md-6 mb-3 d-none">
@@ -629,6 +649,9 @@ t
             rows={1}
             value={formData.addressLine1}
             onChange={handlereInputChange}
+            onBlur={handleAddressBlur}
+            disabled={isSavedChosen}
+            
           ></textarea>
         </div>
         

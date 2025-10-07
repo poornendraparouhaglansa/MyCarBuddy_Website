@@ -1,7 +1,7 @@
 .custom-alert-backdrop {
   position: fixed;
-  top: 60px;
-  right: 20px;
+  bottom: 60px;
+  left: 20px;
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -9,8 +9,9 @@
 }
 
 .custom-alert {
-  background: #ffffff;
+  background: #f50909;
   border-left: 6px solid #ffdd00;
+  color: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 16px 20px;
@@ -23,7 +24,7 @@
   display: flex;
   justify-content: space-between;
   font-weight: 600;
-  color: #333;
+  color: #ffffff;
 }
 
 .custom-alert-body {

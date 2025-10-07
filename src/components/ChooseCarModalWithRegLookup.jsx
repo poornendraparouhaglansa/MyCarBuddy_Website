@@ -363,7 +363,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 	const ManualSelection = () => (
 		<>
 			{/* Manual Selection Section */}
-			<div className="mb-4">
+			<div className="mb-4 mt-4">
 				<label className="form-label">Choose Brand & Model</label>
 				<div className="d-flex gap-3 flex-wrap justify-content-center">
 					{/* Brand Card */}
@@ -465,7 +465,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 			{model && (
 				<div className="mb-4">
 					<label className="form-label">Fuel Type</label>
-					<div className="d-flex gap-3 flex-wrap">
+					<div className="d-flex gap-3 flex-wrap justify-content-center">
 						{fuels.map((f) => (
 							<div
 								key={f.id}

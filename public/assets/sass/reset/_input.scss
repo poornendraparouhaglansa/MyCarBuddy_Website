@@ -389,9 +389,12 @@ textarea.is-invalid {
     width: 20%;
 }
 input::placeholder {
-  color: #6d6b6bbe !important;
+  color: #6d6b6b55 !important;
   opacity: 0.5;
 }
 .btn::after, .btn::before {
     background: #e77c0f !important;
+}
+.border-start.border-3.border-danger.ps-3 input::placeholder {
+  font-size: 12px !important;
 }

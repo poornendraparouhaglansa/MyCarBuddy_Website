@@ -97,7 +97,7 @@ const { categoryname, categoryId } = useParams();
         ]);
 
         if (Array.isArray(subRes.data)) {
-          const activeSubcategories = subRes.data.filter(sub => sub.IsActive === true);
+          const activeSubcategories = subRes.data.filter(sub => sub.IsActive === true && sub.SubCategoryID !== 58);
           setSubcategories(activeSubcategories);
           setActiveTab(activeSubcategories[0]?.SubCategoryID || null);
         }
@@ -130,7 +130,7 @@ const { categoryname, categoryId } = useParams();
           `${BASE_URL}PlanPackage/GetPlanPackagesByCategoryAndSubCategory?categoryId=${categoryId}&subCategoryId=${activeTab}&BrandId=${brandId || ''}&ModelId=${modelId || ''}&fuelTypeId=${fuelId || ''}`
         );
 
-          const formatted = response.data.filter(pkg => pkg.IsActive === true).map(pkg => ({
+          const formatted = response.data.filter(pkg => pkg.IsActive === true).filter(pkg => pkg.Serv_Off_Price >= 200).map(pkg => ({
             id: pkg.PackageID,
             title: pkg.PackageName,
             description: pkg.SubCategoryName,

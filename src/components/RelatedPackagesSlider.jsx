@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { useCart } from "../context/CartContext";
 import toast from "react-hot-toast";
+import "./RelatedPackagesSlider.css";
 
 const RelatedPackagesSlider = () => {
   const [packages, setPackages] = useState([]);
@@ -25,7 +26,8 @@ const RelatedPackagesSlider = () => {
         );
         const formatted = response.data
           .filter((pkg) => pkg.IsActive === true)
-          .filter((pkg) => !cartItems.some((item) => item.id === pkg.PackageID)) 
+          .filter((pkg) => pkg.SubCategoryID == 58)
+          .filter((pkg) => !cartItems.some((item) => item.id === pkg.PackageID))
           .slice(0, 8) // Show at least 4, up to 8 packages
           .map((pkg) => ({
             id: pkg.PackageID,
@@ -63,7 +65,7 @@ const RelatedPackagesSlider = () => {
   if (loading) {
     return (
       <div className="container my-4">
-        <h4 className="mb-3">Related Packages</h4>
+        <h4 className="mb-3">Value Added Services</h4>
         <div className="d-flex justify-content-center">
           <div className="spinner-border" role="status">
             <span className="visually-hidden">Loading...</span>
@@ -84,8 +86,8 @@ const RelatedPackagesSlider = () => {
   }
 
   return (
-    <div className="container my-4">
-      <h4 className="mb-3">Related Packages</h4>
+    <div className="container my-4 related-packages-container">
+      <h4 className="mb-3">Value Added Services</h4>
       <div id="relatedPackagesCarousel" className="carousel slide" data-bs-ride="carousel">
         <div className="carousel-inner">
           {chunkedPackages.map((chunk, slideIndex) => (
@@ -127,22 +129,26 @@ const RelatedPackagesSlider = () => {
             </div>
           ))}
         </div>
+        
+        {/* Custom Previous Button */}
         <button
-          className="carousel-control-prev"
+          className="carousel-control-prev carousel-control-custom carousel-control-prev-custom"
           type="button"
           data-bs-target="#relatedPackagesCarousel"
           data-bs-slide="prev"
         >
-          <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span className="carousel-control-icon">‹</span>
           <span className="visually-hidden">Previous</span>
         </button>
+        
+        {/* Custom Next Button */}
         <button
-          className="carousel-control-next"
+          className="carousel-control-next carousel-control-custom carousel-control-next-custom"
           type="button"
           data-bs-target="#relatedPackagesCarousel"
           data-bs-slide="next"
         >
-          <span className="carousel-control-next-icon" aria-hidden="true"></span>
+          <span className="carousel-control-icon">›</span>
           <span className="visually-hidden">Next</span>
         </button>
       </div>

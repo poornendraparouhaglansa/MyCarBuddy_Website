@@ -6,7 +6,7 @@ import axios from "axios";
 
 const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 	const BASE_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
-	const [selectionMethod, setSelectionMethod] = useState("registration"); // default manual
+	const [selectionMethod, setSelectionMethod] = useState("manual"); // default manual
 	const [registrationNumber, setRegistrationNumber] = useState("");
 	const [carType, setCarType] = useState("");
 	const [brand, setBrand] = useState(null);
@@ -147,7 +147,8 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 		if (onCarSaved) {
 			onCarSaved(selectedCarDetails);
 		}
-		localStorage.removeItem("cartItems");
+		// localStorage.removeItem("cartItems");
+		window.location.reload();
 
 		setTimeout(() => {
 			window.location.reload();
@@ -181,7 +182,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 				</button>
 				<h6>Select Your Car Type</h6>
 				{/* Dropdown */}
-				<div className="mb-4">
+				<div className="mb-4 d-none">
 					<select className="form-select" value={selectionMethod} onChange={(e) => setSelectionMethod(e.target.value)}>
 						<option value="registration">Registration Number</option>
 						<option value="manual">Manual Selection</option>
@@ -204,7 +205,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 						<>
             <div className="mb-4">
 						<label className="form-label">Choose Brand & Model</label>
-						<div className="d-flex gap-3 flex-wrap justify-content-between">
+						<div className="d-flex gap-3 flex-wrap justify-content-center">
 							{/* Brand Card */}
 							<div
 								onClick={() => {
@@ -310,7 +311,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 					{model && (
 						<div className="mb-4">
 							<label className="form-label">Fuel Type</label>
-							<div className="d-flex gap-3 flex-wrap">
+							<div className="d-flex gap-3 flex-wrap justify-content-center">
 								{fuels.map((f) => (
 									<div
 										key={f.id}
