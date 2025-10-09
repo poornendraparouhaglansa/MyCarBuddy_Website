@@ -28,51 +28,56 @@ const MainProfile = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const userName = user?.name || "Guest User";
   const userIdentifier = user?.identifier || "No identifier";
-  const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
-    const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
-    const { showAlert } = useAlert();
-
-  if (!user) {
-    navigate("/");
-  }
+  const decryptedCustId = (() => {
+    try {
+      if (!user?.id) return "";
+      const bytesLocal = CryptoJS.AES.decrypt(user.id, secretKey);
+      return bytesLocal.toString(CryptoJS.enc.Utf8);
+    } catch (_) {
+      return "";
+    }
+  })();
+  const { showAlert } = useAlert();
 
   useEffect(() => {
-      const fetchUser = async () => {
-           try {
-          const res = await axios.get(
-            `${process.env.REACT_APP_CARBUDDY_BASE_URL}Customer/Id?Id=${decryptedCustId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${user.token}`,
-              },
+    if (!user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
-            });
-              
-          const data = res.data[0] || {};
-          console.log("Fetched user profile:", data);
-        
-          setUserData({
-            FullName: data.FullName || "",
-            Email: data.Email ,
-            PhoneNumber: data.PhoneNumber || "",
-            AlternateNumber: data.AlternateNumber || "",
-            ProfileImage: data.ProfileImage || "",
-          });
-
-            const updatedUser = { ...user,
-              profileImage: data.ProfileImage || "" ,
-              name: data.FullName || user.name,
-            };
-            localStorage.setItem("user", JSON.stringify(updatedUser));
-            window.dispatchEvent(new Event("userProfileUpdated"));
-
-          // localStorage.setItem("user", JSON.stringify({ ...parsed, ...data }));
-        } catch (err) {
-          console.error("Failed to fetch user profile", err);
-        }
-      };
-      fetchUser();
-    } , []); 
+  useEffect(() => {
+    if (!user || !decryptedCustId) return;
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get(
+          `${process.env.REACT_APP_CARBUDDY_BASE_URL}Customer/Id?Id=${decryptedCustId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        );
+        const data = res.data[0] || {};
+        setUserData({
+          FullName: data.FullName || "",
+          Email: data.Email,
+          PhoneNumber: data.PhoneNumber || "",
+          AlternateNumber: data.AlternateNumber || "",
+          ProfileImage: data.ProfileImage || "",
+        });
+        const updatedUser = {
+          ...user,
+          profileImage: data.ProfileImage || "",
+          name: data.FullName || user.name,
+        };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        window.dispatchEvent(new Event("userProfileUpdated"));
+      } catch (err) {
+        console.error("Failed to fetch user profile", err);
+      }
+    };
+    fetchUser();
+  }, [user, decryptedCustId]); 
 
 
   const handleTabClick = (key) => {

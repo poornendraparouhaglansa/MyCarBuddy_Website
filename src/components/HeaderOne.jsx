@@ -745,19 +745,11 @@ const HeaderOne = () => {
 								</li>
 
 								<li>
-									<Link
-										to="/"
-										onClick={(e) => {
-											e.preventDefault();
-											if (window.location.pathname !== "/") {
-												window.location.href = "/#services";
-											} else {
-												window.dispatchEvent(new Event("scrollToService"));
-											}
-										}}
+									<NavLink
+										to="/service"  className={(navData) => (navData.isActive ? "active" : "")}
 									>
 										Service
-									</Link>
+									</NavLink>
 								</li>
 
 								{user?.id ? (

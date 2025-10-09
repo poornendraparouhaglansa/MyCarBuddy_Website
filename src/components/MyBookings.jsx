@@ -738,14 +738,22 @@ const BookingSkeleton = () => {
   filteredBookings.slice(0, visibleCount).map((booking) => {
    const tracking = Array.isArray(booking.TechnicianTracking) ? booking.TechnicianTracking[0] : {};
 
-    const statusTimeline = [
-      { label: "Booking Created", date: booking.BookingDate },
-      { label: "Buddy Assigned", date: booking.TechAssignDate },
-      { label: "Buddy Started", date: tracking?.JourneyStartedAt },
-      { label: "Buddy Reached", date: tracking?.ReachedAt },
-      { label: "Service Started", date: tracking?.ServiceStartedAt },
-      { label: "Service Completed", date: tracking?.ServiceEndedAt },
-    ];
+   const statusTimeline = [
+    { label: "Booking Created", date: booking.BookingDate },
+    ...(booking?.Reschedules?.length
+      ? booking.Reschedules.map((r, index) => ({
+          label: `Rescheduled (${index + 1})`,
+          date: r.NewSchedule,
+          oldDate: r.OldSchedule,
+          reason: r.Reason || null,
+        }))
+      : []),
+    { label: "Buddy Assigned", date: booking.TechAssignDate },
+    { label: "Buddy Started", date: tracking?.JourneyStartedAt },
+    { label: "Buddy Reached", date: tracking?.ReachedAt },
+    { label: "Service Started", date: tracking?.ServiceStartedAt },
+    { label: "Service Completed", date: tracking?.ServiceEndedAt },
+  ];
 
     return (
       <div

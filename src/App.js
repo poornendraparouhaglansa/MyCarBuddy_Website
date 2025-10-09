@@ -27,6 +27,8 @@ import ReschedulePage from "./pages/ReschedulePage";
 import CarDamageAnalysisPage from "./pages/CarDamageAnalysisPage";
 import SearchPage from "./pages/SearchPage";
 import AppRedirectPage from "./pages/AppRedirectPage";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import RedirectToPayment from "./pages/RedirectToPayment";
 
 function App() {
   useEffect(() => {
@@ -62,6 +64,8 @@ function App() {
           <Route exact path="/car-damage-analysis" element={<CarDamageAnalysisPage />} />
           <Route exact path="/search" element={<SearchPage />} />
           <Route exact path="/redirect" element={<AppRedirectPage />} />
+          <Route exact path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/redirect-to-payment/:encodedUrl" element={<RedirectToPayment />} />
           <Route path="*" element={<NotFoundPage />} />
 
         </Routes>

@@ -296,10 +296,10 @@ useEffect(() => {
 
               <>
                 <div className="col-md-6 mb-4">
-                  <div className="pricing-card">
-                    <div className="pricing-card-price-wrap" onClick={() => navigate(`/servicedetails/${slugify(pkg.title)}/${pkg.id}`)} style={{ cursor: "pointer" }}>
+                  <div className="pricing-card"  onClick={() => navigate(`/servicedetails/${slugify(pkg.title)}/${pkg.id}`)} style={{ cursor: "pointer" }}>
+                    <div className="pricing-card-price-wrap">
 
-                    <div className="pricing-card-price-wrap position-relative" onClick={() => navigate(`/servicedetails/${slugify(pkg.title)}/${pkg.id}`)} style={{ cursor: "pointer" }}>
+                    <div className="pricing-card-price-wrap position-relative" >
                       {/* <div className="pricing-badge">
                         10% OFF
                       </div> */}

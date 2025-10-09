@@ -233,8 +233,8 @@ styleSheet.innerText = `
   
   .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px #116d6e !important;
-  }
+    box-shadow: 0 6px 6px #116d6e8f !important;
+}
   
   .btn-outline-primary:hover {
     background: #116d6e !important;
