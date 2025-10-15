@@ -98,14 +98,17 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
 			});
 			console.log("OTP verification response:", response.data.custID);
 
+
 			localStorage.setItem(
 				"user",
 				JSON.stringify({
 					id: CryptoJS.AES.encrypt(response.data?.custID.toString(), secretKey).toString(),
 					name: response.data?.name || "GUEST",
 					token: response.data?.token,
+					profileImage: response?.data?.profileImage,
 				})
 			);
+
 			getVehicleList(response.data?.custID);
 			window.dispatchEvent(new Event("userProfileUpdated"));
 			onClose();

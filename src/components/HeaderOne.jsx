@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import SignIn from "./SignIn";
 import RegisterModal from "./RegisterModal";
 import { FaCarSide, FaSearch } from "react-icons/fa";
-import ChooseCarModal from "./ChooseCarModal";
-// import ChooseCarModal from "./ChooseCarModalWithRegLookup";
+// import ChooseCarModal from "./ChooseCarModal";
+import ChooseCarModal from "./ChooseCarModalGridLayout";
 
 import { FaShoppingCart } from "react-icons/fa";
 import { useCart } from "../context/CartContext";
@@ -12,8 +12,11 @@ import ProfileModal from "./ProfileModal";
 import { useAlert } from "../context/AlertContext";
 import axios from "axios";
 import { FaCar } from "react-icons/fa";
+import NotificationDropdown from "./NotificationDropdown";
+import CryptoJS from "crypto-js";
 
 const API_URL = process.env.REACT_APP_CARBUDDY_BASE_URL;
+const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
 
 const HeaderOne = () => {
 	const [active, setActive] = useState(false);
@@ -24,7 +27,7 @@ const HeaderOne = () => {
 	const [selectedCar, setSelectedCar] = useState(null);
 
 	const [showLocationModal, setShowLocationModal] = useState(false);
-	const [location, setLocation] = useState(null);
+	const [userLocation, setUserLocation] = useState(null);
 
 	const [locationText, setLocationText] = useState("");
 	const [isServiceAvailable, setIsServiceAvailable] = useState(null);
@@ -48,18 +51,46 @@ const HeaderOne = () => {
 
 	// New state for service search
 	const [serviceSearchTerm, setServiceSearchTerm] = useState("");
+	const [decryptedUserId, setDecryptedUserId] = useState("");
+ 
+
+	const debounce = (func, delay) => {
+		let timeoutId;
+		return (...args) => {
+			clearTimeout(timeoutId);
+			timeoutId = setTimeout(() => func.apply(null, args), delay);
+		};
+	};
+
+	const debouncedNavigate = useCallback(
+		debounce((value) => {
+			if (value.trim()) {
+				navigate(`/search?q=${encodeURIComponent(value.trim())}`);
+			}
+		}, 500),
+		[navigate]
+	);
 
 	const handleSearchChange = (e) => {
 		const value = e.target.value;
 		setServiceSearchTerm(value);
+		debouncedNavigate(value);
 	};
 
-	const handleSearchSubmit = (e) => {
-		e.preventDefault();
-		if (serviceSearchTerm.trim()) {
-			navigate(`/search?q=${encodeURIComponent(serviceSearchTerm.trim())}`);
-		}
-	};
+	// const handleSearchSubmit = (e) => {
+	// 	e.preventDefault();
+	// 	if (serviceSearchTerm.trim()) {
+	// 		navigate(`/search?q=${encodeURIComponent(serviceSearchTerm.trim())}`);
+	// 	}
+	// };
+
+	const location = useLocation();
+
+	useEffect(() => {
+		const params = new URLSearchParams(location.search);
+		const q = params.get('q');
+		if (q) setServiceSearchTerm(q);
+	}, [location.search]);
 
 	useEffect(() => {
 		let timeoutId;
@@ -100,12 +131,15 @@ const HeaderOne = () => {
 			const saved = localStorage.getItem("user");
 			if (saved) {
 				setUser(JSON.parse(saved));
+				
 			}
 
 			const carData = localStorage.getItem("selectedCarDetails");
 			if (carData) {
 				setSelectedCar(JSON.parse(carData));
 			}
+
+			
 		};
 
 		loadUser();
@@ -174,7 +208,7 @@ const HeaderOne = () => {
 			navigator.geolocation.getCurrentPosition(
 				async (position) => {
 					const coords = position.coords;
-					setLocation(coords);
+					setUserLocation(coords);
 					localStorage.setItem("location", JSON.stringify(coords));
 					localStorage.setItem("locationModalShown", "true");
 					setShowLocationModal(false);
@@ -451,11 +485,16 @@ const HeaderOne = () => {
 										</button>
 									</div>
 								</div>
-								<div className="col-auto d-block  ms-auto d-xl-block d-sm-block">
+
+								<div className="col-auto m-auto d-xl-block ">
 									<div className="navbar-right-desc">
+										<div
+											className="header-grid-wrap d-flex align-items-center gap-6"
+										>
+
 										<div className="header-search d-xl-block">
 											{/* Search input and dropdown */}
-											<form onSubmit={handleSearchSubmit} className="position-relative ml-4 mr-50">
+											<div className="position-relative ml-4 mr-50">
 												<FaSearch className="fasearch" />
 												<input
 													type="text"
@@ -465,26 +504,12 @@ const HeaderOne = () => {
 													className="searchInput"
 													style={{
 														flex: "1 1 auto",
-														minWidth: "100px", 
+														minWidth: "100px",
 														maxWidth: "100%",
 													}}
 												/>
-											</form>
+											</div>
 										</div>
-									</div>
-								</div>
-								<div className="col-auto ms-auto d-xl-block ">
-									<div className="navbar-right-desc">
-										<div
-											className="header-grid-wrap"
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: "36px",
-												padding: "8px 0",
-												fontFamily: "Segoe UI, sans-serif",
-											}}
-										>
 											<div
 												className="navbar-right-desc-details signDiv d-none d-md-flex"
 												style={{
@@ -500,6 +525,8 @@ const HeaderOne = () => {
 													}
 												}}
 											>
+
+												
 												{user?.name || user?.identifier ? (
 													<>
 														<div
@@ -673,6 +700,28 @@ const HeaderOne = () => {
 													)}
 												</Link>
 											</div>
+
+											{/* Notifications */}
+											{user?.id && (
+												<div
+													className="navbar-right-desc-details"
+													style={{
+														display: "flex",
+														flexDirection: "column",
+														alignItems: "center",
+														justifyContent: "center",
+													}}
+												>
+													<span className="header-grid-text" style={{ visibility: "hidden" }}>
+														{/* Notifications */}
+													</span>
+                                                    <NotificationDropdown  />
+												</div>
+											)}
+
+											
+
+											
 										</div>
 									</div>
 								</div>
@@ -758,6 +807,12 @@ const HeaderOne = () => {
 											<NavLink to="/profile" className={(navData) => (navData.isActive ? "active" : "")}>
 												Profile
 											</NavLink>
+										</li>
+										<li>
+                                            <div className="d-flex align-items-center justify-content-between">
+                                                <span>Notifications</span>
+                                                <NotificationDropdown  />
+                                            </div>
 										</li>
 										<li>
 											<NavLink to="/cart" className={(navData) => (navData.isActive ? "active" : "")}>

@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Profile from "./Profile";
 import AddressTab from "./AddressTab";
 import MyBookings from "./MyBookings";
 import MyCarList from "./MyCarList";
 import InvoicesTab from "./InvoicesTab";
+import RaisedTicketsTab from "./RaisedTicketsTab";
 import axios from "axios";
 import CryptoJS from "crypto-js";
 import { useAlert } from "../context/AlertContext";
@@ -38,6 +39,7 @@ const MainProfile = () => {
     }
   })();
   const { showAlert } = useAlert();
+  const contentRef = useRef(null);
 
   useEffect(() => {
     if (!user) {
@@ -77,7 +79,7 @@ const MainProfile = () => {
       }
     };
     fetchUser();
-  }, [user, decryptedCustId]); 
+  }, []); 
 
 
   const handleTabClick = (key) => {
@@ -88,6 +90,12 @@ const MainProfile = () => {
       navigate("/");
     } else {
       setActiveTab(key);
+      // Smooth scroll to top after tab change
+      setTimeout(() => {
+        try {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (_) {}
+      }, 0);
     }
   };
 
@@ -103,6 +111,8 @@ const MainProfile = () => {
         return <MyCarList />;
       case "invoices":
         return <InvoicesTab />;
+      case "tickets":
+        return <RaisedTicketsTab />;
       case "DeleteAccount":
         const handleDelete = async () => {
           const confirmed = window.confirm(
@@ -157,6 +167,7 @@ const MainProfile = () => {
     { key: "addresses", label: "🏠 Addresses" },
     { key: "mycars", label: "🚗 My Car List" },
     { key: "invoices", label: "📄 Invoices" },
+    { key: "tickets", label: "🎫 Raised Tickets" },
     { key: "logout", label: "🚪 Log Out" },
     { key: "DeleteAccount", label: "🗑️ Delete Account" },
   ];
@@ -205,7 +216,7 @@ const MainProfile = () => {
         </div>
 
         {/* Content */}
-        <div className="col-md-9">
+        <div className="col-md-9" ref={contentRef}>
           <div className="card shadow-sm p-4">{renderContent()}</div>
         </div>
       </div>

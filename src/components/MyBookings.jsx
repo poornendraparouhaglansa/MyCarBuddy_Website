@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import CryptoJS from "crypto-js";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAlert } from "../context/AlertContext";
+import { useCart } from "../context/CartContext";
+import Swal from "sweetalert2";
 
 const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
 const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
@@ -13,14 +15,19 @@ const MyBookings = () => {
   const [visibleCount, setVisibleCount] = useState(3);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const { showAlert } = useAlert();
+  const { addToCart, clearCart } = useCart();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [activeTab, setActiveTab] = useState("All"); // All | Active | Completed | Cancelled
+  const [showFilters, setShowFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedBookingIds, setExpandedBookingIds] = useState(new Set());
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
     const user = JSON.parse(localStorage.getItem("user"));
     const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
     const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
+    const token = user?.token;
   const location = useLocation();
   const navigate = useNavigate();
   const [feedback, setFeedback] = useState("");
@@ -41,9 +48,61 @@ const MyBookings = () => {
   const [resumeAfternoonSlots, setResumeAfternoonSlots] = useState([]);
   const [resumeEveningSlots, setResumeEveningSlots] = useState([]);
   const [isSubmittingResume, setIsSubmittingResume] = useState(false);
+  const [showPackagesOpen, setShowPackagesOpen] = useState(false);
+  const [expandedPackageIdxs, setExpandedPackageIdxs] = useState(new Set());
+  const [couponList, setCouponList] = useState([]);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [showCouponPicker, setShowCouponPicker] = useState(false);
+  const [isProcessingBookAgain, setIsProcessingBookAgain] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState(""); // "processing" | "success" | "error"
 
   const handleBack = () => {
     setSelectedBooking(null);
+  };
+
+  // Add booking packages to cart
+  const handleAddBookingToCart = async (booking) => {
+    if (!booking?.Packages || booking.Packages.length === 0) {
+      showAlert("No packages found in this booking.", "warning");
+      return;
+    }
+
+    try {
+      setIsProcessingBookAgain(true);
+      
+      // Clear existing cart first
+      clearCart();
+      
+      // Add each package to cart
+      let addedCount = 0;
+      for (const pkg of booking.Packages) {
+        const cartItem = {
+          id: pkg.PackageID,
+          title: pkg.PackageName,
+          price: pkg.PackagePrice || 0,
+          image: pkg.PackageImage ? `${ImageURL}${pkg.PackageImage}` : "/assets/img/service-1-1.png",
+          category: pkg.CategoryName || "Service",
+          subCategory: pkg.SubCategoryName || ""
+        };
+        addToCart(cartItem);
+        addedCount++;
+      }
+
+      // showAlert(`Cart cleared and ${addedCount} package(s) added to your cart!`, "success");
+      
+      // Redirect to cart page
+      setTimeout(() => {
+        navigate("/cart");
+      }, 1500);
+    } catch (error) {
+      console.error("Error adding packages to cart:", error);
+      showAlert("Failed to add packages to cart. Please try again.", "error");
+    } finally {
+      setIsProcessingBookAgain(false);
+    }
   };
 
   
@@ -89,18 +148,35 @@ const MyBookings = () => {
     };
   }, []); // 👀 Watch for URL search param changes
 
-  // Define filteredBookings before using it in useEffect
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch = booking.BookingTrackID
-      ?.toString()
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+  // Tab counts
+  const { allCount, activeCount, completedCount, cancelledCount } = useMemo(() => {
+    const all = bookings.length;
+    const completed = bookings.filter(b => b.BookingStatus === "Completed").length;
+    const cancelled = bookings.filter(b => b.BookingStatus === "Cancelled").length;
+    const active = bookings.filter(b => !["Completed","Cancelled","Failed","Refunded"].includes(b.BookingStatus)).length;
+    return { allCount: all, activeCount: active, completedCount: completed, cancelledCount: cancelled };
+  }, [bookings]);
 
-    const matchesStatus =
-      statusFilter === "All" || booking.BookingStatus === statusFilter;
+  useEffect(() => {
+    // keep legacy statusFilter roughly in sync for any dependent logic
+    if (activeTab === "All") setStatusFilter("All");
+    else if (activeTab === "Completed") setStatusFilter("Completed");
+    else if (activeTab === "Cancelled") setStatusFilter("Cancelled");
+    else setStatusFilter("Active");
+  }, [activeTab]);
 
-    return matchesSearch && matchesStatus;
-  });
+  // Define filteredBookings with tab and search
+  const filteredBookings = useMemo(() => {
+    const q = searchTerm.toLowerCase();
+    return bookings.filter((booking) => {
+      const matchesSearch = booking.BookingTrackID?.toString().toLowerCase().includes(q);
+      let matchesTab = true;
+      if (activeTab === "Completed") matchesTab = booking.BookingStatus === "Completed";
+      else if (activeTab === "Cancelled") matchesTab = booking.BookingStatus === "Cancelled";
+      else if (activeTab === "Active") matchesTab = !["Completed","Cancelled","Failed","Refunded"].includes(booking.BookingStatus);
+      return matchesSearch && matchesTab;
+    });
+  }, [bookings, searchTerm, activeTab]);
 
   // Infinite scroll effect
   useEffect(() => {
@@ -220,6 +296,124 @@ useEffect(() => {
     }
   }, [selectedBooking]);
 
+  // Fetch coupons for Pay Now (full view)
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const response = await axios.get(`${BaseURL}Coupons`, {
+          headers: { Authorization: `Bearer ${user?.token}` },
+        });
+        const now = new Date();
+        const formatted = (response.data || [])
+          .filter((coupon) => {
+            const from = new Date(coupon.ValidFrom);
+            const till = new Date(coupon.ValidTill);
+            return coupon.Status && from <= now && now <= till;
+          })
+          .map((coupon) => ({
+            id: coupon.CouponID,
+            Code: coupon.Code,
+            Description: coupon.Description,
+            DiscountValue: coupon.DiscountValue,
+            DiscountType: coupon.DiscountType,
+            MaxDisAmount: coupon.MaxDisAmount,
+            MinBookingAmount: coupon.MinBookingAmount,
+            validTill: new Date(coupon.ValidTill),
+          }));
+        setCouponList(formatted);
+      } catch (err) {
+        console.error("Error fetching coupons (MyBookings)", err);
+      }
+    };
+
+    fetchCoupons();
+  }, [BaseURL, user?.token]);
+
+  const getBookingOriginalTotal = (booking) => {
+    const base = Number(booking?.TotalPrice) || 0;
+    const gst = Number(booking?.GSTAmount) || 0;
+    return base + gst;
+  };
+
+  const computeCouponDiscount = (originalTotal) => {
+    if (!appliedCoupon) return 0;
+    let discount = 0;
+    if (appliedCoupon.DiscountType === "percentage") {
+      discount = (originalTotal * appliedCoupon.DiscountValue) / 100;
+      if (appliedCoupon.MaxDisAmount && discount > appliedCoupon.MaxDisAmount) {
+        discount = appliedCoupon.MaxDisAmount;
+      }
+    } else {
+      discount = appliedCoupon.DiscountValue || 0;
+    }
+    return Math.min(discount, originalTotal);
+  };
+
+  const getBookingFinalTotalWithCoupon = (booking) => {
+    const original = getBookingOriginalTotal(booking);
+    const discount = computeCouponDiscount(original);
+    return Math.max(original - discount, 0);
+  };
+
+  const handleApplyCouponFullView = (coupon) => {
+    const original = getBookingOriginalTotal(selectedBooking || {});
+    if ((coupon.MinBookingAmount || 0) > original) {
+      showAlert(`This coupon requires a minimum booking amount of ₹${coupon.MinBookingAmount}`);
+      return;
+    }
+    setAppliedCoupon(coupon);
+    setCouponApplied(true);
+    setShowCouponPicker(false);
+  };
+
+  const handleRemoveCouponFullView = () => {
+    setAppliedCoupon(null);
+    setCouponApplied(false);
+  };
+
+  const handlePayNow = async () => {
+    if (!selectedBooking) return;
+    try {
+      // 1) Ensure backend knows we are paying via Razorpay
+      const form = new FormData();
+      form.append("BookingTrackID", selectedBooking.BookingTrackID);
+      form.append("PaymentMethod", "Razorpay");
+      form.append("BookingFrom", "web");
+      // Compute and send coupon amount (live if coupon applied)
+      if (!appliedCoupon){
+        form.append("CouponAmount", "0");
+      }else{
+        form.append("CouponAmount", Number(getBookingOriginalTotal(selectedBooking) - getBookingFinalTotalWithCoupon(selectedBooking)).toFixed(2));
+      }
+      
+      form.append("GSTAmount", selectedBooking.GSTAmount);
+      form.append("TotalAmount", selectedBooking.TotalPrice);
+      form.append("BookingDate", selectedBooking.BookingDate);
+      form.append("TimeSlot", selectedBooking.TimeSlot);
+      form.append("Paynowtype", "Paynow");
+
+
+      const res = await axios.put(`${BaseURL}Bookings/update-booking`, form, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+
+      if (res.status === 200 || res.status === 201) {
+        // alert("Booking resumed successfully!");
+          const finalTotal = (selectedBooking.TotalPrice + selectedBooking.GSTAmount - selectedBooking.CouponAmount).toFixed(2);
+          loadRazorpay(finalTotal, res.data);
+
+      } else {
+        showAlert("Failed to resume booking. Please try again.");
+      }
+      
+    } catch (err) {
+      console.error("Pay Now error:", err);
+      showAlert("Error initiating payment. Please try again.");
+    }
+  };
+
   // Fetch TimeSlots for resume form
   const fetchResumeTimeSlots = async (dateStr) => {
     try {
@@ -305,7 +499,8 @@ useEffect(() => {
       form.append("BookingFrom", "web");
       form.append("CouponAmount", selectedBooking.CouponAmount);
       form.append("GSTAmount", selectedBooking.GSTAmount);
-      form.append("TotalAmount", selectedBooking.TotalPrice)
+      form.append("TotalAmount", selectedBooking.TotalPrice);
+
 
       const res = await axios.put(`${BaseURL}Bookings/update-booking`, form, {
         headers: {
@@ -340,49 +535,64 @@ useEffect(() => {
 
   const loadRazorpay = (amount, data) => {
 
+
     const options = {
       key: process.env.REACT_APP_RAZORPAY_KEY,
-      amount: amount * 100,
+      amount: Math.round(Number(amount) * 100),
       currency: "INR",
       name: "MyCarBuddy a product by Glansa Solutions Pvt. Ltd.",
-      order_id: data.razorpay.orderID,
-      description: "Payment for Car Services",
+      order_id: data?.razorpay?.orderID,
+      description: `Payment for ${selectedBooking?.BookingTrackID || selectedBooking?.BookingID}`,
       image: "/assets/img/MyCarBuddy-Logo1.png",
       handler: function (response) {
-        console.log("Payment success:", response);
-      },
-      prefill: {
-        name: selectedBooking.CustFullName,
-        email: selectedBooking.CustEmail,
-        contact: selectedBooking.CustPhoneNumber,
-      },
-      theme: {
-        color: "#1890ae",
-      },
-      modal: {
-        ondismiss: function () {
-  
-          axios.put(
-            `${BaseURL}Bookings/booking-status`,
+        // Wait for 5 seconds before calling confirm-payment (backend settlement time)
+        setPaymentStatus("processing");
+        setPaymentMessage("Please wait... your booking is being processed.");
+        setShowPaymentModal(true);
+        setTimeout(async () => {
+          try {
+            const res = await axios.post(
+              `${BaseURL}Bookings/confirm-Payment`,
             {
               bookingID: data.bookingID,
-              bookingStatus: "Failed",
-            },
-            {
-              headers: {
-                // Authorization: `Bearer ${token}`,
+                amountPaid: amount,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                razorpayOrderId: response.razorpay_order_id,
+                paymentMode: "Razorpay",
               },
-            }
-          );
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
 
-          showAlert("success", "Payment was cancelled or failed.", 3000, "success");
+            if (res?.data?.success || res?.status === 200) {
+              setPaymentStatus("success");
+              setPaymentMessage("Payment was successful!");
           setShowResumeForm(false);
-          setSelectedBooking(null);
+              // setSelectedResumeTimes([]);
+              clearCart();
           fetchBookings();
-          // setPaymentStatus("error");
-          // setPaymentMessage("Payment was cancelled or failed.");
-          // setShowPaymentModal(true);
-          // clearCart();
+              setShowResumeForm(false);
+            } else {
+              setPaymentStatus("error");
+              setPaymentMessage("Payment failed! Please try again.");
+            }
+          } catch (error) {
+            console.error(error);
+            setPaymentStatus("error");
+            setPaymentMessage("Payment failed! Please try again.");
+          }
+        }, 5000);
+      },
+      prefill: {
+        name: selectedBooking?.CustFullName,
+        email: selectedBooking?.CustEmail,
+        contact: selectedBooking?.CustPhoneNumber,
+      },
+      theme: { color: "#1890ae" },
+      modal: {
+        ondismiss: function () {
+          setPaymentStatus("error");
+          setPaymentMessage("Payment window closed.");
         },
       },
     };
@@ -684,7 +894,7 @@ const BookingSkeleton = () => {
 
 
   return (
-    <div className="container py-4">
+    <div className="container ">
       <style>
         {`
           @keyframes pulse {
@@ -697,33 +907,89 @@ const BookingSkeleton = () => {
           }
         `}
       </style>
-      <h6 className="mb-4">My Bookings</h6>
+      <div className="d-flex align-items-center justify-content-between mb-3">
+        <h6 className="mb-0">My Bookings</h6>
+        <button className="btn btn-outline-secondary px-4 py-2" onClick={() => setShowFilters(s => !s)}>
+          <i className="bi bi-funnel me-1"></i> Filter
+        </button>
+      </div>
 
-      <div className="d-flex justify-content-between gap-3 mb-3">
-  {/* Search by Track ID */}
+      {showFilters && (
+      <div className="d-flex gap-2 mb-2 flex-wrap">
+        <button
+          className="btn px-4 py-2 shadow-sm"
+          style={{
+            borderRadius: 999,
+            background: activeTab === 'All' ? 'linear-gradient(135deg,#04b1a6d6,#136e6f)' : '#f8f9fa',
+            color: activeTab === 'All' ? '#fff' : '#495057',
+            border: activeTab === 'All' ? 'none' : '1px solid #e9ecef'
+          }}
+          onClick={() => setActiveTab('All')}
+        >
+          <i className="bi bi-grid me-2"></i>All
+          <span className={`badge ms-2 ${activeTab === 'All' ? 'bg-light text-primary' : 'bg-secondary-subtle text-secondary'}`}>{allCount}</span>
+        </button>
+        <button
+          className="btn px-4 py-2 shadow-sm"
+          style={{
+            borderRadius: 999,
+            background: activeTab === 'Active' ? 'linear-gradient(135deg,#04b1a6d6,#136e6f)' : '#f8f9fa',
+            color: activeTab === 'Active' ? '#fff' : '#495057',
+            border: activeTab === 'Active' ? 'none' : '1px solid #e9ecef'
+          }}
+          onClick={() => setActiveTab('Active')}
+        >
+          <i className="bi bi-lightning-charge me-2"></i>Active
+          <span className={`badge ms-2 ${activeTab === 'Active' ? 'bg-light text-primary' : 'bg-secondary-subtle text-secondary'}`}>{activeCount}</span>
+        </button>
+        <button
+          className="btn px-4 py-2 shadow-sm"
+          style={{
+            borderRadius: 999,
+            background: activeTab === 'Completed' ? 'linear-gradient(135deg,#04b1a6d6,#136e6f)' : '#f8f9fa',
+            color: activeTab === 'Completed' ? '#fff' : '#495057',
+            border: activeTab === 'Completed' ? 'none' : '1px solid #e9ecef'
+          }}
+          onClick={() => setActiveTab('Completed')}
+        >
+          <i className="bi bi-check2-circle me-2"></i>Completed
+          <span className={`badge ms-2 ${activeTab === 'Completed' ? 'bg-light text-success' : 'bg-secondary-subtle text-secondary'}`}>{completedCount}</span>
+        </button>
+        <button
+          className="btn px-4 py-2 shadow-sm"
+          style={{
+            borderRadius: 999,
+            background: activeTab === 'Cancelled' ? 'linear-gradient(135deg,#04b1a6d6,#136e6f)' : '#f8f9fa',
+            color: activeTab === 'Cancelled' ? '#fff' : '#495057',
+            border: activeTab === 'Cancelled' ? 'none' : '1px solid #e9ecef'
+          }}
+          onClick={() => setActiveTab('Cancelled')}
+        >
+          <i className="bi bi-x-octagon me-2"></i>Cancelled
+          <span className={`badge ms-2 ${activeTab === 'Cancelled' ? 'bg-light text-danger' : 'bg-secondary-subtle text-secondary'}`}>{cancelledCount}</span>
+        </button>
+      </div>
+      )}
+
+      {showFilters && (
+        <div className="card card-body mb-3">
+          <div className="row g-2 align-items-end">
+            <div className="col-md-8">
+              <label className="form-label small">Search by Booking Track ID</label>
   <input
     type="text"
     className="form-control"
-    placeholder="Search by Booking Track ID"
+                placeholder="e.g. 123456"
     value={searchTerm}
     onChange={(e) => setSearchTerm(e.target.value)}
-    style={{ maxWidth: "250px" }}
-  />
-
-  {/* Booking Status Filter */}
-  <select
-    className="form-select"
-    value={statusFilter}
-    onChange={(e) => setStatusFilter(e.target.value)}
-    style={{ maxWidth: "200px" }}
-  >
-    <option value="All">All Status</option>
-    <option value="Pending">Pending</option>
-    <option value="Completed">Completed</option>
-    <option value="Cancelled">Cancelled</option>
-    <option value="ServiceStarted">ServiceStarted</option>
-  </select>
+              />
 </div>
+            <div className="col-md-4 text-end">
+              <button className="btn btn-outline-secondary px-4 py-2" onClick={() => setSearchTerm("")}>Clear</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {!selectedBooking && (
         <div className="bookings-scroll-container" style={{ maxHeight: "75vh", overflowY: "auto" }}>
@@ -737,6 +1003,7 @@ const BookingSkeleton = () => {
    ) : Array.isArray(filteredBookings) && filteredBookings.length > 0 ? (
   filteredBookings.slice(0, visibleCount).map((booking) => {
    const tracking = Array.isArray(booking.TechnicianTracking) ? booking.TechnicianTracking[0] : {};
+   const hasServiceStarted = !!tracking?.ServiceStartedAt;
 
    const statusTimeline = [
     { label: "Booking Created", date: booking.BookingDate },
@@ -756,175 +1023,198 @@ const BookingSkeleton = () => {
   ];
 
     return (
-      <div
-        key={booking.BookingID}
-        className="card shadow-sm mb-4 position-relative border-start border-1"
-      >
-        {/* Header */}
-        <div
-          className="d-flex justify-content-between align-items-start mb-2 p-3"
-          style={{ backgroundColor: "#136d6e" }}
-        >
-          <div>
-            <small className="text-white">Booking ID:</small>
-            <div className="fw-bold text-white">
-              #{booking.BookingTrackID}
+      <div key={booking.BookingID} className="card shadow-sm mb-3">
+        <div className="p-3" style={{ borderBottom: "1px solid #eee" }}>
+          <div className="row align-items-center">
+            <div className="col-12 col-md-8">
+              <div className="d-flex align-items-center gap-3">
+                <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center bg-radial" style={{ width: 40, height: 40, color: '#fff'  }}>
+                  <i className="bi bi-receipt"></i>
             </div>
-          </div>
-          {booking.Status !== "Completed" && booking.Status !== 'Cancelled' && booking.Status !== 'Failed' ?
           <div>
-             
-            <small className="text-white">Booking {booking.CompletedOTP ? "Completion" : "Start"} OTP:</small>
-           
-            <div className="fw-bold text-primary">
-              <span className="bg-warning px-2 py-1 rounded text-dark">
-                {booking.CompletedOTP ? booking.CompletedOTP : booking.BookingOTP}
-              </span>
+                  <div className="small text-muted">BID : <span className="fw-bold">#{booking.BookingTrackID} ( {(booking.BookingDate ? new Date(booking.BookingDate).toLocaleDateString('en-GB') : 'N/A')})</span></div>
+                  <div className="small text-muted">
+                    
             </div>
-          </div> : null}
-          <button
-            className="btn btn-yellow px-3 py-1"
-            onClick={() => setSelectedBooking(booking)}
-          >
-            <i className="bi bi-eye"></i>
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-md-4">
+              <div className="d-flex align-items-center gap-2 justify-content-md-end mt-2 mt-md-0">
+                {/* Status chip */}
+                {booking.Status !== "Completed" && booking.Status !== 'Cancelled' && booking.Status !== 'Failed' ? (
+                  <div className="text-end me-2">
+                    <div className="small text-muted">{booking.CompletedOTP ? "Completion" : "Start"} OTP : <span className="bg-warning px-2 py-1 rounded text-dark fw-semibold">{booking.CompletedOTP ? booking.CompletedOTP : booking.BookingOTP}</span></div>
+                  </div>
+                ) : null}
+                <button className="btn btn-warning px-4 py-2" onClick={() => setSelectedBooking(booking)}>
+                  <i className="bi bi-arrows-fullscreen"></i>  view
           </button>
         </div>
-
-        {/* Timeline */}
-        <div className="timeline-container">
-          {[  
-            ...statusTimeline,
-            ...(booking.BookingStatus === "Cancelled"
-              ? [{ label: "Cancelled", date: new Date() }]
-              : []),
-            ...(booking.BookingStatus === "Failed"
-              ? [{ label: "Failed", date: new Date() }]
-              : []),
-            ...(booking.Payments === null
-              ? [{ label: "Resume", date: new Date() }]
-              : []),
-          ].map((step, index, array) => {
+            </div>
+          </div>
+        </div>
+        {/* Timeline (horizontal on desktop, vertical on mobile) with side details */}
+        <div className="p-3">
+          <div className="row g-3">
+            <div className="col-lg-12">
+              {/* Horizontal (desktop) using timeline-step blocks */}
+              <div className="d-none d-lg-block">
+                <div className="timeline-container d-flex w-100" >
+                  {[...statusTimeline,
+                    ...(booking.BookingStatus === "Cancelled" ? [{ label: "Cancelled", date: new Date() }] : []),
+                    ...(booking.BookingStatus === "Failed" ? [{ label: "Failed", date: new Date() }] : []),
+                    ...(booking.Payments === null ? [{ label: "Resume", date: new Date() }] : []),
+                  ].map((step, index, arr) => {
             const isCompleted = !!step.date;
+                    const isBad = step.label === 'Cancelled' || step.label === 'Failed';
+                    const circleBg = isBad
+                      ? 'bg-red-radial'
+                      : isCompleted
+                        ? 'bg-radial'
+                        : 'bg-gray-radial';
+                    const icon =
+                      step.label === 'Booking Created' ? 'bi-clipboard-check' :
+                      step.label?.startsWith('Rescheduled') ? 'bi-arrow-repeat' :
+                      step.label === 'Buddy Assigned' ? 'bi-person-check' :
+                      step.label === 'Buddy Started' ? 'bi-play-circle' :
+                      step.label === 'Buddy Reached' ? 'bi-geo-alt' :
+                      step.label === 'Service Started' ? 'bi-tools' :
+                      step.label === 'Service Completed' ? 'bi-check2-circle' :
+                      step.label === 'Cancelled' ? 'bi-x-circle' :
+                      step.label === 'Failed' ? 'bi-x-octagon' :
+                      'bi-dot';
+                    const connectorBg = isCompleted && !isBad ? 'linear-gradient(135deg, rgb(4 177 166 / 84%) 0%, rgb(19 110 111) 100%)' : '#e9ecef';
             return (
-              <div
-                key={index}
-                className={`timeline-step ${isCompleted ? "completed" : ""} ${step.label === "Cancelled" ? "cancelled" : ""} ${step.label === "Failed" ? "failed" : ""}`}
-              >
-                <div
-                  className={`circle ${step.label === "Cancelled" ? "circle-cancel" : ""} ${step.label === "Failed" ? "circle-failed" : ""}`}
-                  style={{
-                    backgroundColor: step.label === "Cancelled" ? "#a93b2a" : step.label === "Failed" ? "#a93b2a" : ""
-                  }}
-                >
-                  {step.label === "Cancelled" ? "✕" : step.label === "Failed" ? "✕" : isCompleted ? "✓" : index + 1}
+                      <div key={`${booking.BookingID}-h-${index}`} className={`timeline-step ${isCompleted ? 'completed' : ''}`} style={{ display: 'flex', alignItems: 'center', minWidth: 120 }}>
+                        <div className="text-center" style={{ minWidth: 120 }}>
+                          <div className={`circle ${circleBg}`} style={{ width: 40, height: 40, borderRadius: 20, margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',  top: '-5px', boxShadow: isCompleted ? '0 2px 6px rgba(32,201,151,0.35)' : '0 2px 6px rgba(0,0,0,0.05) ' }}>
+                            <i className={`bi ${icon}`} style={{ fontSize: 18 }}></i>
                 </div>
-                <div className="label">{step.label}</div>
-                <div className="date">
-                  {step.date
-                    ? new Date(step.date).toLocaleDateString("en-GB")
-                    : ""}
+                          <div className="label small fw-semibold" style={{ color: '#495057' }}>{step.label}</div>
+                          <div className="date xsmall text-muted" style={{ fontSize: 11 }}>{step.date ? new Date(step.date).toLocaleDateString('en-GB') : ''}</div>
                 </div>
-                {index !== array.length - 1 && <div className="line" />}
+                        {index < arr.length - 1 && (
+                          <div className="line" style={{ height: 6, background: connectorBg, opacity: 0.9, flex: 1, minWidth: 60, borderRadius: 999 }}></div>
+                        )}
               </div>
             );
           })}
         </div>
-
-        {/* Booking Info */}
-
-     {booking?.Payments ? (
-       <div className="row g-3 p-3">
-          <div className="col-md-4">
-            <div className="d-flex align-items-center gap-2">
-              <i className="bi bi-calendar-event text-muted fs-5" />
-              <div>
-                <div className="small text-muted">Date</div>
-                <div className="fw-semibold">
-                  {booking.BookingDate
-                    ? new Date(booking.BookingDate).toLocaleDateString("en-GB")
-                    : "N/A"}
                 </div>
+              {/* Vertical (mobile) */}
+              <div className="d-block d-lg-none">
+                <div className="position-relative" style={{ paddingLeft: 34 }}>
+                  <div style={{ position: 'absolute', top: 0, bottom: 0, left: 16, width: 3, borderRadius: 2, background: 'linear-gradient(180deg, #e9ecef 0%, #dee2e6 60%, #e9ecef 100%)' }}></div>
+                  {[...statusTimeline,
+                    ...(booking.BookingStatus === "Cancelled" ? [{ label: "Cancelled", date: new Date() }] : []),
+                    ...(booking.BookingStatus === "Failed" ? [{ label: "Failed", date: new Date() }] : []),
+                    ...(booking.Payments === null ? [{ label: "Resume", date: new Date() }] : []),
+                  ].map((step, index, arr) => {
+                    const isCompleted = !!step.date;
+                    const isBad = step.label === 'Cancelled' || step.label === 'Failed';
+                    const circleBg = isCompleted
+                      ? 'bg-radial'
+                      : (isBad ? 'bg-red-radial' : 'bg-gray-radial');
+                    const color = isBad ? '#fff' : (isCompleted ? '#fff' : '#6c757d');
+                    const icon =
+                      step.label === 'Booking Created' ? 'bi-clipboard-check' :
+                      step.label?.startsWith('Rescheduled') ? 'bi-arrow-repeat' :
+                      step.label === 'Buddy Assigned' ? 'bi-person-check' :
+                      step.label === 'Buddy Started' ? 'bi-play-circle' :
+                      step.label === 'Buddy Reached' ? 'bi-geo-alt' :
+                      step.label === 'Service Started' ? 'bi-tools' :
+                      step.label === 'Service Completed' ? 'bi-check2-circle' :
+                      step.label === 'Cancelled' ? 'bi-x-circle' :
+                      step.label === 'Failed' ? 'bi-x-octagon' :
+                      'bi-dot';
+                    return (
+                      <div key={`${booking.BookingID}-v-${index}`} className="d-flex align-items-start" style={{ marginBottom: index < arr.length - 1 ? 14 : 0 }}>
+                        <div style={{ position: 'relative' }}>
+                          <div className={`${circleBg}`}
+                            style={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: 15,
+                              boxShadow: isCompleted ? '0 2px 6px rgba(32,201,151,0.35)' : '0 2px 6px rgba(0,0,0,0.05)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color
+                            }}
+                          >
+                            <i className={`bi ${icon}`} style={{ fontSize: 15 }}></i>
               </div>
-            </div>
-          </div>
-
-          <div className="col-md-4">
-            <div className="d-flex align-items-start gap-2">
-              <i className="bi bi-clock-history text-muted fs-5 mt-1" />
-              <div>
-                <div className="small text-muted">Time</div>
-                <div className="fw-semibold">
-                  {booking.TimeSlot && booking.TimeSlot.includes(',') ? (
-                    // Multiple time slots - display each on a new line
-                    <div>
-                      {booking.TimeSlot.split(',').map((timeSlot, index) => (
-                        <div key={index} className="mb-1">
-                          {timeSlot.trim()}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    // Single time slot
-                    booking.TimeSlot || "N/A"
+                          {index < arr.length - 1 && (
+                            <div style={{ position: 'absolute', top: 30, left: 14, width: 2, height: 14, background: '#e5e5e5' }}></div>
                   )}
-                </div>
+            </div>
+                        <div style={{ marginLeft: 10, marginTop: 2 }}>
+                          <div className="fw-semibold" style={{ lineHeight: 1.2 }}>{step.label}</div>
+                          <div className="xsmall text-muted" style={{ fontSize: 11 }}>
+                            {step.date ? new Date(step.date).toLocaleDateString('en-GB') : 'Pending'}
+          </div>
+                        </div>
+                    </div>
+                    );
+                  })}
               </div>
             </div>
           </div>
 
-          <div className="col-md-4">
-            <div className="d-flex align-items-center gap-2">
-              <i className="bi bi-geo-alt text-muted fs-5" />
-              <div>
-                <div className="small text-muted">Location</div>
-                <div className="fw-semibold">
-                  {booking.CityName}, {booking.StateName}
+            <div className="col-12">
+             {booking?.Payments 
+             && (booking.BookingStatus === 'Pending' 
+               || booking.BookingStatus === 'Confirmed'
+               || booking.BookingStatus === 'JourneyStarted')
+              ? (
+                 <div className="alert alert-warning " role="alert">
+                   <div className="row align-items-center g-2">
+                     <div className="col">
+                       {booking?.Reschedules && booking.Reschedules.length >= 2 ? (
+                         <span>You have reached the maximum reschedule limit. Please contact customer support to reschedule your booking.</span>
+                       ) : (
+                         <span>Need a different time? Go ahead and reschedule your booking.</span>
+                       )}
                 </div>
+                     <div className="col-auto">
+                       {booking?.Reschedules && booking.Reschedules.length >= 2 ? (
+                         <a href="tel:7075243939" className="tab-pill pill border-info text-info px-3 py-1 d-flex align-items-center gap-1 text-decoration-none">
+                           <i className="bi bi-telephone"></i>
+                           Contact Support
+                         </a>
+                       ) : (
+                         <button className="tab-pill pill border-warning text-warning px-3 py-1" onClick={() => navigate(`/reschedule?bookingId=${booking.BookingID}`)}>Reschedule</button>
+                       )}
               </div>
             </div>
           </div>
-
-        {booking?.Payments
-        ? (
-          booking.BookingStatus !== "Completed" &&
-          booking.BookingStatus !== "Cancelled" &&
-          booking.BookingStatus !== "Refunded" &&
-          booking.BookingStatus !== "Failed" &&
-          !showCancelSection ? (
-          <div className="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
-            <div>Need a different time? Go ahead and reschedule your booking.</div>
-            <button
-                  className="tab-pill pill border-warning text-warning px-3 py-1"
-                  onClick={() => navigate(`/reschedule?bookingId=${booking.BookingID}`)}
-                >
-                  Reschedule
-            </button>
+               ) : !booking?.Payments ? (
+                 <div className="alert alert-warning" role="alert">
+                   <div className="row align-items-center g-2">
+                     <div className="col">Your payment is pending. Please resume your booking to complete the payment.</div>
+                     <div className="col-auto">
+                       <button className="btn btn-primary px-3 py-1" onClick={() => { setSelectedBooking(booking); handleOpenResume(); }}>Resume Booking</button>
           </div>
-        ) : null
+                   </div>
+                 </div>
         ) : null}
-
         </div>
-     ) : (
-      <>
-        <div className="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
-          <div>Your payment is pending. Please resume your booking to complete the payment.</div>
-          <button
-            className="btn btn-primary px-3 py-1"
-            onClick={() => { setSelectedBooking(booking); handleOpenResume(); }}
-          >
-            Resume Booking
-          </button>
         </div>
-      </>
-     )}
-       
+        </div>
       </div>
     );
   })
 ) : (
   <div className="text-center py-5">
-    <h5>No bookings found</h5>
-    <p className="text-muted">Try changing your filter.</p>
+  <img
+    src="/assets/img/not-booked.png"
+    alt="No Bookings"
+    style={{ maxWidth: "500px", marginBottom: "20px" }}
+  />
+  <h4>No bookings yet</h4>
+  <p>
+    Looks like you haven't booked any services yet. Book your first
+    service!
+  </p>
   </div>
 )}
 
@@ -964,117 +1254,102 @@ const BookingSkeleton = () => {
       
     </div>
 
-    {/* Header */}
-    <div className="mb-4 d-flex justify-content-between align-items-start">
-  <div>
-    <h4 className="fw-bold mb-1">Booking Details</h4>
-    <p className="text-muted mb-0">
-      {new Date(selectedBooking.BookingDate).toLocaleDateString("en-GB")} • {
+    {/* Header - trendy gradient card */}
+    <div className="mb-4 w-100 bg-radial" style={{
+      color: '#fff',
+      borderRadius: 16,
+      padding: 16,
+      boxShadow: '0 8px 24px rgba(13,110,253,0.15)'
+    }}>
+      <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div className="row w-100">
+          <div className="col-md-6">
+            <div className="small" style={{ opacity: 0.9 }}>Booking ID</div>
+            <h4 className="fw-bold mb-1 text-white">#{selectedBooking.BookingTrackID}</h4>
+          </div>
+          <div className="col-md-6">
+            <div className="small" style={{ opacity: 0.9 }}>Date & Time</div>
+            <div className="small" style={{ opacity: 0.95 }}>
+              {new Date(selectedBooking.BookingDate).toLocaleDateString('en-GB')} • {
         selectedBooking.TimeSlot && selectedBooking.TimeSlot.includes(',') ? (
-          // Multiple time slots - display with line breaks
           <span>
             {selectedBooking.TimeSlot.split(',').map((timeSlot, index) => (
               <span key={index}>
                 {timeSlot.trim()}
-                {index < selectedBooking.TimeSlot.split(',').length - 1 && <br />}
+                        {index < selectedBooking.TimeSlot.split(',').length - 1 && <span> • </span>}
               </span>
             ))}
           </span>
         ) : (
-          // Single time slot
-          selectedBooking.TimeSlot || "N/A"
-        )
-      }
-    </p>
-    <p className="text-secondary small mb-0">
-      <i className="bi bi-geo-alt me-1" />
-      {selectedBooking.CityName}, {selectedBooking.StateName}
-    </p>
+                  selectedBooking.TimeSlot || 'N/A'
+                )
+              }
+            </div>
+          </div>
+        </div>
+        <div className="small mt-2" style={{ opacity: 0.9 }}>
+          <i className="bi bi-geo-alt me-1" />{selectedBooking.CityName}, {selectedBooking.StateName}
   </div>
 
-{selectedBooking?.Payments
-  ? (
-    selectedBooking.BookingStatus !== "Completed" &&
-    selectedBooking.BookingStatus !== "Cancelled" &&
-    selectedBooking.BookingStatus !== "Refunded" &&
-    selectedBooking.BookingStatus !== "Failed" &&
+        <div className="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+         
+          
+
+          {/* Actions inside header: Resume/Cancel based on state */}
+          {selectedBooking?.Payments ? (
+            selectedBooking.BookingStatus !== 'Completed' &&
+            selectedBooking.BookingStatus !== 'Cancelled' &&
+            selectedBooking.BookingStatus !== 'Refunded' &&
+            selectedBooking.BookingStatus !== 'Failed' &&
     !showCancelSection ? (
       <div className="d-flex gap-2">
-        {/* <button
-          className="tab-pill pill border-warning text-warning px-3 py-1"
+                {(() => {
+                  const fullTracking = Array.isArray(selectedBooking?.TechnicianTracking) ? selectedBooking.TechnicianTracking[0] : {};
+                  const hasServiceStartedFull = !!fullTracking?.ServiceStartedAt;
+                  const canReschedule = !hasServiceStartedFull && selectedBooking?.Reschedules && selectedBooking.Reschedules.length < 2;
+                  
+                  return canReschedule ? (
+                    <button
+                      className="btn btn-warning px-3 py-1"
           onClick={() => navigate(`/reschedule?bookingId=${selectedBooking.BookingID}`)}
         >
           Reschedule
-        </button> */}
+                    </button>
+                  ) : !hasServiceStartedFull && selectedBooking?.Reschedules && selectedBooking.Reschedules.length >= 2 ? (
+                    <a
+                      href="tel:7075243939"
+                      className="btn btn-warning px-3 py-1 d-flex align-items-center gap-1 text-decoration-none"
+                      title="Call customer support for rescheduling assistance"
+                    >
+                      <i className="bi bi-telephone"></i>
+                      Contact Support
+                    </a>
+                  ) : null;
+                })()}
         <button
-          className="tab-pill pill border-danger text-danger px-3 py-1"
+                  className="btn btn-warning px-3 py-1"
           onClick={() => openCancelModal()}
         >
           Cancel
         </button>
       </div>
-    ) : (
-      (() => {
-        const bookingDate = new Date(selectedBooking.BookingDate);
-        const now = new Date();
-        const diffInDays = Math.floor((now - bookingDate) / (1000 * 60 * 60 * 24));
-
-        return diffInDays <= 7 &&
-               selectedBooking.BookingStatus !== "Cancelled" &&
-               selectedBooking.Payments !== null &&
-               selectedBooking.Payments?.isRefunded === false ? (
-          <div className="d-flex gap-2">
-            {/* <button
-              className="tab-pill pill border-warning text-warning px-3 py-1"
-              onClick={() => navigate(`/reschedule?bookingId=${selectedBooking.BookingID}`)}
-            >
-              Reschedule
-            </button> */}
-            {/* <button
-              className="tab-pill pill border-success text-success px-3 py-1"
-              onClick={handleRequestRefund}
-            >
-              Request for Refund
-            </button> */}
-          </div>
-        ) : (
-          selectedBooking.BookingStatus !== "Completed" &&
-          selectedBooking.BookingStatus !== "Cancelled" &&
-          selectedBooking.BookingStatus !== "Failed" &&
-          selectedBooking.BookingStatus !== "Refunded" ? (
-            <button
-              className="tab-pill pill border-warning text-warning px-3 py-1"
-              onClick={() => navigate(`/reschedule?bookingId=${selectedBooking.BookingID}`)}
-            >
-              Reschedule
-            </button>
           ) : null
-        );
-      })()
-    )
-  ) : (
-     selectedBooking.BookingStatus !== "Failed" &&
-      selectedBooking.BookingStatus !== "Completed" &&
-      selectedBooking.BookingStatus !== "Cancelled" &&
-       selectedBooking.BookingStatus !== "Refunded" &&
-    !showResumeForm && (
-      <div className="d-flex gap-2">
-        {/* <button
-          className="tab-pill pill border-warning text-warning px-3 py-1"
-          onClick={() => navigate(`/reschedule?bookingId=${selectedBooking.BookingID}`)}
-        >
-          Reschedule
-        </button> */}
+          ) : (
+            selectedBooking.BookingStatus !== 'Failed' &&
+            selectedBooking.BookingStatus !== 'Completed' &&
+            selectedBooking.BookingStatus !== 'Cancelled' &&
+            selectedBooking.BookingStatus !== 'Refunded' &&
+            !showResumeForm ? (
         <button
-          className="tab-pill pill border-primary text-primary px-3 py-1"
+                className="btn btn-warning px-3 py-1"
           onClick={handleOpenResume}
         >
           Resume booking
         </button>
-      </div>
-    )
+            ) : null
   )}
-
+        </div>
+      </div>
 </div>
 
     {/* Resume Booking Form or Details */}
@@ -1210,121 +1485,185 @@ const BookingSkeleton = () => {
       </div>
     ) : (
     <>
+    {/* Timeline removed as requested */}
+    {(() => {
+      const fullTracking = Array.isArray(selectedBooking?.TechnicianTracking) ? selectedBooking.TechnicianTracking[0] : {};
+      var hasServiceStartedFull = !!fullTracking?.ServiceStartedAt;
+      return null;
+    })()}
+
     <div className="row g-3 mb-4">
-      {/* Customer Info */}
-      <div className="col-md-5">
-        <div className="border rounded-4 p-3 h-100">
-          <h6 className="text-uppercase text-muted mb-2">User Details</h6>
-          <div className="fw-bold fs-6">
-            {selectedBooking.IsOthers ? selectedBooking.OthersFullName : selectedBooking.CustomerName}
+      {/* Customer Info (trendy card) */}
+      <div className="col-md-7">
+        <div className="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+          <div className="d-flex align-items-center gap-2 px-3 py-2" style={{background:'#f8f9fa'}}>
+            <div className="rounded-circle d-flex align-items-center justify-content-center bg-radial" style={{width:32,height:32,color:'#fff'}}>
+              <i className="bi bi-person"></i>
           </div>
-          <div className="text-muted small">
-            {selectedBooking.IsOthers ? selectedBooking.OthersPhoneNumber : selectedBooking.PhoneNumber}
+            <h6 className="mb-0 text-muted">User Details</h6>
           </div>
-          <hr />
-          <h6 className="text-uppercase text-muted mb-2">Address</h6>
-          <div className="small">
-            {selectedBooking.FullAddress}, {selectedBooking.Pincode}
+          <div className="p-3">
+            <div className="fw-bold fs-6">{selectedBooking.IsOthers ? selectedBooking.OthersFullName : selectedBooking.CustomerName} (<span className="text-muted small">{selectedBooking.IsOthers ? selectedBooking.OthersPhoneNumber : selectedBooking.PhoneNumber}</span>)</div>
+            <div className="small"><strong>Address:</strong> {selectedBooking.FullAddress}, {selectedBooking.Pincode}</div>
           </div>
         </div>
       </div>
 
-      {/* Vehicle Info */}
-      <div className="col-md-7">
-        <div className="border rounded-4 p-3 h-100 d-flex gap-3">
+      {/* Vehicle Info (trendy card) */}
+      <div className="col-md-5">
+        <div className="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+          <div className="d-flex align-items-center gap-2 px-3 py-2" style={{background:'#f8f9fa'}}>
+            <div className="rounded-circle d-flex align-items-center justify-content-center bg-radial" style={{width:32,height:32,color:'#fff'}}>
+              <i className="bi bi-car-front"></i>
+            </div>
+            <h6 className="mb-0 text-muted">Vehicle</h6>
+          </div>
+          <div className="p-3 d-flex gap-3 align-items-start">
           <img
             src={`${ImageURL}${selectedBooking.VehicleImage}`}
             alt="Vehicle"
             className="img-fluid rounded-3"
-            style={{ width: 150, height: "auto", objectFit: "cover" }}
-          />
-          <div>
-            <h6 className="text-uppercase text-muted mb-2">Vehicle Details</h6>
-            <div className="small"><strong>Number:</strong> {selectedBooking.VehicleNumber}</div>
-            <div className="small"><strong>Brand:</strong> {selectedBooking.BrandName}</div>
-            <div className="small"><strong>Model:</strong> {selectedBooking.ModelName}</div>
-            <div className="small"><strong>Fuel:</strong> {selectedBooking.FuelTypeName}</div>
+              style={{ width: 120, height: 80, objectFit: 'cover' }}
+            />
+            <div className="small">
+              <div><strong>Number:</strong> {selectedBooking.VehicleNumber}</div>
+              <div><strong>Brand:</strong> {selectedBooking.BrandName}</div>
+              <div><strong>Model:</strong> {selectedBooking.ModelName}</div>
+              <div><strong>Fuel:</strong> {selectedBooking.FuelTypeName}</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    {/* Packages */}
+    {/* Packages (accordion list) */}
     {selectedBooking.Packages?.length > 0 && (
       <div className="mb-4">
-        <h5 className="fw-semibold mb-3">Included Packages</h5>
-        <div className="row g-3">
-          {selectedBooking.Packages.map((pkg, idx) => (
-            <div key={idx} className="col-md-6">
-              <div className="border rounded-4 p-3 d-flex gap-3">
-                <div
-                  className="rounded-circle bg-light d-flex align-items-center justify-content-center"
-                  style={{ width: 56, height: 56 }}
-                >
-                  <i className="bi bi-box-seam fs-5 text-secondary"></i>
+        <div className="d-flex align-items-center justify-content-between mb-2">
+          <h5 className="fw-semibold mb-0 d-flex align-items-center"><i className="bi bi-box-seam me-2 text-primary"></i>Included Packages</h5>
+          <div className="d-flex align-items-center gap-2">
+            
+            <button 
+              className="btn btn-outline-primary px-4 py-2"
+              onClick={() => handleAddBookingToCart(selectedBooking)}
+              disabled={isProcessingBookAgain}
+            >
+              {isProcessingBookAgain ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-cart-plus me-1"></i>Book Again
+                </>
+              )}
+            </button>
                 </div>
-                <div>
-                  <div className="fw-semibold">{pkg.PackageName}</div>
-                  <ul className="text-muted small mb-0 mt-1">
-                    {pkg.Category?.SubCategories?.[0]?.Includes?.map((inc) => (
+        </div>
+        <div className="accordion" id="packagesAccordion">
+          {selectedBooking.Packages.map((pkg, idx) => {
+              const isOpen = expandedPackageIdxs.has(idx);
+              return (
+                <div className="accordion-item" key={idx}>
+                  <h2 className="accordion-header">
+                    <button
+                      className={`accordion-button ${isOpen ? '' : 'collapsed'} py-0`}
+                      type="button"
+                      onClick={() => {
+                        const next = new Set(expandedPackageIdxs);
+                        if (next.has(idx)) next.delete(idx); else next.add(idx);
+                        setExpandedPackageIdxs(next);
+                      }}
+                    >
+                      <i className="bi bi-box-seam me-2"></i> {pkg.PackageName}
+                    </button>
+                  </h2>
+                  <div className={`accordion-collapse collapse ${isOpen ? 'show' : ''}`}>
+                    <div className="accordion-body">
+                      {pkg.Category?.SubCategories?.[0]?.Includes?.length ? (
+                        <ul className="text-muted small mb-0">
+                          {pkg.Category.SubCategories[0].Includes.map((inc) => (
                       <li key={inc.IncludeID}>{inc.IncludeName}</li>
                     ))}
                   </ul>
+                      ) : (
+                        <div className="text-muted small">No includes available.</div>
+                      )}
                 </div>
               </div>
             </div>
-          ))}
+              );
+            })}
         </div>
       </div>
     )}
 
-    {/* Booking Meta Info */}
+    {/* Booking Meta Info (trendy cards) */}
     <div className="row g-3 mb-4">
       {/* Payment */}
       <div className="col-md-4">
-        <div className="card p-3 border-0 shadow-sm rounded-4">
-  <h6 className="text-uppercase text-muted mb-2">Payment</h6>
-  <span
-    className={`fw-bold ${
-      selectedBooking?.Payments?.[0]?.PaymentStatus === "Success" 
-        ? "text-success" 
-        : "text-danger"
-    }`}
-  >
-    {selectedBooking?.Payments?.[0]?.PaymentStatus || "Pending"}
+        <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+          <div className="d-flex align-items-center gap-2 px-3 py-2" style={{background:'#f8f9fa'}}>
+            <div className="rounded-circle d-flex align-items-center justify-content-center bg-radial" style={{width:32,height:32,color:'#fff'}}>
+              <i className="bi bi-wallet2"></i>
+            </div>
+            <h6 className="mb-0 text-muted">Payment</h6>
+          </div>
+          <div className="p-3">
+            <span className={`fw-bold ${selectedBooking?.Payments?.[0]?.PaymentStatus === 'Success' ? 'text-success' : 'text-danger'}`}>
+              {selectedBooking?.Payments?.[0]?.PaymentStatus || 'Pending'}
   </span>
+            <div className="small text-muted mt-1">Payment Method: {selectedBooking?.PaymentMethod || 'N/A'}</div>
+          </div>
 </div>
       </div>
 
       {/* Technician */}
       <div className="col-md-4">
-        <div className="card p-3 border-0 shadow-sm rounded-4">
-          <h6 className="text-uppercase text-muted mb-2">Technician</h6>
+        <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+          <div className="d-flex align-items-center gap-2 px-3 py-2" style={{background:'#f8f9fa'}}>
+            <div className="rounded-circle d-flex align-items-center justify-content-center bg-radial" style={{width:32,height:32,color:'#fff'}}>
+              <i className="bi bi-person-badge"></i>
+            </div>
+            <h6 className="mb-0 text-muted">Technician</h6>
+          </div>
+          <div className="p-3">
           {selectedBooking.TechID ? (
             <>
-              <div className="fw-bold">
-                {selectedBooking.TechFullName} ({selectedBooking.TechPhoneNumber})
+                <div className="fw-bold">{selectedBooking.TechFullName}</div>
+                <div className="text-muted small">{selectedBooking.TechPhoneNumber}</div>
+                {selectedBooking.AssignedTimeSlot && (
+                  <div className="text-muted small mt-1">
+                    <strong>Time Slot:</strong> {selectedBooking.AssignedTimeSlot}
               </div>
+                )}
               <div className="text-success small mt-1">Assigned</div>
             </>
           ) : (
             <div className="text-muted fst-italic">Not assigned</div>
           )}
+          </div>
         </div>
       </div>
 
       {/* Booking Status */}
-      {selectedBooking.BookingStatus !== "Pending" && (
         <div className="col-md-4">
-          <div className="card p-3 border-0 shadow-sm rounded-4">
-            <h6 className="text-uppercase text-muted mb-2">Booking Status</h6>
+        <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+          <div className="d-flex align-items-center gap-2 px-3 py-2" style={{background:'#f8f9fa'}}>
+            <div className="rounded-circle d-flex align-items-center justify-content-center bg-radial" style={{width:32,height:32,color:'#fff'}}>
+              <i className="bi bi-flag"></i>
+            </div>
+            <h6 className="mb-0 text-muted">Booking Status</h6>
+          </div>
+          <div className="p-3">
             <div className="fw-semibold">{selectedBooking.BookingStatus}</div>
           </div>
         </div>
-      )}
+      </div>
     </div>
 
-    {/* Amount Summary */}
+    {/* Amount Summary + COS Pay Now */}
     <div className="border-top pt-4">
       <div className="d-flex justify-content-end mb-2">
         <div className="me-4 fw-semibold">Amount</div>
@@ -1333,10 +1672,12 @@ const BookingSkeleton = () => {
         </div>
       </div>
       <div className="d-flex justify-content-end mb-2">
-        <div className="me-4 fw-semibold">GST (18%)</div>
-        <div className="fw-bold text-primary">
-          ₹{selectedBooking.GSTAmount.toFixed(2)}
+        <div className="me-4 fw-semibold">SGST (9%)</div>
+        <div className="fw-bold text-primary">₹{(Number(selectedBooking.GSTAmount || 0) / 2).toFixed(2)}</div>
         </div>
+      <div className="d-flex justify-content-end mb-2">
+        <div className="me-4 fw-semibold">CGST (9%)</div>
+        <div className="fw-bold text-primary">₹{(Number(selectedBooking.GSTAmount || 0) / 2).toFixed(2)}</div>
       </div>
       {selectedBooking.CouponAmount > 0 && (
         <div className="d-flex justify-content-end mb-2">
@@ -1346,13 +1687,100 @@ const BookingSkeleton = () => {
           </div>
         </div>
       )}
-      <hr />
-      <div className="d-flex justify-content-end">
-        <div className="me-4 fw-bold fs-5">Total</div>
-        <div className="fw-bold text-success fs-5">
-          ₹{(selectedBooking.TotalPrice + selectedBooking.GSTAmount - selectedBooking.CouponAmount).toFixed(2)}
+      {appliedCoupon && (
+        <div className="d-flex justify-content-end mb-2">
+          <div className="me-4 fw-semibold">Coupon</div>
+          <div className="fw-bold text-danger">
+            -₹{(getBookingOriginalTotal(selectedBooking) - getBookingFinalTotalWithCoupon(selectedBooking)).toFixed(2)}
+          </div>
         </div>
+      )}
+      <hr />
+      <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
+
+        <div className="ms-auto d-flex align-items-center gap-3">
+          <div className="me-1 fw-bold fs-5">Total</div>
+        <div className="fw-bold text-success fs-5">
+            {(() => {
+
+            
+              if (appliedCoupon) {
+                const base = getBookingOriginalTotal(selectedBooking);
+                const final = couponApplied ? getBookingFinalTotalWithCoupon(selectedBooking) : base;
+                return `₹${final.toFixed(2)}`;
+              }
+              const backendFinal = (selectedBooking.TotalPrice + selectedBooking.GSTAmount - selectedBooking.CouponAmount);
+              return `₹${Number(backendFinal).toFixed(2)}`;
+            })()}
+        </div>
+          
       </div>
+
+      
+      </div>
+      <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mt-3">  
+
+      <div className="col-6">
+          {(() => {
+            const fullTracking = Array.isArray(selectedBooking?.TechnicianTracking) ? selectedBooking.TechnicianTracking[0] : {};
+            const hasServiceStartedFull = !!fullTracking?.ServiceStartedAt;
+            return (selectedBooking?.PaymentMethod === 'COS' && selectedBooking?.BookingStatus !== 'Completed' && selectedBooking?.BookingStatus !== 'Cancelled' && selectedBooking?.BookingStatus !== 'Failed');
+          })() && (
+            <div className="card p-3 border-0 shadow-sm rounded-4" style={{ maxWidth: 420 }}>
+              <h6 className="mb-2">Have a coupon?</h6>
+              {!couponApplied ? (
+                <>
+                  <button className="btn btn-outline-primary px-4 py-2" onClick={() => setShowCouponPicker(true)}>View Coupons</button>
+                  {showCouponPicker && (
+                    <div className="mt-3" style={{ maxHeight: 200, overflowY: 'auto' }}>
+                      {couponList.map((c) => (
+                        <div key={c.id} className="d-flex justify-content-between align-items-start border rounded p-2 mb-2">
+                          <div>
+                            <div className="fw-semibold">{c.Code}</div>
+                            <div className="small text-muted">{c.Description}</div>
+                            {c.MinBookingAmount ? (
+                              <div className="small text-muted">Min ₹{c.MinBookingAmount}</div>
+                            ) : null}
+                          </div>
+                          <button className="btn btn-primary px-2 py-1" onClick={() => handleApplyCouponFullView(c)}>Apply</button>
+                        </div>
+                      ))}
+                      {couponList.length === 0 && (
+                        <div className="text-muted small">No coupons available.</div>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="d-flex justify-content-between align-items-center w-100">
+                  <div>
+                    <div className="fw-semibold">Applied: {appliedCoupon?.Code}</div>
+                    <div className="small text-muted">{appliedCoupon?.Description}</div>
+                    <div className="small text-success mt-1">
+                      Discount: ₹{(getBookingOriginalTotal(selectedBooking) - getBookingFinalTotalWithCoupon(selectedBooking)).toFixed(2)}
+                    </div>
+                  </div>
+                  <button className="btn  btn-outline-danger px-2 py-1" onClick={handleRemoveCouponFullView}><i className="bi bi-x"></i></button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+      {(() => {
+            const fullTracking = Array.isArray(selectedBooking?.TechnicianTracking) ? selectedBooking.TechnicianTracking[0] : {};
+            const hasServiceStartedFull = !!fullTracking?.ServiceStartedAt;
+            return (selectedBooking?.PaymentMethod === 'COS' 
+              &&  (selectedBooking?.BookingStatus === 'Pending'  
+                || selectedBooking?.BookingStatus === 'Confirmed' 
+                || selectedBooking?.BookingStatus === 'JourneyStarted')
+
+              && selectedBooking?.Payments?.PaymentStatus !== 'success'
+            );
+          })() && (
+            <button className="btn btn-primary btn-lg px-4 py-2" onClick={handlePayNow}>Pay Now</button>
+          )}
+        </div>
     </div>
 
     {/* Cancel Section Overlay */}
@@ -1465,13 +1893,105 @@ const BookingSkeleton = () => {
         )}
       </div>
     )}
+
+
+
+ 
     </>
     )}
 
   </div>
 )}
 
+{showPaymentModal && (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        backgroundColor: "rgba(0,0,0,0.6)",
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          position: "relative",
+          backgroundColor: "#fff",
+          borderRadius: "12px",
+          padding: "20px",
+          width: "90%",
+          maxWidth: "350px",
+          textAlign: "center",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
+        }}
+      >
+        {paymentStatus === "processing" ? (
+          <>
+            <div
+              style={{
+                width: 50,
+                height: 50,
+                margin: "0 auto 20px",
+                border: "4px solid #1890ae",
+                borderTop: "4px solid transparent",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            />
+            <h4 style={{ marginBottom: 10 }}>Processing Payment</h4>
+            <p style={{ color: "#666", marginBottom: 20 }}>
+              Please wait... your booking is being processed.
+            </p>
+          </>
+        ) : (
+          <>
+            <img
+              src={
+                paymentStatus === "success"
+                  ? "https://cdn-icons-png.flaticon.com/512/190/190411.png" // green check
+                  : "https://cdn-icons-png.flaticon.com/512/463/463612.png" // red cross
+              }
+              alt="Status Icon"
+              style={{ width: 50, height: 50, marginBottom: 20 }}
+            />
+            <h4 style={{ marginBottom: 10 }}>
+              {paymentStatus === "success" ? "Successful" : " Failed"}
+            </h4>
+            <p style={{ color: "#666", marginBottom: 20 }}>{paymentMessage}</p>
+            <button
+              onClick={() => {
+                setShowPaymentModal(false);
+                navigate("/profile?tab=mybookings"); // Redirect to bookings
+              }}
+              style={{
+                backgroundColor: paymentStatus === "success" ? "#28a745" : "#dc3545",
+                color: "#fff",
+                padding: "8px 20px",
+                border: "none",
+                borderRadius: "6px",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              OK
+            </button>
+          </>
+        )}
 
+        {/* Spinner animation */}
+        <style>
+          {`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}
+        </style>
+      </div>
+    </div>
+  )}
 
     </div>
   );

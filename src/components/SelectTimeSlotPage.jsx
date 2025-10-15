@@ -9,6 +9,7 @@ import SuccessFailureModal from "./SuccessFailureModal";
 import BookingVehicleDetails from "./BookingVehicleDetails";
 import BookingAddressDetails from "./BookingAddressDetails";
 import CryptoJS from "crypto-js";
+import Swal from "sweetalert2";
 
 const SelectTimeSlotPage = () => {
   const navigate = useNavigate();
@@ -38,8 +39,11 @@ const SelectTimeSlotPage = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
-    email: "",
-    isBookingForOthers: false,
+  email: "",
+  gstNumber: "",
+  hasGSTNumber: false,
+  organizationName: "",
+  isBookingForOthers: false,
     othersFullName: "",
     othersPhoneNumber: "",
     pincode: "",
@@ -108,6 +112,7 @@ const SelectTimeSlotPage = () => {
 const [paymentMessage, setPaymentMessage] = useState("");
 const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
 const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
+  const [gstError, setGstError] = useState("");
 
   const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -182,13 +187,18 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
       }
 
       if (
-        !formData.CityName ||
+
         !formData.pincode ||
         !formData.StateID ||
-        !formData.addressLine1.trim()
+        !formData.addressLine2.trim()
       ) {
         showAlert("Please complete the address (state, city, pincode, and address).");
 
+        return;
+      }
+
+      if (formData.isBookingForOthers && (!formData.othersFullName.trim() || !formData.othersPhoneNumber.trim())) {
+        showAlert("Please fill other person's name and phone number.");
         return;
       }
 
@@ -239,6 +249,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
   }, []);
 
   const fetchCities = async (Pincode) => {
+
       try {
         const response = await axios.get(`${baseUrl}City`, {
           headers: {
@@ -256,11 +267,13 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
           // If no StateID, show all active cities
           filteredCities = response.data.filter((c) => c.IsActive);
         }
+        console.log(filteredCities);
 
         setCities(filteredCities);
 
         // If Pincode is provided, find matching city
         if (Pincode !== undefined && Pincode !== null && Pincode !== "") {
+
           const matchedCity = response.data.filter(
             (c) => Number(c.Pincode) === Number(Pincode) && c.IsActive
           );
@@ -273,6 +286,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
               CityID: "79",
               pincode: "",
               addressLine1: "",
+              addressLine2: "",
               CityName: "",
               area:""
             }));
@@ -353,54 +367,53 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
 
   const handleMapClick = async (lat, lng) => {
     const result = await reverseGeocode(lat, lng);
-    console.log("Reverse Geocode Result", result);
 
     const stateName = result?.state?.toLowerCase?.();
-    const cityName = result?.city?.toLowerCase?.();
-    const Pincode = result?.postalCode?.toLowerCase?.();
+    const cityNameRaw = result?.city || "";
+    const cityName = cityNameRaw?.toLowerCase?.();
+    const pincodeFromMap = result?.postalCode || "";
 
     const matchedState = states.find(
       (s) => s.StateName?.replace(/\s+/g, "").toLowerCase() === stateName
     );
 
-    
-    const matchedCity = cities.find((c) => Number(c.Pincode) === Number(Pincode) && c.IsActive);
-
-    fetchCities(Pincode);
+    // Try to resolve City object from existing cities list
+    const normalize = (s) => (s || "").replace(/\s+/g, "").toLowerCase();
+    let matchedCityObj = cities.find((c) => normalize(c.CityName) === normalize(cityNameRaw));
+    if (!matchedCityObj && pincodeFromMap) {
+      matchedCityObj = cities.find((c) => String(c.Pincode) === String(pincodeFromMap));
+    }
 
     if (!matchedState) {
-      // alert("Service is not available in your selected location.");
-      showAlert("Service is not available in your selected location.");
-
       setFormData((prev) => ({
         ...prev,
         StateID: "",
         CityID: "79",
         pincode: "",
         addressLine1: "",
+        addressLine2: "",
       }));
-
       return;
     }
 
     setFormData((prev) => ({
       ...prev,
       StateID: matchedState?.StateID || "",
-      CityID: matchedCity?.CityID || "0",
-      CityName: matchedCity?.CityName || "",
-      pincode: result?.postalCode || "",
-      addressLine1: result?.address || "",
+      CityID: matchedCityObj?.CityID ? String(matchedCityObj.CityID) : prev.CityID || "0",
+      CityName: matchedCityObj?.CityName || cityNameRaw,
+      pincode: pincodeFromMap || "",
+      addressLine2: result?.address || "",
       mapLocation: { latitude: lat, longitude: lng },
     }));
 
     if (matchedState) setSelectedState(matchedState.StateID);
-    if (matchedCity) setSelectedCity(matchedCity.CityID);
-    if (result?.postalCode) setPincode(result.postalCode);
+    if (matchedCityObj?.CityID) setSelectedCity(matchedCityObj.CityID);
+    if (pincodeFromMap) setPincode(pincodeFromMap);
     // Do not overwrite typed address; only set if empty
     if (result?.address) {
       setFormData((prev) => ({
         ...prev,
-        addressLine1: prev.addressLine1?.trim() ? prev.addressLine1 : result.address,
+        addressLine2: prev.addressLine2?.trim() ? prev.addressLine2 : result.address,
       }));
     }
   };
@@ -493,6 +506,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
           ...prev,
           [name]: value,
           addressLine1: "", // clear address
+          addressLine2: "",
           pincode: "",
         };
       });
@@ -503,6 +517,23 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
         ...prev,
         [name]: type === "checkbox" ? checked : value, // ✅ correct handling
       };
+
+      if (name === "hasGSTNumber" && !checked) {
+        updatedForm.gstNumber = "";
+        updatedForm.organizationName = "";
+        setGstError("");
+      }
+
+      if (name === "gstNumber") {
+        const upperValue = value.toUpperCase();
+        const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+        if (upperValue && !gstRegex.test(upperValue)) {
+          setGstError("Please enter a valid GST number.");
+        } else {
+          setGstError("");
+        }
+        return { ...updatedForm, [name]: upperValue };
+      }
 
       if (
         name === "pincode" ||
@@ -523,7 +554,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
 
   const updateMapFromAddress = async (form) => {
 
-    const { addressLine1, pincode, StateID , CityName } = form;
+    const { addressLine2, pincode, StateID , CityName } = form;
 
     const state = states.find((s) => s.StateID === parseInt(StateID));
     // const city = cities.find((c) => c.CityID === parseInt(CityID));
@@ -534,12 +565,12 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
       return;
     }
 
-    const fullAddress = `${addressLine1 || ""}, ${pincode || ""}, ${
+    const fullAddress = `${addressLine2 || ""}, ${pincode || ""}, ${
       city?.replace(/\s+/g, "").toLowerCase() || ""
     }, ${state?.StateName?.replace(/\s+/g, "").toLowerCase() || ""}`;
-    console.log(pincode);
+
     if (!fullAddress.trim()) return;
-    console.log(fullAddress);
+
 
     try {
       const res = await axios.get(
@@ -554,7 +585,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
 
       if (res.data.results && res.data.results[0]) {
         const { lat, lng } = res.data.results[0].geometry.location;
-        console.log("Geocoded coordinates:", res.data.results[0]);
+
         setFormData((prev) => ({
           ...prev,
           mapLocation: { latitude: lat, longitude: lng },
@@ -727,8 +758,9 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
   const handleContinue = async () => {
     const payload = {
       custID: decryptedCustId,
+      addressLine2: formData.addressLine2,
       addressLine1: formData.addressLine1,
-      addressLine2: "",
+      cityName: formData.CityName,
       stateID: Number(formData.StateID),
       cityID: Number(formData.CityID),
       pincode: formData.pincode,
@@ -779,7 +811,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     description: "Payment for Car Services",
     image: "/assets/img/MyCarBuddy-Logo1.png",
     handler: function (response) {
-      console.log("Payment success:", response);
+
 
       // Show a modal indicating processing
       setPaymentStatus("processing");
@@ -895,7 +927,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
       !formData.StateID ||
       // !formData.CityID ||
       !formData.pincode ||
-      !formData.addressLine1 ||
+      !formData.addressLine2 ||
       !selectedDate ||
       selectedTimes.length === 0 ||
       cartItems.length === 0
@@ -904,6 +936,22 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
       return;
     }
 
+    if (formData.hasGSTNumber) {
+    if (!formData.organizationName.trim() && (!formData.gstNumber || gstError)) {
+      showAlert("Please enter organization name and a valid GST number.");
+      return;
+    }
+
+    if (!formData.organizationName.trim()) {
+      showAlert("Please enter organization name.");
+      return;
+    }
+
+    if (!formData.gstNumber || gstError) {
+      showAlert("Please enter a valid GST number.");
+      return;
+    }
+  }
 
     // Vehicle save now happens in step 3 advance
 
@@ -928,7 +976,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     }
 
     // formData.vehicleId = saveCarResponse.addressID;
-    console.log("Form Data:", formData);
+
     const form = new FormData();
     form.append("custID", decryptedCustId);
     form.append("CustFullName", formData.fullName);
@@ -953,12 +1001,12 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     form.append("PaymentMethod", paymentMethod);
     form.append("BookingFrom", "web");
 
-    form.append("FullAddress", formData.floorNumber + " " + formData.addressLine1);
+    form.append("FullAddress", formData.addressLine1 + " " + formData.addressLine2);
     form.append("StateID", formData.StateID);
     form.append("CityID", formData.CityID);
     form.append("Pincode", formData.pincode);
     // form.append("FloorNumber", formData.floorNumber);
-    form.append("CityName", formData.area);
+    form.append("CityName", formData.CityName);
 
     form.append("Longitude", formData.mapLocation.longitude);
     form.append("Latitude", formData.mapLocation.latitude);
@@ -966,6 +1014,8 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     form.append("CouponCode", couponApplied ? formData.appliedCouponCode : "");
     form.append("CouponAmount", getOriginalTotal() - getDiscountedTotal());
     form.append("GSTAmount", getGST());
+    form.append("GSTNumber", formData.gstNumber || null);
+    form.append("OrganizationName", formData.organizationName || null);
     setIsLoading(true);
 
     try {
@@ -1010,7 +1060,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
       );
       const data = await response.json();
-      console.log("Reverse Geocode Response:", data);
+
       const addressComponents = data.results[0].address_components;
 
       const city =
@@ -1082,7 +1132,14 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
   const handleApplyCoupon = (coupon) => {
     const minAmount = coupon.MinBookingAmount || 0;
     if (totalAmount < minAmount) {
-      alert(`This coupon requires a minimum booking amount of ₹${minAmount}`);
+      // Replace alert with SweetAlert2
+        Swal.fire({
+          icon: 'info',
+          title: 'Minimum amount required',
+          text: `This coupon requires a minimum booking amount of ₹${minAmount}`,
+          confirmButtonColor: '#3085d6'
+        });
+
       return;
     }
 
@@ -1117,7 +1174,8 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
 
 const getGST = () => {
   const discountedTotal = getDiscountedTotal();
-  const taxAmount = Math.round(discountedTotal * 0.18);
+  // Calculate 18% GST precisely, keeping paise (2 decimals)
+  const taxAmount = Number((discountedTotal * 0.18).toFixed(2));
   return taxAmount;
 };
 
@@ -1358,22 +1416,26 @@ const getGST = () => {
                   </div>
                 </div>
 
-                <div className="form-check mt-2 mb-3">
-                  <input
-                    type="checkbox"
-                    name="isBookingForOthers"
-                    className="form-check-input"
-                    id="bookingForOthers"
-                    checked={formData.isBookingForOthers}
-                    value={formData.isBookingForOthers ? "true" : "false"}
-                    onChange={handlereInputChange}
-                  />
-                  <label
-                    className="form-check-label"
-                    htmlFor="bookingForOthers"
-                  >
-                    Booking for someone else?
-                  </label>
+                <div className="row mt-2 mb-3">
+                  <div className="col-md-6">
+                    <div className="form-check mt-2 mb-3">
+                      <input
+                        type="checkbox"
+                        name="isBookingForOthers"
+                        className="form-check-input"
+                        id="bookingForOthers"
+                        checked={formData.isBookingForOthers}
+                        value={formData.isBookingForOthers ? "true" : "false"}
+                        onChange={handlereInputChange}
+                      />
+                      <label
+                        className="form-check-label"
+                        htmlFor="bookingForOthers"
+                      >
+                        Booking for someone else?
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
                 {formData.isBookingForOthers && (
@@ -1404,15 +1466,15 @@ const getGST = () => {
 
               <BookingAddressDetails
                 formData={formData}
-                setFormData={setFormData} // ✅ now it exists
+                setFormData={setFormData}
                 handlereInputChange={handlereInputChange}
                 savedAddresses={savedAddresses}
                 selectedState={selectedState}
                 selectedCity={selectedCity}
                 states={states}
                 cities={cities}
-                setSelectedState={setSelectedState} // ✅ Add this
-                setSelectedCity={setSelectedCity} // ✅ Add this
+                setSelectedState={setSelectedState} 
+                setSelectedCity={setSelectedCity} 
                 pincode={formData.pincode}
                 setPincode={setPincode}
                 addressLine1={formData.addressLine1}
@@ -1458,6 +1520,51 @@ const getGST = () => {
                 />
               </div>
 
+              {/* GST Details */}
+              <div className="card shadow p-4 mb-4">
+                <h5 className="mb-3">GST & Organization Details</h5>
+                <div className="form-check mb-3">
+                  <input
+                    type="checkbox"
+                    name="hasGSTNumber"
+                    className="form-check-input"
+                    id="hasGST"
+                    checked={formData.hasGSTNumber}
+                    onChange={handlereInputChange}
+                  />
+                  <label className="form-check-label" htmlFor="hasGST">
+                    Do you have a GST number?
+                  </label>
+                </div>
+                {formData.hasGSTNumber && (
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label fw-semibold">Organization Name <span className="text-danger">*</span></label>
+                      <input
+                        type="text"
+                        name="organizationName"
+                        className="form-control"
+                        placeholder="Organization Name"
+                        value={formData.organizationName}
+                        onChange={handlereInputChange}
+                      />
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label fw-semibold">GST Number <span className="text-danger">*</span></label>
+                      <input
+                        type="text"
+                        name="gstNumber"
+                        className={`form-control ${gstError ? "is-invalid" : ""}`}
+                        placeholder="GST Number"
+                        value={formData.gstNumber}
+                        onChange={handlereInputChange}
+                      />
+                      <div className="invalid-feedback" style={{ color: "black" }}>{gstError}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Payment Method */}
               <div className="card shadow p-4 mb-4">
                 {/* <h3 className="mb-4">Checkout</h3> */}
@@ -1487,7 +1594,7 @@ const getGST = () => {
                     onChange={() => setPaymentMethod("COS")}
                   />
                   <label className="form-check-label" htmlFor="COS">
-                    Cash on Service
+                    Pay On Completion
                   </label>
                 </div>
 
@@ -1584,35 +1691,27 @@ const getGST = () => {
                   ))}
 
 
-                  {(() => {
-                    const originalTotal = getOriginalTotal();
-                    const discountedTotal = getDiscountedTotal();
-                    const gstAmount = getGST(originalTotal);
-                    const finalTotal = getFinalTotal();
-                    const savings = couponApplied
-                      ? originalTotal - discountedTotal
-                      : 0;
-
-                    return (
-                      <div className="d-flex justify-content-between pt-2 border-top mt-2">
-                        <strong>Total (incl. 18% GST)</strong>
-                        <div className="text-end">
-                          <strong className="text-primary">
-                            ₹{finalTotal.toFixed(2)}
-                          </strong>
-                          <div className="small text-secondary">
-                            <div>Base: ₹{getOriginalTotal().toFixed(2)}</div>
-                            <div>GST (18%): ₹{gstAmount.toFixed(2)}</div>
-                            {couponApplied && (
-                              <div className="text-muted">
-                                (Saved ₹{savings.toFixed(2)})
-                              </div>
-                            )}
+                  <div className="d-flex justify-content-end pt-2 mt-2">
+                    <div className="text-end"> 
+                      <div className="small text-secondary">
+                        <div>Service Total: ₹{getOriginalTotal().toFixed(2)}</div>
+                        <div>SGST (9%): ₹{(getGST() / 2).toFixed(2)}</div>
+                        <div>CGST (9%): ₹{(getGST() / 2).toFixed(2)}</div>
+                        {couponApplied && (
+                          <div className="text-muted">
+                            (Saved ₹{(getOriginalTotal() - getDiscountedTotal()).toFixed(2)})
                           </div>
-                        </div>
+                        )}
                       </div>
-                    );
-                  })()}
+                    </div>
+
+                  </div>
+                       <div className="d-flex justify-content-between border-top pt-2 mt-2">
+                        <strong >Grand Total</strong>
+                        <strong className="text-primary">
+                          ₹{getFinalTotal().toFixed(2)}
+                        </strong>
+                      </div>
                 </div>
               )}
             </div>

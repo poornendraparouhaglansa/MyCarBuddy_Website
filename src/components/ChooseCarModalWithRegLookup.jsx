@@ -136,99 +136,34 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 		setIsProcessingReg(true);
 
 		try {
-			// const response = await fetch('https://api.attestr.com/api/v2/public/checkx/rc', {
-			// 	method: 'POST',
-			// 	headers: {
-			// 		'Content-Type': 'application/json',
-			// 		'Authorization': 'Basic T1gwUzZJLWpyRUliT0FzU0phLjViNDU0MTE4YTkwYzJmMDhlNTcxNzFiYmUzZmE1ZTUwOmNmYzY4YjkwMDU2OTEyZjRmNTM2M2FkNGZiY2RhNzgwZmU1MmZhNmJjNWNlODIwNQ=='
-			// 	},
-			// 	body: JSON.stringify({
-			// 		reg: registrationNumber.trim()
-			// 	})
-			// });
+			// Use the actual API endpoint
+			const response = await axios.get(
+				`${BaseURL}CustomerVehicles/VehicleNumber?VehicleNumber=${encodeURIComponent(registrationNumber.trim())}`
+			);
 
-			// const data = await response.json();
-			            const data = {
-			  "valid": true,
-			  "status": "ACTIVE",
-			  "registered": "04-11-2024",
-			  "owner": "ERUMALLA PRADEEP",
-			  "masked": null,
-			  "ownerNumber": "1",
-			  "father": null,
-			  "currentAddress": "H NO:2-104,KATTALINGAMPETA,MALLIAL,VEMULAWADA,RAJANNA,CHANDURTHY,505307",
-			  "permanentAddress": "H NO:2-104,KATTALINGAMPETA,MALLIAL,VEMULAWADA,RAJANNA,CHANDURTHY,505307",
-			  "mobile": null,
-			  "category": "LMV",
-			  "categoryDescription": "Motor Car(LMV)",
-			  "chassisNumber": "MBHZCDESKRH169194",
-			  "engineNumber": "Z12EP1069172",
-			  "makerDescription": "MARUTI SUZUKI INDIA LTD",
-			  "makerModel": "MARUTI SWIFT VXI 1.2L ISS 5MT",
-			  "makerVariant": null,
-			  "bodyType": "30",
-			  "fuelType": "PETROL",
-			  "colorType": "LUSTER BLUE",
-			  "normsType": "Not Available",
-			  "fitnessUpto": "03-11-2039",
-			  "financed": true,
-			  "lender": "ICICI BANK LTD",
-			  "insuranceProvider": "LIBERTY GENERAL INSURANCE LIMITED",
-			  "insurancePolicyNumber": "201150010124850229800000",
-			  "insuranceUpto": "25-10-2027",
-			  "manufactured": "08/2024",
-			  "rto": "RTA RAJANNA, TELANGANA",
-			  "cubicCapacity": "1197.00",
-			  "grossWeight": "1355",
-			  "wheelBase": "2450",
-			  "unladenWeight": "760",
-			  "cylinders": "3",
-			  "seatingCapacity": "5",
-			  "sleepingCapacity": "0",
-			  "standingCapacity": "0",
-			  "pollutionCertificateNumber": null,
-			  "pollutionCertificateUpto": null,
-			  "permitNumber": null,
-			  "permitIssued": null,
-			  "permitFrom": null,
-			  "permitUpto": null,
-			  "permitType": null,
-			  "taxUpto": "LTT",
-			  "taxPaidUpto": "LTT",
-			  "nationalPermitNumber": null,
-			  "nationalPermitIssued": null,
-			  "nationalPermitFrom": null,
-			  "nationalPermitUpto": null,
-			  "blacklistStatus": null,
-			  "nocDetails": null,
-			  "challanDetails": null,
-			  "nationalPermitIssuedBy": null,
-			  "commercial": false,
-			  "exShowroomPrice": null,
-			  "nonUseStatus": null,
-			  "nonUseFrom": null,
-			  "nonUseTo": null,
-			  "blacklistDetails": null
-			}
-
-			if ((data.valid === 1 || data.valid === true) && (data.category?.toLocaleUpperCase().includes("LMV") || data.categoryDescription?.toLocaleUpperCase().includes("CAR"))) {
+			if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+				const vehicleData = response.data[0];
+				
 				// Extract and format the data
 				const extractedData = {
-					registrationNumber: registrationNumber.trim(),
-					brand: data.makerDescription || 'Not detected',
-					model: data.makerModel || 'Not detected',
-					fuelType: data.fuelType || 'Not detected',
-					manufactured: data.manufactured || 'Not detected',
-					owner: data.owner || 'Not detected',
-					color: data.colorType || 'Not detected',
-					chassisNumber: data.chassisNumber || 'Not detected',
-					engineNumber: data.engineNumber || 'Not detected',
-					status: data.status || 'Not detected',
-					rawData: data
+					registrationNumber: vehicleData.VehicleNumber,
+					brand: vehicleData.BrandName || 'Not detected',
+					model: vehicleData.ModelName || 'Not detected',
+					fuelType: vehicleData.FuelTypeName || 'Not detected',
+					yearOfPurchase: vehicleData.YearOfPurchase || 'Not detected',
+					engineType: vehicleData.EngineType || 'Not detected',
+					kilometersDriven: vehicleData.KilometersDriven || 'Not detected',
+					transmissionType: vehicleData.TransmissionType || 'Not detected',
+					brandID: vehicleData.BrandID,
+					modelID: vehicleData.ModelID,
+					fuelTypeID: vehicleData.FuelTypeID,
+					brandLogo: vehicleData.BrandLogo,
+					vehicleImage: vehicleData.VehicleImage,
+					rawData: vehicleData
 				};
 
 				setRegResult(extractedData);
-				await autoPopulateFromRegData(extractedData);
+				await autoPopulateFromVehicleData(extractedData);
 			} else {
 				alert("Vehicle registration number not found or invalid");
 				setRegResult(null);
@@ -242,50 +177,76 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 		}
 	};
 
-	// Auto-populate car details from registration data
-	const autoPopulateFromRegData = async (data) => {
-		if (!data.brand || data.brand === 'Not detected') return;
-
+	// Auto-populate car details from vehicle data
+	const autoPopulateFromVehicleData = async (data) => {
 		try {
-			const brandName = data.brand;
-
-			// Match Brand
-			const matchedBrand = brands.find(b =>
-				b.name.toLowerCase().includes(brandName.toLowerCase()) ||
-				brandName.toLowerCase().includes(b.name.toLowerCase())
-			);
-
-			if (matchedBrand) {
-				setBrand(matchedBrand.id);
-
-				// Fetch models for the brand and use the returned list to match
-				const loadedModels = await fetchModels(matchedBrand.id);
-
-				// Now we can match the model using the freshly loaded list
-				if (data.model && data.model !== 'Not detected') {
-					const modelName = data.model.toLowerCase();
-					const searchList = Array.isArray(loadedModels) && loadedModels.length ? loadedModels : models;
-					const matchedModel = searchList.find(m =>
-						m.name.toLowerCase().includes(modelName) ||
-						modelName.includes(m.name.toLowerCase())
-					);
-
-					if (matchedModel) {
-						setModel(matchedModel.id);
-					} else {
-						console.warn("No exact model match found for:", data.makerModel);
+			// Set brand directly using BrandID if available
+			if (data.brandID) {
+				setBrand(data.brandID);
+				
+				// Fetch models for the brand
+				const loadedModels = await fetchModels(data.brandID);
+				
+				// Set model directly using ModelID if available
+				if (data.modelID) {
+					setModel(data.modelID);
+					
+					// Update the models state to include the vehicle image from API
+					if (data.vehicleImage) {
+						const updatedModels = loadedModels.map(model => {
+							if (model.id === data.modelID) {
+								return {
+									...model,
+									logo: `${imageBaseURL}${data.vehicleImage.startsWith("/") ? data.vehicleImage.slice(1) : data.vehicleImage}`
+								};
+							}
+							return model;
+						});
+						setModels(updatedModels);
 					}
 				}
+			}
 
-				// Match Fuel Type
-				if (data.fuelType && data.fuelType !== 'Not detected') {
-					const matchedFuel = fuels.find(f =>
-						f.name.toLowerCase().includes(data.fuelType.toLowerCase()) ||
-						data.fuelType.toLowerCase().includes(f.name.toLowerCase())
-					);
-					if (matchedFuel) {
-						setFuel(matchedFuel.id);
+			// Set fuel type directly using FuelTypeID if available
+			if (data.fuelTypeID) {
+				setFuel(data.fuelTypeID);
+			}
+
+			// Fallback to name matching if IDs are not available
+			if (!data.brandID && data.brand && data.brand !== 'Not detected') {
+				const brandName = data.brand;
+				const matchedBrand = brands.find(b =>
+					b.name.toLowerCase().includes(brandName.toLowerCase()) ||
+					brandName.toLowerCase().includes(b.name.toLowerCase())
+				);
+
+				if (matchedBrand) {
+					setBrand(matchedBrand.id);
+					const loadedModels = await fetchModels(matchedBrand.id);
+
+					if (data.model && data.model !== 'Not detected') {
+						const modelName = data.model.toLowerCase();
+						const searchList = Array.isArray(loadedModels) && loadedModels.length ? loadedModels : models;
+						const matchedModel = searchList.find(m =>
+							m.name.toLowerCase().includes(modelName) ||
+							modelName.includes(m.name.toLowerCase())
+						);
+
+						if (matchedModel) {
+							setModel(matchedModel.id);
+						}
 					}
+				}
+			}
+
+			// Fallback fuel type matching
+			if (!data.fuelTypeID && data.fuelType && data.fuelType !== 'Not detected') {
+				const matchedFuel = fuels.find(f =>
+					f.name.toLowerCase().includes(data.fuelType.toLowerCase()) ||
+					data.fuelType.toLowerCase().includes(f.name.toLowerCase())
+				);
+				if (matchedFuel) {
+					setFuel(matchedFuel.id);
 				}
 			}
 		} catch (error) {
@@ -543,28 +504,57 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 								</div>
 
 								{regResult && (
-								<div className="bg-light rounded border" style={{  }}>
-									<div className="p-3 sticky-top bg-light border-bottom"><h6 className="text-success mb-0">Vehicle Information</h6></div>
+								<div className="bg-light rounded border">
+									<div className="p-3 sticky-top bg-light border-bottom">
+										<h6 className="text-success mb-0">Vehicle Information</h6>
+									</div>
 									<div className="p-3">
 										<div className="row g-2">
-											<div className="col-4">
+											<div className="col-6 col-md-3">
 												<small className="text-muted d-block">Reg. No:</small>
 												<div className="fw-bold">{regResult.registrationNumber}</div>
 											</div>
-											<div className="col-4">
-												<small className="text-muted d-block">Owner:</small>
-												<div className="fw-bold">{regResult.owner}</div>
+											<div className="col-6 col-md-3">
+												<small className="text-muted d-block">Brand:</small>
+												<div className="fw-bold">{regResult.brand}</div>
 											</div>
-											<div className="col-4">
-												<small className="text-muted d-block">Manufactured:</small>
-												<div className="fw-bold">{regResult.manufactured}</div>
+											<div className="col-6 col-md-3">
+												<small className="text-muted d-block">Model:</small>
+												<div className="fw-bold">{regResult.model}</div>
+											</div>
+											<div className="col-6 col-md-3">
+												<small className="text-muted d-block">Fuel Type:</small>
+												<div className="fw-bold">{regResult.fuelType}</div>
 											</div>
 										</div>
+										
+										{(regResult.yearOfPurchase || regResult.engineType || regResult.transmissionType) && (
+											<div className="row g-2 mt-2">
+												{regResult.yearOfPurchase && regResult.yearOfPurchase !== 'Not detected' && (
+													<div className="col-6 col-md-4">
+														<small className="text-muted d-block">Year:</small>
+														<div className="fw-bold">{regResult.yearOfPurchase}</div>
+													</div>
+												)}
+												{regResult.engineType && regResult.engineType !== 'Not detected' && (
+													<div className="col-6 col-md-4">
+														<small className="text-muted d-block">Engine:</small>
+														<div className="fw-bold">{regResult.engineType}</div>
+													</div>
+												)}
+												{regResult.transmissionType && regResult.transmissionType !== 'Not detected' && (
+													<div className="col-6 col-md-4">
+														<small className="text-muted d-block">Transmission:</small>
+														<div className="fw-bold">{regResult.transmissionType}</div>
+													</div>
+												)}
+											</div>
+										)}
 
 										<div className="mt-3 text-center">
 											<button
 												type="button"
-												className="btn btn-outline-secondary px-3 py-2 "
+												className="btn btn-outline-secondary px-3 py-2"
 												onClick={resetRegScanner}
 											>
 												<i className="fas fa-redo me-2"></i>

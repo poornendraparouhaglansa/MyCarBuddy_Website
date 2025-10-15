@@ -3,6 +3,9 @@
 :root {
   // --theme-color: #e8092e;
   --theme-color: #116d6e;
+  --theme-color2: linear-gradient(135deg, rgb(40 224 212) 0%, rgb(19 110 111) 100%);
+  --theme-color3: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  --theme-color4: linear-gradient(135deg, #dc3545 0%, #a93b2a 100%);
 
   --title-color: #171717;
   --body-color: #171717;
@@ -34,6 +37,7 @@
 
 // Color Variation
 $theme-color: var(--theme-color);
+$theme-color2: var(--theme-color2);
 $title-color: var(--title-color);
 $body-color: var(--body-color);
 $smoke-color: var(--smoke-color);
@@ -498,6 +502,43 @@ button.tab.tab-pill.active.btn-lg.px-4.py-2.btn-confirm:disabled {
 .choose-car-modal .modal-content{
   max-width: 35% !important;
 }
+.search-results-container .checklist li{
+  display: block;
+}
+.btn.btn-warning {
+  background: #e77c0f ;
+}
+.text-primary{
+  color: var(--theme-color) !important;
+}
+.bg-radial , button.swal2-confirm.swal2-styled{
+  background: var(--theme-color2) !important;
+}
+.bg-gray-radial{
+  background: var(--theme-color3) !important;
+}
+.bg-red-radial{
+  background: var(--theme-color4) !important;
+}
+
+div:where(.swal2-container) div:where(.swal2-html-container){
+  font-size: 1em;
+}
+div:where(.swal2-container) h2:where(.swal2-title){
+  padding: 10px;
+}
+button.swal2-confirm.swal2-styled, .swal2-cancel.swal2-styled{
+  padding: 0px 10px;
+}
+div:where(.swal2-icon){
+   width: 3em;
+    height: 3em;
+    border: .15em solid rgba(0, 0, 0, 0);
+}
+div:where(.swal2-icon) .swal2-icon-content {
+  font-size: 1.95em;
+}
+
 // #ea9300
 @media screen and (max-width: 768px) {
   .timeline-container  {

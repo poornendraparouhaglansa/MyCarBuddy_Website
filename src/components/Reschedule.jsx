@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAlert } from "../context/AlertContext";
+import Swal from "sweetalert2";
 
 const Reschedule = () => {
   const [bookingId, setBookingId] = useState(null);
@@ -193,9 +194,19 @@ const Reschedule = () => {
     }
 
     const timeSlotsText = selectedResumeTimes.join(", ");
-    const confirmed = window.confirm(`Are you sure you want to reschedule to ${newDate} at ${timeSlotsText}?`);
+    
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: `Do you want to reschedule your booking to ${newDate} at ${timeSlotsText}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#20c997',
+      cancelButtonColor: '#dc3545',
+      confirmButtonText: 'Yes, reschedule!',
+      cancelButtonText: 'Cancel'
+    });
 
-    if (!confirmed) return;
+    if (!result.isConfirmed) return;
 
     try {
       await axios.post(`${API_BASE}Reschedules`, {
@@ -323,12 +334,21 @@ const Reschedule = () => {
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                 ></textarea>
-                <button
-                  className="btn btn-primary px-4 py-2 mt-3"
-                  onClick={handleReschedule}
-                >
-                  Submit
-                </button>
+                <div className="d-flex gap-2 mt-3">
+                  <button
+                    className="btn btn-primary px-4 py-2"
+                    onClick={handleReschedule}
+                  >
+                    Submit
+                  </button>
+                  <a 
+                    href="tel:7075243939" 
+                    className="btn btn-outline-success px-4 py-2 d-flex align-items-center gap-2"
+                  >
+                    <i className="bi bi-telephone"></i>
+                    Contact Support
+                  </a>
+                </div>
               </div>
             </div>
           </div>

@@ -75,38 +75,41 @@ const InvoicesTab = () => {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-        <p className="mt-2">Loading invoices...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="alert alert-danger" role="alert">
-        <i className="fas fa-exclamation-triangle me-2"></i>
-        {error}
-      </div>
-    );
-  }
-
   return (
     <div>
-      <h4 className="mb-4 text-primary">
-        <i className="fas fa-file-invoice-dollar me-2"></i>
+      <h4 className="mb-4 fw-bold">
+        {/* <i className="fas fa-file-invoice-dollar me-2"></i> */}
         My Invoices
       </h4>
 
-      {invoices.length === 0 ? (
+      {loading ? (
         <div className="text-center py-5">
-          <i className="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
-          <h5 className="text-muted">No Invoices Found</h5>
-          <p className="text-muted">You don't have any invoices yet.</p>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2">Loading invoices...</p>
+        </div>
+      ) : invoices.length === 0 ? (
+        <div className="text-center py-5">
+          <img
+            src="/assets/img/noinvoice.png"
+            alt="No Invoices"
+            style={{ maxWidth: "500px", marginBottom: "20px" }}
+          />
+          <h4>No invoices yet</h4>
+          <p>
+            Looks like you haven't received any invoices yet. Check back after your next service!
+          </p>
+        </div>
+              ) : error ? (
+        <div className="text-center py-5">
+          <img
+            src="/assets/img/noinvoice.png"
+            alt="No Invoices"
+            style={{ maxWidth: "500px", marginBottom: "20px" }}
+          />
+          <h4>Failed to load invoices</h4>
+          <p>Please try again.</p>
         </div>
       ) : (
         <div className="table-responsive">

@@ -101,6 +101,19 @@ const AddressTab = ({ custID = 0 }) => {
 
       {!selectedAddress ? (
         <div className="row">
+          {addresses.length === 0 && (
+            <div className="text-center py-5">
+              <img
+                src="/assets/img/no-address.png"
+                alt="No Addresses"
+                style={{ maxWidth: "500px", marginBottom: "20px" }}
+              />
+              <h4>No addresses yet</h4>
+              <p>
+                Looks like you haven't added any addresses yet. Add your first address!
+              </p>
+            </div>
+          )}
           {addresses.map((addr) => (
             <div key={addr.id} className="col-md-6 mb-4">
               <div

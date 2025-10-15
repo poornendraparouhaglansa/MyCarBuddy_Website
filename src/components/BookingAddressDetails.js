@@ -9,6 +9,7 @@ import {
 } from "@react-google-maps/api";
 import Select from "react-select";
 import { useAlert } from "../context/AlertContext";
+import Swal from "sweetalert2";
 
 const libraries = ["places"];
 const containerStyle = {
@@ -40,6 +41,9 @@ const BookingAddressDetails = ({
   const cityInputRef = useRef(null);
   const [locating, setLocating] = useState(false);
   const isSavedChosen = !!formData.selectedSavedAddressID;
+  // When we auto-select a saved address on load, skip the next live reverse geocode
+  const blockLiveGeocodeRef = useRef(false);
+  const [addressesLoaded, setAddressesLoaded] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
@@ -53,10 +57,12 @@ const BookingAddressDetails = ({
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
-console.log(cityOptions,'cityOptions');
+
 
   // Function to reverse geocode and update form fields
   const reverseGeocode = async (lat, lng) => {
+    // If user has a saved address chosen, do not override with live location
+    if (isSavedChosen) return;
 
     try {
       const response = await fetch(
@@ -86,6 +92,7 @@ console.log(cityOptions,'cityOptions');
 
         // Validate pincode against available service cities
         const detectedPincode = postalCodeComp ? postalCodeComp.long_name : "";
+ 
         if (detectedPincode) {
           const matchedCity = cities.find(
             (c) => Number(c.Pincode) === Number(detectedPincode) && c.IsActive
@@ -97,10 +104,10 @@ console.log(cityOptions,'cityOptions');
               ...prev,
               StateID: "",
               CityID: "79",
-              CityName: "",
               pincode: "",
               addressLine1: "",
-              area: "",
+              addressLine2: "",
+              CityName: "",
             }));
             return;
           } else {
@@ -109,7 +116,6 @@ console.log(cityOptions,'cityOptions');
               ...prev,
               StateID: prev.StateID || matchedCity.StateID,
               CityID: matchedCity.CityID,
-              CityName: matchedCity.CityName,
             }));
           }
         }
@@ -119,8 +125,7 @@ console.log(cityOptions,'cityOptions');
           CityName: prev.CityName?.trim() ? prev.CityName : (cityComp ? cityComp.long_name : prev.CityName),
           StateID: prev.StateID,
           pincode: prev.pincode?.trim() ? prev.pincode : (postalCodeComp ? postalCodeComp.long_name : prev.pincode),
-          addressLine1: prev.addressLine1?.trim() ? prev.addressLine1 : (address ? address : prev.addressLine1),
-          area: prev.area?.trim() ? prev.area : (areaComp ? areaComp.long_name : prev.area),
+          addressLine2: prev.addressLine2?.trim() ? prev.addressLine2 : (address ? address : prev.addressLine2),
         }));
 
         // Optionally, you can update StateID by matching with states list
@@ -148,7 +153,12 @@ console.log(cityOptions,'cityOptions');
 
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+      Swal.fire({
+        icon: "warning",
+        title: "Geolocation not supported",
+        text: "Your browser does not support geolocation.",
+        confirmButtonColor: "#3085d6",
+      });
       return;
     }
     setLocating(true);
@@ -171,7 +181,12 @@ console.log(cityOptions,'cityOptions');
       (error) => {
         console.error("Error using current location:", error);
         setLocating(false);
-        alert("Unable to fetch your location. Please allow location access and try again.");
+        Swal.fire({
+          icon: "error",
+          title: "Location access error",
+          text: "Unable to fetch your location. Please allow location access and try again.",
+          confirmButtonColor: "#d33",
+        });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -179,15 +194,22 @@ console.log(cityOptions,'cityOptions');
 
   // Reverse geocode when map location changes
   useEffect(() => {
+    // Only attempt live geocode after addresses are fetched
+    if (!addressesLoaded) return;
+    // If a saved address is chosen or we intentionally set map from saved, skip live geocode
+    if (isSavedChosen) return;
+    if (blockLiveGeocodeRef.current) {
+      blockLiveGeocodeRef.current = false;
+      return;
+    }
     if (formData.mapLocation.latitude && formData.mapLocation.longitude) {
       reverseGeocode(formData.mapLocation.latitude, formData.mapLocation.longitude);
     }
-  }, [formData.mapLocation.latitude, formData.mapLocation.longitude]);
+  }, [formData.mapLocation.latitude, formData.mapLocation.longitude, isSavedChosen, addressesLoaded]);
 
   // Fetch saved addresses
   useEffect(() => {
-    console.log(formData.mapLocation.latitude,'sdfsd');
-    console.log(formData.mapLocation.longitude,'sdfsd');
+
     const fetchAddresses = async () => {
       try {
         const response = await axios.get(
@@ -201,12 +223,12 @@ console.log(cityOptions,'cityOptions');
           const formatted = response.data.map((addr) => ({
               id: addr.AddressID,
               address1: addr.AddressLine1,
-              address2: `${addr.AddressLine2 || ""}, ${addr.Pincode}`,
+              address2: `${addr.AddressLine2 || ""}`,
               pincode: addr.Pincode,
               stateId: addr.StateID,
               stateName: addr.StateName,
               cityId: addr.CityID,
-              cityName: addr.CityName,
+              CityName: addr.CityName,
               lat: addr.Latitude,
               lng: addr.Longitude,
               floorNumber: addr.FloorNumber || "",
@@ -225,19 +247,18 @@ console.log(cityOptions,'cityOptions');
               CityID: newest.cityId,
               pincode: newest.pincode,
               addressLine1: newest.address1,
-              floorNumber: newest.floorNumber || "",
-              area: newest.area || "",
-              cityName: newest.cityName || "",
+              addressLine2: newest.address2,
+              CityName: newest.CityName || "",
               selectedSavedAddressID: String(newest.id),
               mapLocation: {
                 latitude: newest.lat,
                 longitude: newest.lng,
               },
             }));
-            if (newest.lat && newest.lng) {
-              handleMapClick(newest.lat, newest.lng);
-            }
+            // prevent the upcoming mapLocation effect from triggering live reverse geocode
+            blockLiveGeocodeRef.current = true;
           }
+          setAddressesLoaded(true);
         }
 
 
@@ -294,15 +315,40 @@ console.log(cityOptions,'cityOptions');
 
   const onPlacesChanged = () => {
     const places = searchBox.getPlaces();
-    if (places && places.length > 0) {
-      const { lat, lng } = places[0].geometry.location;
-      handleMapClick(lat(), lng());
-    }
+    if (!places || places.length === 0) return;
+    const place = places[0];
+    const loc = place.geometry?.location;
+    if (!loc) return;
+
+    // Extract city and pincode from place's address components
+    let cityName = "";
+    let pincode = "";
+    let stateIdKeep = formData.StateID;
+    const comps = place.address_components || [];
+    comps.forEach((c) => {
+      if (c.types?.includes("locality")) cityName = c.long_name;
+      if (c.types?.includes("postal_code")) pincode = c.long_name;
+    });
+
+    // Update form and map
+    setFormData((prev) => ({
+      ...prev,
+      CityName: cityName || prev.CityName,
+      pincode: pincode || prev.pincode,
+      mapLocation: {
+        latitude: loc.lat(),
+        longitude: loc.lng(),
+      },
+    }));
+
+    // Prevent immediate live reverse geocode after we already set via search
+    blockLiveGeocodeRef.current = true;
+    handleMapClick(loc.lat(), loc.lng());
   };
 
   // On blur of addressLine1, geocode and update map center
   const handleAddressBlur = async () => {
-    const addressText = (formData.addressLine1 || "").trim();
+    const addressText = (formData.addressLine2 || "").trim();
     if (!addressText) return;
     try {
       const res = await fetch(
@@ -332,8 +378,8 @@ console.log(cityOptions,'cityOptions');
         CityID: "",
         pincode: "",
         addressLine1: "",
-        floorNumber: "",
-        area: "",
+        addressLine2: "",
+        cityName: "",
         selectedSavedAddressID: "",
         mapLocation: {
           latitude: "",
@@ -351,8 +397,7 @@ console.log(cityOptions,'cityOptions');
         CityID: addr.cityId,
         pincode: addr.pincode,
         addressLine1: addr.address1,
-        floorNumber: addr.floorNumber || "",
-        area: addr.area || "",
+        addressLine2: addr.address2,
         cityName: addr.cityName || "",
         selectedSavedAddressID: selectedId,
         mapLocation: {
@@ -454,7 +499,7 @@ console.log(cityOptions,'cityOptions');
       <option value="">Select Saved Address</option>
       <option value="">New Address</option>
       {savedAddresses.map((addr) => {
-        const fullAddress = `${addr.address1}, ${addr.cityName}, ${addr.stateName}`;
+        const fullAddress = `${addr.address2}`;
         const truncated = fullAddress.length > 30 ? fullAddress.slice(0, 30) + "..." : fullAddress;
         return (
           <option key={addr.id} value={addr.id} title={fullAddress}>
@@ -471,14 +516,14 @@ console.log(cityOptions,'cityOptions');
 
       {/* Form Fields */}
       <div className="row">
-        <div className="col-md-6 mb-3">
+        <div className="col-md-4 mb-3">
           <label className="form-label fw-semibold">State <span className="text-danger">*</span></label>
           <select
             className="form-select"
             name="StateID"
             value={formData.StateID}
             onChange={handlereInputChange}
-            disabled={isSavedChosen}
+            readOnly={isSavedChosen}
           >
             <option value="">Select State</option>
             {states.map((state) => (
@@ -489,7 +534,7 @@ console.log(cityOptions,'cityOptions');
           </select>
         </div>
 
-        <div className="col-md-6 mb-3">
+        <div className="col-md-4 mb-3">
           <label className="form-label fw-semibold">Pincode <span className="text-danger">*</span></label>
           <input
             type="text"
@@ -504,139 +549,33 @@ console.log(cityOptions,'cityOptions');
                 handlereInputChange({ target: { name: "pincode", value } });
               }
             }}
-            disabled={isSavedChosen}
+            readOnly={isSavedChosen}
           />
         </div>
 
-        <div className="col-md-6 mb-3">
+        <div className="col-md-4 mb-3 ">
           <label className="form-label fw-semibold">City <span className="text-danger">*</span></label>
           <input
             type="text"
-            name="area"
+            name="CityName"
             className="form-control"
             placeholder="e.g., Banjara Hills, Jubilee Hills, HITEC City"
-            value={formData.area}
+            value={formData.CityName}
             onChange={handlereInputChange}
-            disabled={isSavedChosen}
+            readOnly={isSavedChosen}
           />
+          <input type="hidden" name="CityID" value={formData.CityID} />
         </div>
-        <div className="col-md-6 mb-3 d-none">
-          <label className="form-label fw-semibold">City <span className="text-danger">*</span></label>
-          <input 
-          type="text"
-          name="CityName"
-          className="form-control"
-          value={formData.CityName}
-          onChange={handlereInputChange}
-          placeholder="City"
-          readOnly={!formData.StateID}
-          />
-              {showCitySuggestions && (
-                <div className="dropdown-menu dropdown-menu-end" style={{ zIndex: 1051 }}>
-                  {filteredCities.map((city) => (
-                    <div
-                      key={city.CityID}
-                      onClick={() => handleCitySelect(city)}
-                      className="dropdown-item"
-                    >
-                      {city.CityName}
-                    </div>
-                  ))}
-                  {filteredCities.length === 0 && (
-                    <div className="dropdown-item text-muted">No cities found</div>
-                  )}
-                  </div>
-              )}
-              <input type="text" name="CityID" value={formData.CityID} />
-          {/* </div> */}
-t
-          {/* <Select
-            name="CityID"
-            value={formData.CityID ? cityOptions.find(option => option.value.toString() === formData.CityID.toString()) : null}
-            onChange={(selectedOption) => {
-              const selectedCity = cities.find(c => c.CityID.toString() === selectedOption?.value?.toString());
-              handlereInputChange({
-                target: {
-                  name: "CityID",
-                  value: selectedOption?.value || ""
-                }
-              });
-              // Also update CityName
-              if (selectedCity) {
-                setFormData(prev => ({
-                  ...prev,
-                  CityName: selectedCity.CityName
-                }));
-              }
-            }}
-            options={cityOptions}
-            isDisabled={!formData.StateID}
-            placeholder="Select City"
-            isSearchable={true}
-            className="react-select-container"
-            classNamePrefix="react-select"
-            styles={{
-              control: (provided, state) => ({
-                ...provided,
-                border: '1px solid #ced4da',
-                borderRadius: '0.375rem',
-                minHeight: '38px',
-                height: '38px',
-                fontSize: '14px',
-                '&:hover': {
-                  borderColor: '#adb5bd'
-                },
-                boxShadow: state.isFocused ? '0 0 0 0.2rem rgba(0, 123, 255, 0.25)' : provided.boxShadow,
-                borderColor: state.isFocused ? '#80bdff' : provided.borderColor
-              }),
-              valueContainer: (provided) => ({
-                ...provided,
-                height: '36px',
-                padding: '0 8px',
-                display: 'flex',
-                alignItems: 'center',
-              }),
-              input: (provided) => ({
-                ...provided,
-                margin: '0px',
-                padding: '0px',
-              }),
-              placeholder: (provided) => ({
-                ...provided,
-                color: '#6c757d',
-                margin: '0px',
-                fontSize: '14px',
-              }),
-              singleValue: (provided) => ({
-                ...provided,
-                color: '#495057',
-                margin: '0px',
-                fontSize: '14px',
-              }),
-              indicatorsContainer: (provided) => ({
-                ...provided,
-                height: '36px',
-              }),
-              indicatorSeparator: (provided) => ({
-                ...provided,
-                display: 'none',
-              }),
-              dropdownIndicator: (provided) => ({
-                ...provided,
-                padding: '8px',
-              })
-            }}
-          /> */}
-        </div>
+
         
-        <div className="col-md-6 mb-3">
-          <label className="form-label fw-semibold">Floor Number</label>
+        <div className="col-md-12 mb-3">
+          <label className="form-label fw-semibold">Floor Number / Area </label>
           <input
             type="text"
-            name="floorNumber"
+            name="addressLine1"
             className="form-control"
             placeholder="e.g., Ground Floor, 1st Floor, 2nd Floor"
-            value={formData.floorNumber}
+            value={formData.addressLine1}
             onChange={handlereInputChange}
           />
         </div>
@@ -644,13 +583,13 @@ t
           <label className="form-label fw-semibold">Address <span className="text-danger">*</span></label>
           <textarea
             className="form-control"
-            name="addressLine1"
-            placeholder="Address Line 1"
+            name="addressLine2"
+            placeholder="Full Address"
             rows={1}
-            value={formData.addressLine1}
+            value={formData.addressLine2}
             onChange={handlereInputChange}
             onBlur={handleAddressBlur}
-            disabled={isSavedChosen}
+            readOnly={isSavedChosen}
             
           ></textarea>
         </div>

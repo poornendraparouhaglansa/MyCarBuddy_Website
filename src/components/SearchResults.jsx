@@ -7,6 +7,22 @@ import axios from "axios";
 import ChooseCarModal from "./ChooseCarModal";
 import AddToCartAnimation from "./AddToCartAnimation";
 
+// Function to highlight matching text in yellow
+const highlightText = (text, highlight) => {
+  if (!highlight) return text;
+  const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi");
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part) ? (
+      <span key={i} style={{ backgroundColor: "yellow" }}>
+        {part}
+      </span>
+    ) : (
+      part
+    )
+  );
+};
+
 const SkeletonLoader = () => {
   return (
     <div className="container my-4 search-results">
@@ -69,6 +85,12 @@ const SearchResults = ({ searchTerm }) => {
   }
 
   useEffect(() => {
+    setSelectedCategories([]);
+    setPriceMin(0);
+    setPriceMax(0);
+    setEffectiveMin(0);
+    setEffectiveMax(0);
+    setSortOption("relevance");
     const fetchSearchResults = async () => {
       if (!searchTerm) return;
       setLoading(true);
@@ -107,6 +129,8 @@ const SearchResults = ({ searchTerm }) => {
           setPriceMin(0);
           setPriceMax(0);
         }
+        setSelectedCategories([]);
+        setSortOption("relevance");
       } catch (err) {
         console.error("Failed to fetch search results", err);
         setPackages([]);
@@ -392,12 +416,12 @@ const SearchResults = ({ searchTerm }) => {
                     </div>
                   </div>
                   <div className="pricing-card-details d-flex flex-column" style={{ minHeight: 180 }}>
-                    <h4 className="pricing-card_title mb-2">{pkg.title}</h4>
+                    <h4 className="pricing-card_title mb-2">{highlightText(pkg.title, searchTerm)}</h4>
                     <div className="checklist style2">
                       <ul className="list-unstyled small mb-2">
                         {pkg.includes.slice(0, 3).map((item, idx) => (
                           <li key={idx}>
-                            <i className="fas fa-angle-right"></i> {item}
+                            <i className="fas fa-angle-right"></i> {highlightText(item, searchTerm)}
                           </li>
                         ))}
                         {pkg.includes.length > 3 && (

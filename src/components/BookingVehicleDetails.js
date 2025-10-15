@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import ChooseCarModal from "./ChooseCarModalGridLayout";
 import CryptoJS from "crypto-js";
 import axios from "axios";
 
@@ -48,6 +49,9 @@ const BookingVehicleDetails = ({
   };
 
   const [isLoadingModel, setIsLoadingModel] = useState(false);
+  const [showChooseCarModal, setShowChooseCarModal] = useState(false);
+  const [isLoadingVehicleData, setIsLoadingVehicleData] = useState(false);
+  const [vehicleNumberTimeout, setVehicleNumberTimeout] = useState(null);
 
   const handleCarSelect = async (e) => {
     const selectedId = e.target.value;
@@ -153,6 +157,128 @@ const BookingVehicleDetails = ({
     validateField(name, value);
   };
 
+  // Fetch vehicle data by registration number
+  const fetchVehicleByNumber = async (vehicleNumber) => {
+    if (!vehicleNumber || vehicleNumber.length < 5) return;
+    
+    setIsLoadingVehicleData(true);
+    try {
+      const response = await axios.get(
+        `${baseUrl}CustomerVehicles/VehicleNumber?VehicleNumber=${encodeURIComponent(vehicleNumber)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data && response.data.VehicleID) {
+        const vehicleData = response.data;
+        
+        // Update vehicle state with fetched data
+        setVehicle({
+          brand: { 
+            brandName: vehicleData.BrandName, 
+            id: vehicleData.BrandID 
+          },
+          model: {
+            modelName: vehicleData.ModelName,
+            id: vehicleData.ModelID,
+            logo: null // Will be updated when fetched
+          },
+          fuelType: { 
+            fuelTypeName: vehicleData.FuelTypeName, 
+            id: vehicleData.FuelTypeID 
+          },
+        });
+
+        // Update formData with all vehicle details
+        setFormData((prev) => ({
+          ...prev,
+          brandID: vehicleData.BrandID,
+          modelID: vehicleData.ModelID,
+          fuelTypeID: vehicleData.FuelTypeID,
+          registrationNumber: vehicleData.VehicleNumber,
+          yearOfPurchase: vehicleData.YearOfPurchase,
+          engineType: vehicleData.EngineType,
+          kilometerDriven: vehicleData.KilometersDriven,
+          transmissionType: vehicleData.TransmissionType,
+          VehicleID: vehicleData.VehicleID,
+        }));
+
+        // Fetch model details to get the logo asynchronously
+        try {
+          const modelResponse = await axios.get(
+            `${baseUrl}VehicleModels/GetListVehicleModel`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (modelResponse.data?.status && Array.isArray(modelResponse.data.data)) {
+            const modelData = modelResponse.data.data.find((m) => m.ModelID === vehicleData.ModelID);
+            if (modelData?.VehicleImage) {
+              const imageBaseURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
+              const getImageUrl = (path) => {
+                if (!path) return "https://via.placeholder.com/100?text=No+Image";
+                return `${imageBaseURL}${path.startsWith("/") ? path.slice(1) : path}`;
+              };
+              const modelLogo = getImageUrl(modelData.VehicleImage);
+
+              // Update vehicle state with the logo
+              setVehicle((prev) => ({
+                ...prev,
+                model: {
+                  ...prev.model,
+                  logo: modelLogo
+                }
+              }));
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching model details:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching vehicle data:", error);
+      // Reset vehicle data if API call fails
+      setVehicle({
+        brand: { brandName: "", id: "" },
+        model: { modelName: "", id: "", logo: null },
+        fuelType: { fuelTypeName: "", id: "" },
+      });
+    } finally {
+      setIsLoadingVehicleData(false);
+    }
+  };
+
+  // Debounced vehicle number change handler
+  const handleVehicleNumberChange = (e) => {
+    const { value } = e.target;
+    const upperValue = value.toUpperCase();
+    
+    // Update the input value immediately
+    handleChangeWithValidation({
+      target: { name: "registrationNumber", value: upperValue },
+    });
+
+    // Clear existing timeout
+    if (vehicleNumberTimeout) {
+      clearTimeout(vehicleNumberTimeout);
+    }
+
+    // Set new timeout for API call
+    const timeoutId = setTimeout(() => {
+      if (upperValue && upperValue.length >= 5) {
+        fetchVehicleByNumber(upperValue);
+      }
+    }, 500);
+
+    setVehicleNumberTimeout(timeoutId);
+  };
+
   useEffect(() => {
     fetchSavedCars();
     
@@ -185,13 +311,32 @@ const BookingVehicleDetails = ({
         console.error("Error parsing selectedCarDetails:", error);
       }
     }
-  }, []);
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (vehicleNumberTimeout) {
+        clearTimeout(vehicleNumberTimeout);
+      }
+    };
+  }, [vehicleNumberTimeout]);
 
   if (!vehicle) return null;
 
   return (
     <div className="card shadow-sm p-4 mb-4">
-      <h5 className="mb-3 text-primary fw-bold">🚗 Vehicle Information</h5>
+      <div className="d-flex align-items-center justify-content-between mb-3">
+        <h5 className="mb-0 text-primary fw-bold">🚗 Vehicle Information</h5>
+        {allowCarSelection && (
+          <button
+            type="button"
+            className="btn btn-outline-primary px-3 py-1"
+            onClick={() => setShowChooseCarModal(true)}
+            title="Add or Choose Car"
+          >
+            <i className="bi bi-plus-circle me-1"></i> Choose Car
+          </button>
+        )}
+      </div>
 
       {allowCarSelection && savedCars.length > 0 && (
         <div className="mb-3">
@@ -221,22 +366,27 @@ const BookingVehicleDetails = ({
               <label className="form-label fw-semibold">
                 Registration Number <span className="text-danger">*</span>
               </label>
-              <input
-                type="text"
-                name="registrationNumber"
-                className={`form-control ${
-                  errors.registrationNumber ? "is-invalid" : ""
-                }`}
-                placeholder="Enter Registration Number"
-                value={formData.registrationNumber || registrationNumber || ""}
-                onChange={(e) => {
-                  const upperValue = e.target.value.toUpperCase();
-                  handleChangeWithValidation({
-                    target: { name: "registrationNumber", value: upperValue },
-                  });
-                }}
-                style={{ textTransform: "uppercase" }}
-              />
+              <div className="position-relative">
+                <input
+                  type="text"
+                  name="registrationNumber"
+                  className={`form-control ${
+                    errors.registrationNumber ? "is-invalid" : ""
+                  }`}
+                  placeholder="Enter Registration Number"
+                  value={formData.registrationNumber || registrationNumber || ""}
+                  onChange={handleVehicleNumberChange}
+                  style={{ textTransform: "uppercase" }}
+                  readOnly={true}
+                />
+                {isLoadingVehicleData && (
+                  <div className="position-absolute top-50 end-0 translate-middle-y me-3">
+                    <div className="spinner-border spinner-border-sm text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
               {errors.registrationNumber && (
                 <div className="invalid-feedback">{errors.registrationNumber}</div>
               )}
@@ -254,6 +404,7 @@ const BookingVehicleDetails = ({
                 placeholder="e.g., 2020"
                 value={formData.yearOfPurchase}
                 onChange={handleChangeWithValidation}
+                readOnly={true}
               />
               {errors.yearOfPurchase && (
                 <div className="invalid-feedback">{errors.yearOfPurchase}</div>
@@ -270,6 +421,7 @@ const BookingVehicleDetails = ({
                 placeholder="e.g., VVT"
                 value={formData.engineType}
                 onChange={handlereInputChange}
+                readOnly={true}
               />
             </div>
 
@@ -285,6 +437,7 @@ const BookingVehicleDetails = ({
                 placeholder="e.g., 25000"
                 value={formData.kilometerDriven}
                 onChange={handleChangeWithValidation}
+                readOnly={true}
               />
               {errors.kilometerDriven && (
                 <div className="invalid-feedback">{errors.kilometerDriven}</div>
@@ -299,6 +452,7 @@ const BookingVehicleDetails = ({
                 className="form-select"
                 value={formData.transmissionType}
                 onChange={handlereInputChange}
+                disabled={true}
               >
                 <option value="">Select</option>
                 <option value="Manual">Manual</option>
@@ -442,6 +596,31 @@ const BookingVehicleDetails = ({
           )}
         </div>
       </div>
+      {/* Choose Car Modal */}
+      <ChooseCarModal
+        isVisible={showChooseCarModal}
+        onClose={() => setShowChooseCarModal(false)}
+        onCarSaved={(car) => {
+          try {
+            if (car) {
+              localStorage.setItem("selectedCarDetails", JSON.stringify(car));
+              setVehicle({
+                brand: { id: car.brand?.id, brandName: car.brand?.name, logo: car.brand?.logo },
+                model: { id: car.model?.id, modelName: car.model?.name, logo: car.model?.logo },
+                fuelType: { id: car.fuel?.id, fuelTypeName: car.fuel?.name, logo: car.fuel?.logo },
+              });
+              setFormData((prev) => ({
+                ...prev,
+                brandID: car.brand?.id || prev.brandID,
+                modelID: car.model?.id || prev.modelID,
+                fuelTypeID: car.fuel?.id || prev.fuelTypeID,
+                VehicleID: car.VehicleID || prev.VehicleID,
+              }));
+            }
+          } catch (_) {}
+          setShowChooseCarModal(false);
+        }}
+      />
     </div>
   );
 };

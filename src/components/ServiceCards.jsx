@@ -6,24 +6,59 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import toast from "react-hot-toast";
 import axios from "axios";
-import ChooseCarModal from "./ChooseCarModal";
+import ChooseCarModal from "./ChooseCarModalGridLayout";
 import AddToCartAnimation from "./AddToCartAnimation";
 
 const SkeletonLoader = () => {
   return (
     <div className="container my-4">
       {/* Category Title Skeleton */}
-      <div className="skeleton-category-title mb-3" style={{ width: "200px", height: 28, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+      <div
+        className="skeleton-category-title mb-3"
+        style={{
+          width: "200px",
+          height: 28,
+          backgroundColor: "#e0e0e0",
+          borderRadius: "0.25rem",
+        }}
+      ></div>
 
       {/* Tabs Skeleton */}
       <div className="d-flex align-items-center position-relative mb-4">
-        <div className="skeleton-arrow-btn" style={{ width: 40, height: 40, backgroundColor: "#e0e0e0", borderRadius: "50%", marginRight: 8 }}></div>
+        <div
+          className="skeleton-arrow-btn"
+          style={{
+            width: 40,
+            height: 40,
+            backgroundColor: "#e0e0e0",
+            borderRadius: "50%",
+            marginRight: 8,
+          }}
+        ></div>
         <div className="d-flex gap-2">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="skeleton-tab" style={{ width: 120, height: 36, backgroundColor: "#e0e0e0", borderRadius: "1rem" }}></div>
+            <div
+              key={i}
+              className="skeleton-tab"
+              style={{
+                width: 120,
+                height: 36,
+                backgroundColor: "#e0e0e0",
+                borderRadius: "1rem",
+              }}
+            ></div>
           ))}
         </div>
-        <div className="skeleton-arrow-btn" style={{ width: 40, height: 40, backgroundColor: "#e0e0e0", borderRadius: "50%", marginLeft: 8 }}></div>
+        <div
+          className="skeleton-arrow-btn"
+          style={{
+            width: 40,
+            height: 40,
+            backgroundColor: "#e0e0e0",
+            borderRadius: "50%",
+            marginLeft: 8,
+          }}
+        ></div>
       </div>
 
       {/* Services Cards Skeleton */}
@@ -32,17 +67,58 @@ const SkeletonLoader = () => {
           <div key={i} className="col-md-6 mb-4">
             <div className="pricing-card">
               <div className="pricing-card-price-wrap">
-                <div className="skeleton-card-image" style={{ width: "100%", height: 200, backgroundColor: "#e0e0e0", borderRadius: "0.5rem" }}></div>
+                <div
+                  className="skeleton-card-image"
+                  style={{
+                    width: "100%",
+                    height: 200,
+                    backgroundColor: "#e0e0e0",
+                    borderRadius: "0.5rem",
+                  }}
+                ></div>
               </div>
               <div className="pricing-card-details">
-                <div className="skeleton-card-title mb-2" style={{ width: "80%", height: 24, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                <div
+                  className="skeleton-card-title mb-2"
+                  style={{
+                    width: "80%",
+                    height: 24,
+                    backgroundColor: "#e0e0e0",
+                    borderRadius: "0.25rem",
+                  }}
+                ></div>
                 <div className="skeleton-card-list mb-3">
                   {[...Array(3)].map((_, j) => (
-                    <div key={j} className="skeleton-list-item mb-1" style={{ width: "90%", height: 16, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                    <div
+                      key={j}
+                      className="skeleton-list-item mb-1"
+                      style={{
+                        width: "90%",
+                        height: 16,
+                        backgroundColor: "#e0e0e0",
+                        borderRadius: "0.25rem",
+                      }}
+                    ></div>
                   ))}
                 </div>
-                <div className="skeleton-card-price mb-2" style={{ width: "60px", height: 20, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
-                <div className="skeleton-card-button" style={{ width: "120px", height: 36, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                <div
+                  className="skeleton-card-price mb-2"
+                  style={{
+                    width: "60px",
+                    height: 20,
+                    backgroundColor: "#e0e0e0",
+                    borderRadius: "0.25rem",
+                  }}
+                ></div>
+                <div
+                  className="skeleton-card-button"
+                  style={{
+                    width: "120px",
+                    height: 36,
+                    backgroundColor: "#e0e0e0",
+                    borderRadius: "0.25rem",
+                  }}
+                ></div>
               </div>
             </div>
           </div>
@@ -53,7 +129,7 @@ const SkeletonLoader = () => {
 };
 
 export default function ServiceCards() {
-const { categoryname, categoryId } = useParams();
+  const { categoryname, categoryId } = useParams();
   const [subcategories, setSubcategories] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
   const [packages, setPackages] = useState([]);
@@ -61,7 +137,10 @@ const { categoryname, categoryId } = useParams();
   const [selectedCar, setSelectedCar] = useState(null);
   const [showCarModal, setShowCarModal] = useState(false);
   const [animationTrigger, setAnimationTrigger] = useState(false);
-  const [animationStartPos, setAnimationStartPos] = useState({ top: 0, left: 0 });
+  const [animationStartPos, setAnimationStartPos] = useState({
+    top: 0,
+    left: 0,
+  });
   const [animationEndPos, setAnimationEndPos] = useState({ top: 0, left: 0 });
   const [loadingSubcategories, setLoadingSubcategories] = useState(true);
   const [loadingPackages, setLoadingPackages] = useState(false);
@@ -73,7 +152,9 @@ const { categoryname, categoryId } = useParams();
 
   const { cartItems, addToCart, removeFromCart, updateQuantity } = useCart();
 
-  const selectedCarDetails = JSON.parse(localStorage.getItem("selectedCarDetails"));
+  const selectedCarDetails = JSON.parse(
+    localStorage.getItem("selectedCarDetails")
+  );
   let brandId;
   let modelId;
   let fuelId;
@@ -92,12 +173,16 @@ const { categoryname, categoryId } = useParams();
       setLoadingSubcategories(true);
       try {
         const [subRes, catRes] = await Promise.all([
-          axios.get(`${BASE_URL}SubCategory1/subcategorybycategoryid?categoryid=${categoryId}`),
-          axios.get(`${BASE_URL}Category`)
+          axios.get(
+            `${BASE_URL}SubCategory1/subcategorybycategoryid?categoryid=${categoryId}`
+          ),
+          axios.get(`${BASE_URL}Category`),
         ]);
 
         if (Array.isArray(subRes.data)) {
-          const activeSubcategories = subRes.data.filter(sub => sub.IsActive === true && sub.SubCategoryID !== 58);
+          const activeSubcategories = subRes.data.filter(
+            (sub) => sub.IsActive === true && sub.SubCategoryID !== 58
+          );
           setSubcategories(activeSubcategories);
           setActiveTab(activeSubcategories[0]?.SubCategoryID || null);
         }
@@ -120,17 +205,21 @@ const { categoryname, categoryId } = useParams();
     fetchCategoryAndSubcategories();
   }, [categoryId]);
 
-
   useEffect(() => {
     const fetchPackages = async () => {
       if (!activeTab) return;
       setLoadingPackages(true);
       try {
         const response = await axios.get(
-          `${BASE_URL}PlanPackage/GetPlanPackagesByCategoryAndSubCategory?categoryId=${categoryId}&subCategoryId=${activeTab}&BrandId=${brandId || ''}&ModelId=${modelId || ''}&fuelTypeId=${fuelId || ''}`
+          `${BASE_URL}PlanPackage/GetPlanPackagesByCategoryAndSubCategory?categoryId=${categoryId}&subCategoryId=${activeTab}&BrandId=${
+            brandId || ""
+          }&ModelId=${modelId || ""}&fuelTypeId=${fuelId || ""}`
         );
 
-          const formatted = response.data.filter(pkg => pkg.IsActive === true).filter(pkg => pkg.Serv_Off_Price >= 200).map(pkg => ({
+        const formatted = response.data
+          .filter((pkg) => pkg.IsActive === true)
+          // .filter((pkg) => pkg.Serv_Off_Price >= 200)
+          .map((pkg) => ({
             id: pkg.PackageID,
             title: pkg.PackageName,
             description: pkg.SubCategoryName,
@@ -139,16 +228,17 @@ const { categoryname, categoryId } = useParams();
             duration: "4 Hrs Taken",
             price: pkg.Serv_Off_Price,
             originalPrice: pkg.Serv_Reg_Price,
-            includes: pkg.IncludeNames ? pkg.IncludeNames.split(',').map(i => i.trim()) : [],
-            BrandId: '',
-            ModelId: '',
+            includes: pkg.IncludeNames
+              ? pkg.IncludeNames.split(",").map((i) => i.trim())
+              : [],
+            BrandId: "",
+            ModelId: "",
             isActive: pkg.IsActive,
             categoryId: categoryId,
           }));
 
-          setPackages(formatted);
-          console.log("Fetched packages:", formatted);
-
+        setPackages(formatted);
+        console.log("Fetched packages:", formatted);
       } catch (err) {
         console.error("Failed to fetch packages", err);
       } finally {
@@ -163,44 +253,43 @@ const { categoryname, categoryId } = useParams();
     setPackages([]);
   }, [activeTab]);
 
-
   const scroll = (direction) => {
     const container = scrollRef.current;
     const tabWidth = container?.firstChild?.offsetWidth || 150;
     const scrollAmount = tabWidth + 12;
     container.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth"
+      behavior: "smooth",
     });
   };
 
-useEffect(() => {
-  const loadSelectedCar = () => {
-    const saved = localStorage.getItem("selectedCarDetails");
-    if (saved) {
-      try {
-        setSelectedCar(JSON.parse(saved));
-      } catch (err) {
-        console.error("Error parsing selected car", err);
+  useEffect(() => {
+    const loadSelectedCar = () => {
+      const saved = localStorage.getItem("selectedCarDetails");
+      if (saved) {
+        try {
+          setSelectedCar(JSON.parse(saved));
+        } catch (err) {
+          console.error("Error parsing selected car", err);
+        }
+      } else {
+        setSelectedCar(null);
       }
-    } else {
-      setSelectedCar(null);
-    }
-  };
+    };
 
-  loadSelectedCar();
-
-  // Listen to custom event triggered after login
-  const handleProfileUpdate = () => {
     loadSelectedCar();
-  };
 
-  window.addEventListener("userProfileUpdated", handleProfileUpdate);
+    // Listen to custom event triggered after login
+    const handleProfileUpdate = () => {
+      loadSelectedCar();
+    };
 
-  return () => {
-    window.removeEventListener("userProfileUpdated", handleProfileUpdate);
-  };
-}, []);
+    window.addEventListener("userProfileUpdated", handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener("userProfileUpdated", handleProfileUpdate);
+    };
+  }, []);
 
   const handleAddToCartClick = (e, pkg) => {
     e.stopPropagation();
@@ -230,17 +319,16 @@ useEffect(() => {
   };
 
   const slugify = (text) => {
-  return text
-    .toLowerCase()
-    .replace(/&/g, "and")     // replace "&" with "and"
-    .replace(/[^a-z0-9]+/g, "-") // replace all non-alphanumeric with "-"
-    .replace(/^-+|-+$/g, ""); // trim starting/ending "-"
-};
+    return text
+      .toLowerCase()
+      .replace(/&/g, "and") // replace "&" with "and"
+      .replace(/[^a-z0-9]+/g, "-") // replace all non-alphanumeric with "-"
+      .replace(/^-+|-+$/g, ""); // trim starting/ending "-"
+  };
 
   if (loadingSubcategories) {
     return <SkeletonLoader />;
   }
-  
 
   return (
     <div className="container my-4">
@@ -248,19 +336,27 @@ useEffect(() => {
         <h4 className="mb-3 text-uppercase fw-bold">{categoryName}</h4>
       )}
       <div className="d-flex align-items-center position-relative mb-4">
-        <button className="arrow-btn left" onClick={() => scroll("left")}><i className="fa fa-arrow-left"></i></button>
+        <button className="arrow-btn left" onClick={() => scroll("left")}>
+          <i className="fa fa-arrow-left"></i>
+        </button>
         <div className="scrollable-tabs" ref={scrollRef}>
           {subcategories.map((sub) => (
             <div
               key={sub.SubCategoryID}
-              className={`tab-pill ${activeTab?.toString() === sub.SubCategoryID.toString() ? "active" : ""}`}
+              className={`tab-pill ${
+                activeTab?.toString() === sub.SubCategoryID.toString()
+                  ? "active"
+                  : ""
+              }`}
               onClick={() => setActiveTab(sub.SubCategoryID)}
             >
               <span>{sub.SubCategoryName}</span>
             </div>
           ))}
         </div>
-        <button className="arrow-btn right" onClick={() => scroll("right")}><i className="fa fa-arrow-right"></i></button>
+        <button className="arrow-btn right" onClick={() => scroll("right")}>
+          <i className="fa fa-arrow-right"></i>
+        </button>
       </div>
 
       {/* Services */}
@@ -271,63 +367,148 @@ useEffect(() => {
               <div key={i} className="col-md-6 mb-4">
                 <div className="pricing-card">
                   <div className="pricing-card-price-wrap">
-                    <div className="skeleton-card-image" style={{ width: "100%", height: 200, backgroundColor: "#e0e0e0", borderRadius: "0.5rem" }}></div>
+                    <div
+                      className="skeleton-card-image"
+                      style={{
+                        width: "100%",
+                        height: 200,
+                        backgroundColor: "#e0e0e0",
+                        borderRadius: "0.5rem",
+                      }}
+                    ></div>
                   </div>
                   <div className="pricing-card-details">
-                    <div className="skeleton-card-title mb-2" style={{ width: "80%", height: 24, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                    <div
+                      className="skeleton-card-title mb-2"
+                      style={{
+                        width: "80%",
+                        height: 24,
+                        backgroundColor: "#e0e0e0",
+                        borderRadius: "0.25rem",
+                      }}
+                    ></div>
                     <div className="skeleton-card-list mb-3">
                       {[...Array(3)].map((_, j) => (
-                        <div key={j} className="skeleton-list-item mb-1" style={{ width: "90%", height: 16, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                        <div
+                          key={j}
+                          className="skeleton-list-item mb-1"
+                          style={{
+                            width: "90%",
+                            height: 16,
+                            backgroundColor: "#e0e0e0",
+                            borderRadius: "0.25rem",
+                          }}
+                        ></div>
                       ))}
                     </div>
-                    <div className="skeleton-card-price mb-2" style={{ width: "60px", height: 20, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
-                    <div className="skeleton-card-button" style={{ width: "120px", height: 36, backgroundColor: "#e0e0e0", borderRadius: "0.25rem" }}></div>
+                    <div
+                      className="skeleton-card-price mb-2"
+                      style={{
+                        width: "60px",
+                        height: 20,
+                        backgroundColor: "#e0e0e0",
+                        borderRadius: "0.25rem",
+                      }}
+                    ></div>
+                    <div
+                      className="skeleton-card-button"
+                      style={{
+                        width: "120px",
+                        height: 36,
+                        backgroundColor: "#e0e0e0",
+                        borderRadius: "0.25rem",
+                      }}
+                    ></div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : packages.length === 0 ? (
-          <p className="text-muted">No packages available for this subcategory.</p>
+          <p className="text-muted">
+            No packages available for this subcategory.
+          </p>
         ) : (
           packages.map((pkg) => {
             const isInCart = cartItems.some((i) => i.id === pkg.id);
             return (
-
               <>
                 <div className="col-md-6 mb-4">
-                  <div className="pricing-card"  onClick={() => navigate(`/servicedetails/${slugify(pkg.title)}/${pkg.id}`)} style={{ cursor: "pointer" }}>
+                  <div
+                    className="pricing-card"
+                    onClick={() =>
+                      navigate(
+                        `/servicedetails/${slugify(pkg.title)}/${pkg.id}`
+                      )
+                    }
+                    style={{ cursor: "pointer" }}
+                  >
                     <div className="pricing-card-price-wrap">
-
-                    <div className="pricing-card-price-wrap position-relative" >
-                      {/* <div className="pricing-badge">
+                      <div className="pricing-card-price-wrap position-relative">
+                        {/* <div className="pricing-badge">
                         10% OFF
                       </div> */}
-                      <div className="pricing-card_icon">
-                        <img
-                          src={pkg.image}
-                          className="img-fluid rounded service-img"
-                          alt={pkg.title}
-                        />
+                        <div className="pricing-card_icon">
+                          <img
+                            src={pkg.image}
+                            className="img-fluid rounded service-img"
+                            alt={pkg.title}
+                          />
+                        </div>
                       </div>
-                    </div>
-
-
-
                     </div>
                     <div className="pricing-card-details">
                       <h4 className="pricing-card_title">{pkg.title}</h4>
                       <div className="checklist style2">
                         <ul className="list-unstyled small mb-2">
-                         {pkg.includes.slice(0, 4).map((item, idx) => (
+                          {(() => {
+                            const maxLines = 4;
+                            const approxCharsPerLine = 30; 
+                            let totalLines = 0;
+                            const visibleItems = [];
+
+                            for (let i = 0; i < pkg.includes.length; i++) {
+                              const item = pkg.includes[i];
+                              const linesNeeded = Math.ceil(
+                                item.length / approxCharsPerLine
+                              );
+
+                              if (totalLines + linesNeeded <= maxLines) {
+                                visibleItems.push(item);
+                                totalLines += linesNeeded;
+                              } else {
+                                break;
+                              }
+                            }
+
+                            return visibleItems.map((item, idx) => (
                               <li key={idx}>
                                 <i className="fas fa-angle-right"></i> {item}
                               </li>
-                            ))}
-                            {pkg.includes.length > 4 && (
+                            ));
+                          })()}
+
+                          {pkg.includes.length > 0 &&
+                            pkg.includes.some((item, idx) => idx >= 0) &&
+                            (() => {
+                              const maxLines = 4;
+                              const approxCharsPerLine = 30;
+                              let totalLines = 0;
+
+                              for (let i = 0; i < pkg.includes.length; i++) {
+                                const linesNeeded = Math.ceil(
+                                  pkg.includes[i].length / approxCharsPerLine
+                                );
+                                totalLines += linesNeeded;
+                                if (totalLines > maxLines) return true;
+                              }
+                              return false;
+                            })() && (
                               <li>
                                 <a
-                                  href={`/servicedetails/${slugify(pkg.title)}/${pkg.id}`}
+                                  href={`/servicedetails/${slugify(
+                                    pkg.title
+                                  )}/${pkg.id}`}
                                   className="text-danger text-decoration-underline"
                                 >
                                   View More
@@ -339,29 +520,34 @@ useEffect(() => {
 
                       {selectedCar ? (
                         <>
-                      {/* <h3 className="pricing-card_price"><span className="currency">₹{pkg.price}</span></h3> */}
-                         <div className="ribbon">₹{pkg.price}
-                           <p><div className="text-muted1 text-decoration-line-through">₹{pkg.originalPrice}</div></p>
-                         </div>
+                          {/* <h3 className="pricing-card_price"><span className="currency">₹{pkg.price}</span></h3> */}
+                          <div className="ribbon">
+                            ₹{pkg.price}
+                            <p>
+                              <div className="text-muted1 text-decoration-line-through">
+                                ₹{pkg.originalPrice}
+                              </div>
+                            </p>
+                          </div>
 
                           {isInCart ? (
                             <>
-                            <button
-                              className="btn style-border2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate("/cart");
-                              }}
-                            >
-                              ✔ View Cart
-                            </button>
-                            <button
+                              <button
+                                className="btn style-border2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate("/cart");
+                                }}
+                              >
+                                ✔ View Cart
+                              </button>
+                              <button
                                 className="btn style-border2 ml-5"
                                 onClick={() => removeFromCart(pkg.id)}
                               >
                                 <i className="bi bi-trash" />
                               </button>
-                              </>
+                            </>
                           ) : (
                             <button
                               className="btn style-border2 "
@@ -373,7 +559,9 @@ useEffect(() => {
                         </>
                       ) : (
                         <>
-                          <div className="text-muted fst-italic mb-2">Select your car to see price</div>
+                          <div className="text-muted fst-italic mb-2">
+                            Add your car to see price
+                          </div>
                           <button
                             className="btn style-border2"
                             onClick={(e) => {
@@ -381,15 +569,13 @@ useEffect(() => {
                               setShowCarModal(true);
                             }}
                           >
-                            Choose Your Car
+                            Add Your Car
                           </button>
                         </>
                       )}
                       {/* <a className="btn style-border2" href="/about">Start now <i className="fas fa-arrow-right ms-2"></i></a> */}
-
                     </div>
                   </div>
-
                 </div>
               </>
             );

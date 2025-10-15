@@ -4,8 +4,10 @@ import BrandPopup from "./BrandPopup"; // new popup component
 import ModelPopup from "./ModelPopup";
 import FuelPopup from "./FuelPopup";
 import axios from "axios";
+import Swal from "sweetalert2";
 import CryptoJS from "crypto-js";
 import { useAlert } from "../context/AlertContext";
+import { v4 as uuidv4 } from "uuid";
 
 const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 	// Alert API (optional)
@@ -28,6 +30,22 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 	const modalRef = useRef();
 	const imageBaseURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
 	const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
+    const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
+
+    // Auth state (inline OTP login when not logged in)
+    const [identifier, setIdentifier] = useState("");
+    const [otp, setOtp] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
+    const [timer, setTimer] = useState(0);
+    const [otpExpired, setOtpExpired] = useState(false);
+    const [loginLoading, setLoginLoading] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(!!JSON.parse(localStorage.getItem("user"))?.token);
+    const regCheckTimeoutRef = useRef(null);
+    const [savedVehicles, setSavedVehicles] = useState([]);
+    const [loadingSavedVehicles, setLoadingSavedVehicles] = useState(false);
+    const [selectedSavedVehicleId, setSelectedSavedVehicleId] = useState("");
+    const [isLoadingVehicleData, setIsLoadingVehicleData] = useState(false);
+    const [vehicleNumberTimeout, setVehicleNumberTimeout] = useState(null);
 
 	// Vehicle detail form data
 	const [formData, setFormData] = useState({
@@ -50,6 +68,343 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 			fuelTypeID: fuel || "",
 		}));
 	}, [brand, model, fuel]);
+
+    // OTP countdown
+    useEffect(() => {
+        let interval;
+        if (otpSent && timer > 0) {
+            interval = setInterval(() => setTimer((t) => t - 1), 1000);
+        } else if (otpSent && timer === 0) {
+            setOtpExpired(true);
+        }
+        return () => clearInterval(interval);
+    }, [otpSent, timer]);
+
+    // Monitor login status changes
+    useEffect(() => {
+        const checkLoginStatus = () => {
+            const user = JSON.parse(localStorage.getItem("user"));
+            setIsLoggedIn(!!user?.token);
+        };
+
+        // Check on mount
+        checkLoginStatus();
+
+        // Listen for user profile updates
+        window.addEventListener("userProfileUpdated", checkLoginStatus);
+        
+        return () => {
+            window.removeEventListener("userProfileUpdated", checkLoginStatus);
+        };
+    }, []);
+
+    const getDeviceId = () => {
+        let deviceId = localStorage.getItem("deviceId");
+        if (!deviceId) {
+            deviceId = uuidv4();
+            localStorage.setItem("deviceId", deviceId);
+        }
+        return deviceId;
+    };
+
+    const handleSendOTP = async (e) => {
+        e?.preventDefault?.();
+        const sanitized = (identifier || "").replace(/\D/g, "");
+        if (!/^\d{10}$/.test(sanitized)) {
+            showAlert && showAlert("Enter a valid 10-digit mobile number.", "warning");
+            setOtpSent(false);
+            return;
+        }
+        setLoginLoading(true);
+        try {
+            await axios.post(`${BaseURL}Auth/send-otp`, { loginId: sanitized });
+            setOtpSent(true);
+            setOtpExpired(false);
+            setTimer(60);
+        } catch (error) {
+            console.error("Error sending OTP:", error);
+            showAlert && showAlert("Failed to send OTP. Please try again.");
+        } finally {
+            setLoginLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = async (e) => {
+        e?.preventDefault?.();
+        const sanitized = (identifier || "").replace(/\D/g, "");
+        if (!/^\d{10}$/.test(sanitized)) {
+            showAlert && showAlert("Enter a valid 10-digit mobile number.", "warning");
+            return;
+        }
+        const deviceId = getDeviceId();
+        setLoginLoading(true);
+        try {
+            const response = await axios.post(`${BaseURL}Auth/verify-otp`, {
+                loginId: sanitized,
+                otp,
+                deviceToken: "web-token",
+                deviceId,
+            });
+
+            localStorage.setItem(
+                "user",
+                JSON.stringify({
+                    id: CryptoJS.AES.encrypt(response.data?.custID?.toString() || "", secretKey).toString(),
+                    name: response.data?.name || "GUEST",
+                    token: response.data?.token,
+                    profileImage: response?.data?.profileImage,
+                })
+            );
+            setIsLoggedIn(true);
+            setOtpSent(false);
+            setIdentifier("");
+            setOtp("");
+            showAlert && showAlert("Signed in successfully", "success");
+            
+            // Dispatch event to update header
+            window.dispatchEvent(new CustomEvent("userProfileUpdated"));
+        } catch (error) {
+            console.error("Error verifying OTP:", error);
+            showAlert && showAlert("Invalid OTP. Please try again.", "error");
+        } finally {
+            setLoginLoading(false);
+        }
+    };
+
+    const getDecryptedCustAuth = () => {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user?.token || !user?.id) return { custId: null, token: null };
+        try {
+            const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
+            const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
+            return { custId: decryptedCustId, token: user.token };
+        } catch (_) {
+            return { custId: null, token: null };
+        }
+    };
+
+    const checkVehicleExists = async (vehicleNumberUpper) => {
+        const { custId, token } = getDecryptedCustAuth();
+        if (!custId || !token || !vehicleNumberUpper) return;
+        try {
+            const res = await axios.get(
+                `${BaseURL}CustomerVehicles/CustId?vehicleNumber=${encodeURIComponent(vehicleNumberUpper)}&custId=${encodeURIComponent(custId)}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            const data = res?.data;
+            const exists = Array.isArray(data) ? data.length > 0 : (data?.status === true && (Array.isArray(data?.data) ? data.data.length > 0 : !!data?.vehicleID));
+            if (exists) {
+                Swal.fire({
+                    title: 'Already Exists',
+                    text: 'This vehicle is already saved. Please select it from your saved cars.',
+                    icon: 'info',
+                    confirmButtonText: 'OK'
+                });
+            }
+        } catch (err) {
+            // Silent fail; do not block user typing
+            console.warn('Vehicle check failed', err?.response?.data || err?.message);
+        }
+    };
+
+    // Fetch vehicle data by registration number
+    const fetchVehicleByNumber = async (vehicleNumber) => {
+        if (!vehicleNumber || vehicleNumber.length < 5) return;
+        
+        setIsLoadingVehicleData(true);
+        try {
+            const response = await axios.get(
+                `${BaseURL}CustomerVehicles/VehicleNumber?VehicleNumber=${encodeURIComponent(vehicleNumber)}`
+            );
+
+            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                const vehicleData = response.data[0];
+                
+                // Update form data with fetched vehicle information
+                setFormData(prev => ({
+                    ...prev,
+                    registrationNumber: vehicleData.VehicleNumber,
+                    yearOfPurchase: vehicleData.YearOfPurchase,
+                    engineType: vehicleData.EngineType || "",
+                    kilometerDriven: vehicleData.KilometersDriven || "",
+                    transmissionType: vehicleData.TransmissionType || "",
+					fuelTypeID: vehicleData.FuelTypeID,
+                }));
+
+                // Update brand, model, and fuel selections
+                if (vehicleData.BrandID) {
+                    setBrand(vehicleData.BrandID);
+                    
+                    // Fetch models for the brand to get the updated list
+                    const loadedModels = await fetchModels(vehicleData.BrandID);
+                    
+                    // Update model selection
+                    if (vehicleData.ModelID) {
+                        setModel(vehicleData.ModelID);
+                        
+                        // Update the models state to include the vehicle image from API
+                        if (vehicleData.VehicleImage && Array.isArray(loadedModels)) {
+                            const updatedModels = loadedModels.map(model => {
+                                if (model.id === vehicleData.ModelID) {
+                                    return {
+                                        ...model,
+                                        logo: `${imageBaseURL}${vehicleData.VehicleImage.startsWith("/") ? vehicleData.VehicleImage.slice(1) : vehicleData.VehicleImage}`
+                                    };
+                                }
+                                return model;
+                            });
+                            setModels(updatedModels);
+                        }
+                    }
+                }
+                
+                if (vehicleData.FuelTypeID) {
+                    // Ensure fuels are loaded before setting fuel
+                    if (fuels.length === 0) {
+                        await fetchFuels();
+                    }
+                    
+                    // Convert to number to ensure type matching
+                    const fuelId = Number(vehicleData.FuelTypeID);
+                    setFuel(fuelId);
+                    
+                    console.log("Setting fuel ID:", fuelId, "Fuel name:", vehicleData.FuelTypeName);
+                    console.log("Available fuels:", fuels);
+                    console.log("Matching fuel:", fuels.find(f => f.id === fuelId));
+                }
+
+                // Show success message
+                Swal.fire({
+                    title: 'Vehicle Found!',
+                    text: `Found ${vehicleData.BrandName} ${vehicleData.ModelName} - ${vehicleData.FuelTypeName}`,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching vehicle data:", error);
+            // Don't show error to user as this is optional functionality
+        } finally {
+            setIsLoadingVehicleData(false);
+        }
+    };
+
+    // Debounced vehicle number change handler
+    const handleVehicleNumberChange = (e) => {
+        const { value } = e.target;
+        const upperValue = value.toUpperCase();
+        
+        // Update the input value immediately
+        setFormData((p) => ({ ...p, registrationNumber: upperValue }));
+
+        // Clear existing timeout
+        if (vehicleNumberTimeout) {
+            clearTimeout(vehicleNumberTimeout);
+        }
+
+        // Set new timeout for API call
+        const timeoutId = setTimeout(() => {
+            if (upperValue && upperValue.length >= 5) {
+                fetchVehicleByNumber(upperValue);
+            }
+        }, 500);
+
+        setVehicleNumberTimeout(timeoutId);
+    };
+
+    // Fetch saved vehicles for logged-in users
+    useEffect(() => {
+        const fetchSavedVehicles = async () => {
+            const { custId, token } = getDecryptedCustAuth();
+            if (!custId || !token) {
+                setSavedVehicles([]);
+                return;
+            }
+            setLoadingSavedVehicles(true);
+            try {
+                const res = await axios.get(`${BaseURL}CustomerVehicles/CustId?CustId=${encodeURIComponent(custId)}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.data) ? res.data.data : []);
+                setSavedVehicles(list || []);
+            } catch (err) {
+                console.warn('Failed to fetch saved vehicles', err?.response?.data || err?.message);
+                setSavedVehicles([]);
+            } finally {
+                setLoadingSavedVehicles(false);
+            }
+        };
+
+        if (isLoggedIn) fetchSavedVehicles();
+    }, [isLoggedIn]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (vehicleNumberTimeout) {
+                clearTimeout(vehicleNumberTimeout);
+            }
+        };
+    }, [vehicleNumberTimeout]);
+
+    // Debug fuel changes
+    useEffect(() => {
+        console.log("Fuel state changed:", fuel, "Available fuels:", fuels);
+        if (fuel) {
+            const selectedFuel = fuels.find(f => f.id === fuel);
+            console.log("Selected fuel:", selectedFuel);
+        }
+    }, [fuel, fuels]);
+
+    const handleChooseSavedVehicle = () => {
+        const v = savedVehicles.find(x => (x.VehicleID || x.vehicleID) === Number(selectedSavedVehicleId));
+        if (!v) return;
+        // Populate form and selections
+        const vehicleNumber = (v.VehicleNumber || v.VehicleRegNo || "").toString().toUpperCase();
+        setFormData(p => ({ ...p, registrationNumber: vehicleNumber, yearOfPurchase: p.yearOfPurchase }));
+        if (v.BrandID) setBrand(v.BrandID);
+        if (v.ModelID) setModel(v.ModelID);
+        if (v.FuelTypeID) setFuel(v.FuelTypeID);
+
+        // Prepare and store selectedCarDetails in localStorage
+        const selectedCarDetails = {
+            brand: {
+                id: v.BrandID,
+                name: v.BrandName,
+                logo: v.BrandLogo ? `${imageBaseURL}${v.BrandLogo}` : undefined,
+            },
+            model: {
+                id: v.ModelID,
+                name: v.ModelName,
+                logo: v.VehicleImage ? `${imageBaseURL}${v.VehicleImage}` : undefined,
+            },
+            fuel: {
+                id: v.FuelTypeID,
+                name: v.FuelTypeName,
+                logo: v.FuelImage ? `${imageBaseURL}${v.FuelImage}` : undefined,
+            },
+            VehicleID: v.VehicleID || v.vehicleID,
+            VehicleNumber: vehicleNumber,
+        };
+        try {
+            localStorage.setItem('selectedCarDetails', JSON.stringify(selectedCarDetails));
+        } catch (_) {}
+
+        // Show confirmation toast
+        Swal.fire({
+            title: 'Vehicle Selected',
+            text: 'We filled your form with the saved car details.',
+            icon: 'success',
+            timer: 1800,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+		window.location.reload();
+    };
 
 	useEffect(() => {
 		const fetchBrands = async () => {
@@ -111,12 +466,15 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 					}));
 
 				setModels(filteredModels);
+				return filteredModels; // Return the models array
 			} else {
 				setModels([]);
 				console.error("Error fetching models:", response.data);
+				return []; // Return empty array
 			}
 		} catch (error) {
 			console.error("Error fetching models:", error);
+			return []; // Return empty array on error
 		} finally {
 			setLoadingModels(false);
 		}
@@ -215,10 +573,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 					CreatedBy: decryptedCustId,
 				};
 
-				const resp = await axios.post(
-					`${BASE_URL}CustomerVehicles/InsertCustomerVehicle`,
-					payload
-				);
+				const resp = await axios.post(`${BaseURL}CustomerVehicles/InsertCustomerVehicle`, payload);
 				const apiData = resp?.data || {};
 				if (apiData?.status === false || apiData?.vehicleID === -1) {
 					const errorMessage = apiData?.message || "Unable to save vehicle. Please check details.";
@@ -232,6 +587,9 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 					saved.VehicleID = apiData.vehicleID;
 					localStorage.setItem("selectedCarDetails", JSON.stringify(saved));
 				}
+			} else {
+				showAlert && showAlert("Please sign in to save your vehicle.", "warning");
+				return;
 			}
 		} catch (err) {
 			console.error("Error inserting customer vehicle:", err);
@@ -270,6 +628,76 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 				<button className="modal-close" onClick={onClose}>
 					×
 				</button>
+				{/* Mobile number verification - SignIn-like form */}
+				{!isLoggedIn && (
+				<div className="mb-3 p-3 rounded  bg-white">
+					<h6 className="mb-3">Please Verify Your Mobile Number</h6>
+					<form onSubmit={otpSent ? handleVerifyOTP : handleSendOTP}>
+						<div className="mb-3 text-start">
+							<label className="form-label">Mobile Number</label>
+							<div className="input-group">
+								<input
+									type="text"
+									inputMode="numeric"
+									pattern="[0-9]*"
+									className="form-control"
+									placeholder="Enter mobile number"
+									value={identifier}
+									onChange={(e) => {
+										const value = e.target.value.replace(/\D/g, "");
+										if (value.length <= 10) setIdentifier(value);
+									}}
+									maxLength={10}
+									required
+								/>
+							</div>
+						</div>
+
+						{otpSent && (
+							<>
+								<label className="form-label text-start">Enter OTP</label>
+								<div className="mb-3 text-start input-group">
+									<input
+										type="text"
+										className="form-control"
+										placeholder="Enter OTP"
+										value={otp}
+										onChange={(e) => setOtp(e.target.value)}
+										required
+									/>
+									<div className="input-group-append">
+										<button
+											type="button"
+											onClick={handleSendOTP}
+											disabled={loginLoading}
+											className="btn btn-outline-secondary"
+											title="Resend OTP"
+											style={{ padding: "12px 17px" }}
+										>
+											Resend
+										</button>
+									</div>
+								</div>
+								{otpSent && !otpExpired && <small className="text-muted">OTP will expire in {timer}s</small>}
+								{otpExpired && <div className="text-danger small mb-2">OTP expired. Please resend.</div>}
+							</>
+						)}
+
+						<div className="text-center mb-2">
+							<button
+								type="submit"
+								className={`btn btn-primary btn-sm line-none ${loginLoading || otpExpired ? "disabled" : ""}`}
+								disabled={loginLoading || otpExpired}
+							>
+								{loginLoading ? "Sending..." : otpSent ? (otpExpired ? "OTP Expired" : "Verify OTP") : "Send OTP"}
+							</button>
+						</div>
+					</form>
+				</div>
+				)}
+
+				{isLoggedIn && (
+				<>
 				<h6>Select Your Car Type</h6>
 				{/* Dropdown */}
 				<div className="mb-4 d-none">
@@ -278,6 +706,34 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 						<option value="manual">Manual Selection</option>
 					</select>
 				</div>
+
+				{/* Saved vehicles chooser (only if exist) */}
+				{isLoggedIn && savedVehicles.length > 0 && (
+					<div className="mb-3 p-3 rounded border bg-white">
+						<div className="row g-2 align-items-end">
+							<div className="col-12 col-md-8">
+								<label className="form-label small">Choose from saved cars</label>
+								<select
+									className="form-select"
+									value={selectedSavedVehicleId}
+									onChange={(e) => setSelectedSavedVehicleId(e.target.value)}
+								>
+									<option value="">Select a saved car</option>
+									{savedVehicles.map((v) => (
+										<option key={v.VehicleID || v.vehicleID} value={v.VehicleID || v.vehicleID}>
+											{(v.BrandName || v.brandName || 'Brand')} {(v.ModelName || v.modelName || 'Model')} - {(v.VehicleNumber || v.VehicleRegNo || '').toUpperCase()}
+										</option>
+									))}
+								</select>
+							</div>
+							<div className="col-12 col-md-4">
+								<button type="button" className="btn btn-primary btn-confirm px-4 py-2" disabled={!selectedSavedVehicleId} onClick={handleChooseSavedVehicle}>
+									Use This Car
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
 
 				<form onSubmit={handleSubmit}>
 					{selectionMethod === "registration" ? (
@@ -293,7 +749,79 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 						</div>
 					) : (
 						<>
-            <div className="mb-4">
+                    {/* Vehicle Details FIRST */}
+                    <div className="mt-3 text-start">
+                        <div className="row g-2">
+                            {/* Mobile number + OTP were moved to a separate block above */}
+								<div className="col-12 col-md-6">
+									<label className="form-label small">Registration Number <span className="text-danger">*</span></label>
+									<div className="position-relative">
+										<input
+											type="text"
+											className="form-control"
+											value={formData.registrationNumber}
+											onChange={handleVehicleNumberChange}
+											style={{ textTransform: 'uppercase' }}
+											placeholder="e.g., MH12AB1234"
+											required
+										/>
+										{isLoadingVehicleData && (
+											<div className="position-absolute top-50 end-0 translate-middle-y me-3">
+												<div className="spinner-border spinner-border-sm text-primary" role="status">
+													<span className="visually-hidden">Loading...</span>
+												</div>
+											</div>
+										)}
+									</div>
+								</div>
+								<div className="col-12 col-md-6">
+									<label className="form-label small">Year of Purchase <span className="text-danger">*</span></label>
+									<input
+										type="text"
+										className="form-control"
+										value={formData.yearOfPurchase}
+										onChange={(e) => setFormData((p) => ({ ...p, yearOfPurchase: e.target.value }))}
+										placeholder="e.g., 2020"
+										required
+									/>
+								</div>
+								<div className="col-12 col-md-6">
+									<label className="form-label small">Engine Type</label>
+									<input
+										type="text"
+										className="form-control"
+										value={formData.engineType}
+										onChange={(e) => setFormData((p) => ({ ...p, engineType: e.target.value }))}
+										placeholder="e.g., VVT"
+									/>
+								</div>
+								<div className="col-12 col-md-6">
+									<label className="form-label small">Kilometers Driven</label>
+									<input
+										type="text"
+										className="form-control"
+										value={formData.kilometerDriven}
+										onChange={(e) => setFormData((p) => ({ ...p, kilometerDriven: e.target.value }))}
+										placeholder="e.g., 25000"
+									/>
+								</div>
+								<div className="col-12 col-md-6">
+									<label className="form-label small">Transmission Type</label>
+									<select
+										className="form-select"
+										value={formData.transmissionType}
+										onChange={(e) => setFormData((p) => ({ ...p, transmissionType: e.target.value }))}
+									>
+										<option value="">Select</option>
+										<option value="Manual">Manual</option>
+										<option value="Automatic">Automatic</option>
+									</select>
+								</div>
+							</div>
+						</div>
+
+						{/* THEN: Choose Brand, Model & Fuel */}
+            <div className="mb-4 mt-4">
 						<label className="form-label">Choose Brand, Model & Fuel</label>
 						<div className="d-flex gap-3 flex-wrap justify-content-center">
 							{/* Brand Card */}
@@ -404,11 +932,28 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 							>
 								<div className="fw-semibold small mb-2 text-dark">Fuel</div>
 								{fuel ? (
-									<img
-										src={fuels.find((f) => f.id === fuel)?.image}
-										alt="Fuel Type"
-										style={{ width: 70, height: 70, objectFit: "contain" }}
-									/>
+									<div>
+										{(() => {
+											const selectedFuel = fuels.find((f) => f.id === fuel);
+											console.log("Fuel card render - fuel ID:", fuel, "selectedFuel:", selectedFuel);
+											return (
+												<>
+													<img
+														src={selectedFuel?.image}
+														alt="Fuel Type"
+														style={{ width: 45, height: 45, objectFit: "contain" }}
+														onError={(e) => {
+															console.log("Fuel image error - fuel ID:", fuel, "selectedFuel:", selectedFuel, "image URL:", selectedFuel?.image);
+															e.target.style.display = 'none';
+														}}
+													/>
+													<div className="small mt-1" style={{ fontSize: '10px', color: '#666' }}>
+														{selectedFuel?.name || 'Unknown'}
+													</div>
+												</>
+											);
+										})()}
+									</div>
 								) : (
 									<div className="text-muted small">Choose</div>
 								)}
@@ -432,70 +977,11 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 					
 
 
-					{/* Booking Vehicle Details fields - visible only after fuel selection */}
-					{fuel && (
-					<div className="mt-3 text-start">
-						<div className="row g-2">
-							<div className="col-12 col-md-6">
-								<label className="form-label small">Registration Number</label>
-								<input
-									type="text"
-									className="form-control"
-									value={formData.registrationNumber}
-									onChange={(e) => setFormData((p) => ({ ...p, registrationNumber: e.target.value.toUpperCase() }))}
-									style={{ textTransform: 'uppercase' }}
-									placeholder="e.g., MH12AB1234"
-								/>
-							</div>
-							<div className="col-12 col-md-6">
-								<label className="form-label small">Year of Purchase</label>
-								<input
-									type="text"
-									className="form-control"
-									value={formData.yearOfPurchase}
-									onChange={(e) => setFormData((p) => ({ ...p, yearOfPurchase: e.target.value }))}
-									placeholder="e.g., 2020"
-								/>
-							</div>
-							<div className="col-12 col-md-6">
-								<label className="form-label small">Engine Type</label>
-								<input
-									type="text"
-									className="form-control"
-									value={formData.engineType}
-									onChange={(e) => setFormData((p) => ({ ...p, engineType: e.target.value }))}
-									placeholder="e.g., VVT"
-								/>
-							</div>
-							<div className="col-12 col-md-6">
-								<label className="form-label small">Kilometers Driven</label>
-								<input
-									type="text"
-									className="form-control"
-									value={formData.kilometerDriven}
-									onChange={(e) => setFormData((p) => ({ ...p, kilometerDriven: e.target.value }))}
-									placeholder="e.g., 25000"
-								/>
-							</div>
-							<div className="col-12 col-md-6">
-								<label className="form-label small">Transmission Type</label>
-								<select
-									className="form-select"
-									value={formData.transmissionType}
-									onChange={(e) => setFormData((p) => ({ ...p, transmissionType: e.target.value }))}
-								>
-									<option value="">Select</option>
-									<option value="Manual">Manual</option>
-									<option value="Automatic">Automatic</option>
-								</select>
-							</div>
-						</div>
-					</div>
-					)}
+					{/* Booking Vehicle Details fields were moved above; keeping this block removed */}
 
 					{/* Buttons */}
 					<div className="d-flex justify-content-center gap-2 mt-3">
-						<button type="button" className="btn btn-light py-2 px-4" onClick={onClose}>
+						<button type="button" className="btn btn-warning py-2 px-4" onClick={onClose}>
 							Cancel
 						</button>
 						<button type="submit" className="btn btn-primary py-2 px-4">
@@ -503,9 +989,11 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 						</button>
 					</div>
 				</form>
+				</>
+				)}
 			</div>
 
-			{showBrandPopup && (
+			{isLoggedIn && showBrandPopup && (
 				<BrandPopup
 					brands={brands}
 					selected={brand}
@@ -514,7 +1002,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 				/>
 			)}
 
-			{showModelPopup && (
+			{isLoggedIn && showModelPopup && (
 				<ModelPopup
 					models={models}
 					selected={model}
@@ -524,7 +1012,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 				/>
 			)}
 
-			{showFuelPopup && (
+			{isLoggedIn && showFuelPopup && (
 				<FuelPopup
 					fuels={fuels}
 					selected={fuel}

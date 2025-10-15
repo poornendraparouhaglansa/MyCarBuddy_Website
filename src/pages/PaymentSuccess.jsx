@@ -8,38 +8,66 @@ const PaymentSuccess = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [status, setStatus] = useState("Checking payment...");
-  const [details, setDetails] = useState({ paymentLinkId: "", paymentId: "" });
+  const [details, setDetails] = useState({
+    bookingId: "",
+    paymentLinkId: "",
+    paymentLinkStatus: "",
+    paymentId: "",
+    referenceId: ""
+  });
   const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const bookingId = params.get("bookingId") || "";
-    const paymentLinkId = params.get("payment_link_id") || params.get("paymentLinkId");
-    const paymentId = params.get("payment_id") || params.get("paymentId");
-    setDetails({ paymentLinkId: paymentLinkId || "", paymentId: paymentId || "" });
+    const bookingId = params.get("bookingid") || params.get("bookingId") || "";
+    const paymentLinkId = params.get("razorpay_payment_link_id") || params.get("payment_link_id") || "";
+    const paymentLinkStatus = params.get("razorpay_payment_link_status") || "";
+    const paymentId = params.get("razorpay_payment_id") || params.get("payment_id") || "";
+    const referenceId = params.get("razorpay_payment_link_reference_id") || "";
+    const signature = params.get("razorpay_signature") || "";
 
-    if (paymentLinkId) {
-      axios
-        .get(`${BaseURL}Payments/verify`, {
-          params: { paymentLinkId, paymentId, bookingId },
-          headers: { "Content-Type": "application/json" },
-        })
-        .then((res) => {
-          const v = (res?.data?.status || "").toString().toLowerCase();
-          if (v === "paid" || v === "success" || v === "captured") {
-            setStatus("Payment Successful ✅");
-          } else if (v === "pending") {
-            setStatus("Payment Pending ⏳");
-          } else {
-            setStatus("Payment Failed ❌");
-          }
-        })
-        .catch(() => {
-          setStatus("Payment verification failed ❌");
-        });
-    } else {
+    setDetails({
+      bookingId,
+      paymentLinkId,
+      paymentLinkStatus,
+      paymentId,
+      referenceId
+    });
+
+    if (!paymentLinkId) {
       setStatus("Invalid payment link ❌");
+      return;
     }
+
+    // Call backend callback with the exact Razorpay query params
+    const callbackParams = {
+      bookingid: bookingId,
+      razorpay_payment_link_id: paymentLinkId,
+      razorpay_payment_link_status: paymentLinkStatus,
+      razorpay_payment_id: paymentId,
+      razorpay_payment_link_reference_id: referenceId,
+      razorpay_signature: signature,
+    };
+
+    const tryCallback = async () => {
+      try {
+        const url = `${BaseURL}Bookings/razorpay/callback`;
+        console.log(url);
+        const res = await axios.get(url, { params: callbackParams });
+        const v = (paymentLinkStatus || res?.data?.status || "").toString().toLowerCase();
+        if (["paid", "success", "captured"].includes(v)) {
+          setStatus("Payment Successful ✅");
+        } else if (v === "pending") {
+          setStatus("Payment Pending ⏳");
+        } else {
+          setStatus("Payment Failed ❌");
+        }
+      } catch (e) {
+        setStatus("Payment verification failed ❌");
+      }
+    };
+
+    tryCallback();
   }, [location.search, BaseURL]);
 
   return (
@@ -61,18 +89,36 @@ const PaymentSuccess = () => {
               <h4 className="fw-bold mb-2">Car Service Payment</h4>
               <p className="mb-3 text-muted">{status}</p>
 
-              {(details.paymentLinkId || details.paymentId) && (
+              {(details.paymentLinkId || details.paymentId || details.referenceId) && (
                 <div className="bg-light rounded-3 p-3 text-start small mb-3">
+                  {details.bookingId && (
+                    <div className="d-flex justify-content-between">
+                      <span className="text-muted">Booking ID</span>
+                      <span className="fw-semibold">{details.bookingId}</span>
+                    </div>
+                  )}
                   {details.paymentLinkId && (
                     <div className="d-flex justify-content-between">
                       <span className="text-muted">Payment Link ID</span>
                       <span className="fw-semibold">{details.paymentLinkId}</span>
                     </div>
                   )}
+                  {details.paymentLinkStatus && (
+                    <div className="d-flex justify-content-between mt-2">
+                      <span className="text-muted">Link Status</span>
+                      <span className="fw-semibold text-capitalize">{details.paymentLinkStatus}</span>
+                    </div>
+                  )}
                   {details.paymentId && (
                     <div className="d-flex justify-content-between mt-2">
                       <span className="text-muted">Payment ID</span>
                       <span className="fw-semibold">{details.paymentId}</span>
+                    </div>
+                  )}
+                  {details.referenceId && (
+                    <div className="d-flex justify-content-between mt-2">
+                      <span className="text-muted">Reference ID</span>
+                      <span className="fw-semibold">{details.referenceId}</span>
                     </div>
                   )}
                 </div>

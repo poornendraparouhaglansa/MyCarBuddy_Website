@@ -1,10 +1,8 @@
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import CryptoJS from "crypto-js";
 import { useAlert } from "../context/AlertContext";
 import { useNavigate } from "react-router-dom";
-
 
 const ImageURL = process.env.REACT_APP_CARBUDDY_IMAGE_URL;
 const Profile = () => {
@@ -16,8 +14,8 @@ const Profile = () => {
     ProfileImage: "",
   });
   const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
-    const { showAlert } = useAlert()
-    const navigate = useNavigate();
+  const { showAlert } = useAlert();
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const userdata = JSON.parse(localStorage.getItem("user")) || {};
   const token = userdata?.token || "";
@@ -25,35 +23,43 @@ const Profile = () => {
   const decryptedCustId = bytes.toString(CryptoJS.enc.Utf8);
 
   useEffect(() => {
-      const fetchProfile = async () => {
-        try {
-          const res = await axios.get(
-            `${process.env.REACT_APP_CARBUDDY_BASE_URL}Customer/Id?Id=${decryptedCustId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get(
+          `${process.env.REACT_APP_CARBUDDY_BASE_URL}Customer/Id?Id=${decryptedCustId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const data = res.data[0] || {};
+        console.log("Fetched user profile:", data);
 
-            });
-              
-          const data = res.data[0] || {};
-          console.log("Fetched user profile:", data);
-        
-          setUser({
-            FullName: data.FullName || "",
-            Email: data.Email ,
-            PhoneNumber: data.PhoneNumber || "",
-            AlternateNumber: data.AlternateNumber || "",
-            ProfileImage: data.ProfileImage || "",
-          });
+        setUser({
+          FullName: data.FullName || "",
+          Email: data.Email,
+          PhoneNumber: data.PhoneNumber || "",
+          AlternateNumber: data.AlternateNumber || "",
+          ProfileImage: data.ProfileImage || "",
+        });
 
-          // localStorage.setItem("user", JSON.stringify({ ...parsed, ...data }));
-        } catch (err) {
-          console.error("Failed to fetch user profile", err);
+        const isEmptyProfile =
+          !data.FullName &&
+          (!data.Email || data.Email === "null") &&
+          !data.AlternateNumber &&
+          !data.ProfileImage;
+
+        if (isEmptyProfile) {
+          setEditing(true);
         }
-      };
+        // localStorage.setItem("user", JSON.stringify({ ...parsed, ...data }));
+      } catch (err) {
+        console.error("Failed to fetch user profile", err);
+      }
+    };
 
-      fetchProfile();
+    fetchProfile();
   }, []);
 
   const handleInputChange = (e) => {
@@ -61,43 +67,42 @@ const Profile = () => {
     setUser((prev) => ({ ...prev, [name]: value }));
   };
 
- const handleSave = async () => {
-  try {
+  const handleSave = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("CustID", decryptedCustId || "");
+      formData.append("FullName", user.FullName || "");
+      formData.append("Email", user.Email || "");
+      formData.append("PhoneNumber", user.PhoneNumber || "");
+      formData.append("AlternateNumber", user.AlternateNumber || "");
 
-    const formData = new FormData();
-    formData.append("CustID", decryptedCustId || "");
-    formData.append("FullName", user.FullName || "");
-    formData.append("Email", user.Email || "");
-    formData.append("PhoneNumber", user.PhoneNumber || "");
-    formData.append("AlternateNumber", user.AlternateNumber || "");
-
-    // If image is base64 string, convert to file
-    if (user.ProfileImage?.startsWith("data:image")) {
-      const blob = await fetch(user.ProfileImage).then((r) => r.blob());
-      formData.append("ProfileImageFile", blob, "profile.jpg");
-    }
-
-    const res = await fetch(
-      `${process.env.REACT_APP_CARBUDDY_BASE_URL}Customer/update-customer`,
-      {
-        method: "POST",
-        body: formData,
+      // If image is base64 string, convert to file
+      if (user.ProfileImage?.startsWith("data:image")) {
+        const blob = await fetch(user.ProfileImage).then((r) => r.blob());
+        formData.append("ProfileImageFile", blob, "profile.jpg");
       }
-    );
 
-    if (!res.ok) throw new Error("Failed to update profile");
+      const res = await fetch(
+        `${process.env.REACT_APP_CARBUDDY_BASE_URL}Customer/update-customer`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
-    const updatedData = await res.json();
-    window.dispatchEvent(new Event("userProfileUpdated"));
-    setEditing(false);
-    showAlert("success", "Profile updated successfully!", 3000, "success");
-    //reload the page
-    window.location.reload();
-  } catch (err) {
-    console.error("Save failed:", err);
-    alert("Error updating profile");
-  }
-};
+      if (!res.ok) throw new Error("Failed to update profile");
+
+      const updatedData = await res.json();
+      window.dispatchEvent(new Event("userProfileUpdated"));
+      setEditing(false);
+      showAlert("success", "Profile updated successfully!", 3000, "success");
+      //reload the page
+      window.location.reload();
+    } catch (err) {
+      console.error("Save failed:", err);
+      alert("Error updating profile");
+    }
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -111,9 +116,9 @@ const Profile = () => {
   };
 
   return (
-    <div className="container py-5">
+    <div className="container py-4">
       <div className="row justify-content-center">
-        <div className="col-md-8">
+        <div className="col-md-12">
           <div className="card shadow-sm rounded-4 p-4">
             <div className="d-flex justify-content-between align-items-center mb-4">
               <h4 className="mb-0">Profile Details</h4>
@@ -127,10 +132,11 @@ const Profile = () => {
               )}
             </div>
 
-            {/* Profile Image */}
-            <div className="text-center mb-4">
-              {user.ProfileImage && (
-               <img
+            <div className="row align-items-center ">
+              {/* Profile Image */}
+              <div className="text-center mb-4 col-md-5 mb-md-0 ml-15 ">
+                {(user.ProfileImage && (
+                  <img
                     src={
                       user?.ProfileImage?.startsWith("data:")
                         ? user.ProfileImage // base64 preview
@@ -140,85 +146,98 @@ const Profile = () => {
                     }
                     alt="Profile"
                     className="rounded-circle border"
-                    style={{ width: "150px", height: "150px", objectFit: "cover" }}
+                    style={{
+                      width: "300px",
+                      height: "300px",
+                      objectFit: "cover",
+                    }}
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = "/assets/img/avatar.png";
                     }}
                   />
-              ) || (
-                <img
-                  src="/assets/img/avatar.png"
-                  alt="Profile"
-                  // className="rounded-circle border"
-                />
-              )}
-              
-              {editing && (
-                <div className="mt-2">
+                )) || (
+                  <img
+                    src="/assets/img/avatar.png"
+                    alt="Profile"
+                    // className="rounded-circle border"
+                  />
+                )}
+              </div>
+              <div className="col-md-6 ms-auto mr-20">
+                <div className="mb-3">
+                  <label className="form-label">Full Name</label>
                   <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
+                    type="text"
+                    className="form-control"
+                    name="FullName"
+                    value={user.FullName}
+                    onChange={handleInputChange}
+                    placeholder="Enter your name"
+                    readOnly={!editing}
                   />
                 </div>
-              )}
-            </div>
 
-            <div className="mb-3">
-              <label className="form-label">Full Name</label>
-              <input
-                type="text"
-                className="form-control"
-                name="FullName"
-                value={user.FullName}
-                onChange={handleInputChange}
-                placeholder="Enter your name"
-                readOnly={!editing}
-              />
-            </div>
-
-            <div className="mb-3">
-              <label className="form-label">Mobile</label>
-              <input
-                type="text"
-                className="form-control"
-                name="PhoneNumber"
-                value={user.PhoneNumber}
-                readOnly
-              />
-            </div>
-            <div className="mb-3">
-                <label className="form-label">Email</label>
-                <input
-                  type="email"
+                <div className="mb-3">
+                  <label className="form-label">Mobile</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="PhoneNumber"
+                    value={user.PhoneNumber}
+                    readOnly
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Email</label>
+                  <input
+                    type="email"
                     className="form-control"
                     name="Email"
-                    value={user.Email === 'null' ? "" : user.Email}
+                    value={user.Email === "null" ? "" : user.Email}
                     onChange={handleInputChange}
                     readOnly={!editing}
-                />
+                  />
+                </div>
 
+                <div className="mb-3">
+                  <label className="form-label">Alternate Number</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="AlternateNumber"
+                    value={user.AlternateNumber}
+                    onChange={handleInputChange}
+                    readOnly={!editing}
+                  />
+                </div>
+                {editing && (
+                  <div className="mt-3">
+                    <label className="form-label">Profile Image</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-
-            <div className="mb-3">
-              <label className="form-label">Alternate Number</label>
-              <input
-                type="text"
-                className="form-control"
-                name="AlternateNumber"
-                value={user.AlternateNumber}
-                onChange={handleInputChange}
-                readOnly={!editing}
-              />
-            </div>
-
-
-
             {editing && (
-              <button className="btn btn-success w-100 px-4 py-2" onClick={handleSave}>
-                Save Profile
-              </button>
+              <div className="d-flex justify-content-center gap-3 mt-3">
+                <button
+                  className="btn btn-success px-4 py-2"
+                  onClick={handleSave}
+                >
+                  Update Profile
+                </button>
+                <button
+                  className="btn btn-secondary px-4 py-2"
+                  onClick={() => setEditing(false)}
+                >
+                  Cancel Update
+                </button>
+              </div>
             )}
           </div>
         </div>
