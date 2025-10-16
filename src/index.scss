@@ -11,3 +11,5 @@
 // Init main SCSS File
 @import "/public/assets/css/demo.scss";
 @import "/public/assets/sass/style.scss";
+// Mobile overrides (must come last)
+@import "./mobile.scss";

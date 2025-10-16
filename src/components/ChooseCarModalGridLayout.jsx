@@ -403,7 +403,11 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
             toast: true,
             position: 'top-end'
         });
-		window.location.reload();
+        try { window.dispatchEvent(new CustomEvent('selectedCarUpdated')); } catch (_) {}
+        if (onCarSaved) {
+            onCarSaved(selectedCarDetails);
+        }
+        if (onClose) onClose();
     };
 
 	useEffect(() => {
@@ -595,8 +599,12 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 			console.error("Error inserting customer vehicle:", err);
 		}
 
-		console.log("Saved Car:", selectedCarDetails);
-		window.location.reload();
+        console.log("Saved Car:", selectedCarDetails);
+        try { window.dispatchEvent(new CustomEvent('selectedCarUpdated')); } catch (_) {}
+        if (onCarSaved) {
+            onCarSaved(selectedCarDetails);
+        }
+        if (onClose) onClose();
 	};
 
 	const handleBrandSelect = (id) => {

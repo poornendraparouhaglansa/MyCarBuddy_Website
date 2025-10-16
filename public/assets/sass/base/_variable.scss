@@ -585,6 +585,9 @@ div:where(.swal2-icon) .swal2-icon-content {
   text-decoration: none !important;
 }
 
+textarea::placeholder {
+  color: rgb(227, 227, 227) !important; 
+}
 
 @media (min-width: 320px) and (max-width: 375px) {
    .menu-area .col-auto.d-block.ms-auto.d-xl-block.d-sm-block{

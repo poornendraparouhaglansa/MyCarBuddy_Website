@@ -24,6 +24,8 @@ const BookingAddressDetails = ({
   states,
   cities,
   handleMapClick,
+  fetchCities,
+  serviceAvailable,
   // setSelectedSavedAddressID
 }) => {
   const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
@@ -314,6 +316,7 @@ const BookingAddressDetails = ({
   }, []);
 
   const onPlacesChanged = () => {
+
     const places = searchBox.getPlaces();
     if (!places || places.length === 0) return;
     const place = places[0];
@@ -329,25 +332,47 @@ const BookingAddressDetails = ({
       if (c.types?.includes("locality")) cityName = c.long_name;
       if (c.types?.includes("postal_code")) pincode = c.long_name;
     });
+    
+    fetchCities(pincode);
+    const filteredCities = cities.filter((c) => c.Pincode === pincode);
+    if (filteredCities.length > 0) {
+      // alert("filteredCities");
+    } else {
+      showAlert("Service is not available in your selected location.");
+      setFormData((prev) => ({
+        ...prev,
+        StateID: "",
+        CityID: "79",
+        pincode: "",
+        addressLine1: "",
+        addressLine2: "",
+        CityName: "",
+      }));
+
+
+
+      return;
+    }
 
     // Update form and map
-    setFormData((prev) => ({
-      ...prev,
-      CityName: cityName || prev.CityName,
-      pincode: pincode || prev.pincode,
-      mapLocation: {
-        latitude: loc.lat(),
-        longitude: loc.lng(),
-      },
-    }));
+    // setFormData((prev) => ({
+    //   ...prev,
+    //   CityName: cityName || prev.CityName,
+    //   pincode: pincode || prev.pincode,
+    //   mapLocation: {
+    //     latitude: loc.lat(),
+    //     longitude: loc.lng(),
+    //   },
+    // }));
 
     // Prevent immediate live reverse geocode after we already set via search
     blockLiveGeocodeRef.current = true;
-    handleMapClick(loc.lat(), loc.lng());
+    handleMapClick(loc.lat(), loc.lng(), place.name || place.formatted_address || "");
   };
 
   // On blur of addressLine1, geocode and update map center
   const handleAddressBlur = async () => {
+    alert();
     const addressText = (formData.addressLine2 || "").trim();
     if (!addressText) return;
     try {

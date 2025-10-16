@@ -86,6 +86,7 @@ const SelectTimeSlotPage = () => {
   const [selectedCity, setSelectedCity] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
+  const [serviceAvailable, setServiceAvailable] = useState(true);
 
   const [appliedCoupon, setAppliedCoupon] = useState(null); // Stores selected coupon
   const [couponApplied, setCouponApplied] = useState(false); // Tracks applied status
@@ -113,6 +114,29 @@ const [paymentMessage, setPaymentMessage] = useState("");
 const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
 const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
   const [gstError, setGstError] = useState("");
+
+  // Preserve current step and refresh vehicle details when car selection changes
+  useEffect(() => {
+    const handleSelectedCarUpdated = () => {
+      try {
+        const carData = localStorage.getItem("selectedCarDetails");
+        if (!carData) return;
+        const parsedCar = JSON.parse(carData);
+        setSelectedVehicle(parsedCar);
+        setFormData((prev) => ({
+          ...prev,
+          brandID: parsedCar.brand?.id || prev.brandID,
+          modelID: parsedCar.model?.id || prev.modelID,
+          fuelTypeID: parsedCar.fuel?.id || prev.fuelTypeID,
+          VehicleID: parsedCar.VehicleID || prev.VehicleID,
+        }));
+        // Keep the current step; do not reset
+      } catch (_) { /* no-op */ }
+    };
+
+    window.addEventListener('selectedCarUpdated', handleSelectedCarUpdated);
+    return () => window.removeEventListener('selectedCarUpdated', handleSelectedCarUpdated);
+  }, []);
 
   const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -280,6 +304,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
 
           if (matchedCity.length === 0) {
             showAlert("Service is not available in your selected location.");
+            setServiceAvailable(false);
             setFormData((prev) => ({
               ...prev,
               StateID: "",
@@ -296,6 +321,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
           // If we found a matching city by pincode, update the form
           if (matchedCity.length > 0) {
             const city = matchedCity[0];
+            setServiceAvailable(true);
             setFormData((prev) => ({
               ...prev,
               StateID: city.StateID.toString(),
@@ -365,8 +391,9 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
 }, []);
 
 
-  const handleMapClick = async (lat, lng) => {
-    const result = await reverseGeocode(lat, lng);
+  const handleMapClick = async (lat, lng , placeName = '') => {
+    if (!serviceAvailable) return; // Skip when service not available
+    const result = await reverseGeocode(lat, lng, placeName);
 
     const stateName = result?.state?.toLowerCase?.();
     const cityNameRaw = result?.city || "";
@@ -542,8 +569,11 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
       ) {
         // Immediate triggers
         if (name === "pincode" && value.length === 6) {
-          updateMapFromAddress(updatedForm);
+          // Validate pincode first
           fetchCities(value);
+          if (serviceAvailable) {
+            updateMapFromAddress(updatedForm);
+          }
         } else if (name === "StateID") {
           updateMapFromAddress(updatedForm);
         }
@@ -553,6 +583,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
   };
 
   const updateMapFromAddress = async (form) => {
+    if (!serviceAvailable) return; // Block geocoding when service not available
 
     const { addressLine2, pincode, StateID , CityName } = form;
 
@@ -1054,7 +1085,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     }
   };
 
-  const reverseGeocode = async (lat, lng) => {
+  const reverseGeocode = async (lat, lng, placeName = '') => {
     try {
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
@@ -1074,12 +1105,12 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
         addressComponents.find((c) => c.types.includes("postal_code"))
           ?.long_name || "";
       const formattedAddress = data.results[0].formatted_address;
-
+      const fullAddress = placeName ?  `${placeName}, ${formattedAddress}` : formattedAddress;
       return {
         city,
         state,
         postalCode,
-        address: formattedAddress,
+        address: fullAddress,
       };
     } catch (error) {
       console.error("Error in reverse geocoding:", error);
@@ -1482,6 +1513,8 @@ const getGST = () => {
                 setAddressLine1={setAddressLine1}
                 setAddressLine2={setAddressLine2}
                 handleMapClick={handleMapClick}
+                fetchCities={fetchCities}
+                serviceAvailable={serviceAvailable}
               />
                 </div>
           )}

@@ -20,6 +20,10 @@ const NotificationDropdown = ({  }) => {
       }
     } finally {
       setIsOpen(false);
+      // Notify other views (e.g., MyBookings) to refresh immediately
+      try {
+        window.dispatchEvent(new CustomEvent('notificationReceived'));
+      } catch (_) { /* no-op */ }
       const targetBookingId = notification?.relatedId || notification?.bookingId || notification?.bookingID || '';
       if (targetBookingId) {
         navigate(`/profile?tab=mybookings&bookingId=${encodeURIComponent(targetBookingId)}`);

@@ -896,6 +896,11 @@ const HeaderOne = () => {
 										Service
 									</NavLink>
 								</li>
+								<li>
+									<NavLink to="/contact" className={(navData) => (navData.isActive ? "active" : "")}>
+										Contact
+									</NavLink>
+								</li>
 
 								{user?.id ? (
 									<>
@@ -904,12 +909,12 @@ const HeaderOne = () => {
 												Profile
 											</NavLink>
 										</li>
-										<li>
+										{/* <li>
                                             <div className="d-flex align-items-center justify-content-between">
                                                 <span>Notifications</span>
                                                 <NotificationDropdown  />
                                             </div>
-										</li>
+										</li> */}
 										<li>
 											<NavLink to="/cart" className={(navData) => (navData.isActive ? "active" : "")}>
 												Cart
@@ -949,11 +954,7 @@ const HeaderOne = () => {
 									</li>
 								)}
 
-								<li>
-									<NavLink to="/contact" className={(navData) => (navData.isActive ? "active" : "")}>
-										Contact
-									</NavLink>
-								</li>
+								
 							</ul>
 						</div>
 					</div>

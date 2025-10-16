@@ -1244,7 +1244,7 @@ const BookingSkeleton = () => {
               {/* Vertical (mobile) */}
               <div className="d-block d-lg-none">
                 <div className="position-relative" style={{ paddingLeft: 34 }}>
-                  <div style={{ position: 'absolute', top: 0, bottom: 0, left: 16, width: 3, borderRadius: 2, background: 'linear-gradient(180deg, #e9ecef 0%, #dee2e6 60%, #e9ecef 100%)' }}></div>
+
                   {[...statusTimeline,
                     ...(booking.BookingStatus === "Cancelled" ? [{ label: "Cancelled", date: new Date() }] : []),
                     ...(booking.BookingStatus === "Failed" ? [{ label: "Failed", date: new Date() }] : []),
@@ -1307,14 +1307,14 @@ const BookingSkeleton = () => {
               ? (
                  <div className="alert alert-warning " role="alert">
                    <div className="row align-items-center g-2">
-                     <div className="col">
+                     <div className="col-12 col-md-10">
                        {booking?.Reschedules && booking.Reschedules.length >= 2 ? (
                          <span>You have reached the maximum reschedule limit. Please contact customer support to reschedule your booking.</span>
                        ) : (
                          <span>Need a different time? Go ahead and reschedule your booking.</span>
                        )}
                 </div>
-                     <div className="col-auto">
+                     <div className="col-auto  ">
                        {booking?.Reschedules && booking.Reschedules.length >= 2 ? (
                          <a href="tel:7075243939" className="tab-pill pill border-info text-info px-3 py-1 d-flex align-items-center gap-1 text-decoration-none">
                            <i className="bi bi-telephone"></i>

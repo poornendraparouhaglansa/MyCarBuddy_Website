@@ -1,0 +1,274 @@
+// Mobile-first overrides and helpers
+
+// Breakpoints based on common device widths
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+
+// Generic utilities
+@media (max-width: $breakpoint-md) {
+  html, body {
+    overflow-x: hidden;
+  }
+
+  img,
+  svg,
+  canvas,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .container,
+  .container-fluid,
+  .container-lg,
+  .container-md,
+  .container-sm,
+  .container-xl {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  // Prevent grid overflow
+  .row {
+    margin-left: -12px;
+    margin-right: -12px;
+  }
+}
+
+// Header adjustments
+@media (max-width: $breakpoint-md) {
+  .nav-header.header-layout1 {
+    .header-top {
+      display: none; // reduce clutter on small screens
+    }
+
+    .menu-area {
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+
+    .header-logo1 img {
+      width: 140px !important;
+      height: auto !important;
+    }
+
+    .navbar-right-desc {
+      gap: 8px !important;
+    }
+
+    .header-grid-wrap {
+      gap: 10px !important;
+    }
+
+    // Compact search chip
+    .single-search {
+      height: 36px !important;
+      .custom-input {
+        font-size: 14px !important;
+        line-height: 36px !important;
+      }
+      .icon-area {
+        height: 36px !important;
+        width: 36px !important;
+      }
+    }
+
+    // Hide desktop-only account blurb on small screens
+    .signDiv {
+      display: none !important;
+    }
+  }
+}
+
+// Cards & lists common fixes
+@media (max-width: $breakpoint-sm) {
+  .card,
+  .package-card,
+  .booking-card,
+  .service-card {
+    border-radius: 8px;
+  }
+
+  .grid-2, .grid-3, .grid-4 {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+// Safe table scrolling for narrow viewports
+@media (max-width: $breakpoint-md) {
+  .table-responsive,
+  .table-wrap,
+  .overflow-table {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+// MyBookings and common action areas
+@media (max-width: $breakpoint-md) {
+  // Make large primary actions more tappable but not overflow
+  .btn-lg {
+    font-size: 1rem;
+    padding: 0.6rem 1rem !important;
+    width: 100%;
+  }
+
+  // Reduce overly large horizontal padding on buttons
+  .btn.px-4 { padding-left: 0.9rem !important; padding-right: 0.9rem !important; }
+  .btn.py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+
+  // Wrap clustered buttons instead of overflowing
+  .d-flex.gap-1,
+  .d-flex.gap-2,
+  .d-flex.gap-3 {
+    flex-wrap: wrap;
+  }
+
+  // Right-aligned button rows should stack on small screens
+  .justify-content-end > .btn,
+  .text-end > .btn {
+    width: 100%;
+    margin-left: 0 !important;
+    margin-top: 8px;
+  }
+
+  // Ensure action areas have spacing when stacked
+  .btn + .btn {
+    margin-left: 0 !important;
+  }
+
+  // Column spacing and stacking helpers
+  .row > [class^="col-"],
+  .row > [class*=" col-"] {
+    margin-bottom: 12px;
+  }
+}
+
+// Modal sizing on small devices
+@media (max-width: $breakpoint-sm) {
+  .modal-dialog {
+    max-width: 95% !important;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+// SelectTimeSlotPage responsive tweaks
+@media (max-width: $breakpoint-md) {
+  // Calendar container and controls
+  .weekly-calendar,
+  .WeeklyCalendar,
+  .calendar-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  // Time slot chips should wrap nicely
+  .timeslot-checkbox.form-check-inline {
+    display: inline-flex;
+    margin-right: 8px;
+    margin-bottom: 8px;
+  }
+
+  .timeslot-checkbox input[type="checkbox"],
+  .timeslot-checkbox input[type="radio"] {
+    width: 18px;
+    height: 18px;
+  }
+
+  // Section paddings
+  .pt-3 { padding-top: 0.75rem !important; }
+  .ps-3 { padding-left: 0.75rem !important; }
+
+  // Form groups spacing
+  .form-group, .mb-3, .mb-4 { margin-bottom: 0.75rem !important; }
+
+  // Step footer actions stack
+  .step-actions,
+  .checkout-actions,
+  .d-flex.justify-content-end.mt-3 {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .step-actions .btn,
+  .checkout-actions .btn,
+  .d-flex.justify-content-end.mt-3 .btn {
+    width: 100%;
+  }
+
+  // Address block side border can be subtle on mobile
+  .border-start { border-left-width: 2px !important; }
+}
+
+// ChooseCarModalGridLayout responsive tweaks
+@media (max-width: $breakpoint-md) {
+  .choose-car-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    z-index: 1055;
+  }
+
+  .choose-car-modal .modal-content {
+    width: 100%;
+    max-width: 560px !important;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 12px;
+  }
+
+  .choose-car-modal .modal-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: transparent;
+    border: 0;
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  // Car selection tiles
+  .choose-car-modal .car-box {
+    width: 45% !important;
+    height: 110px !important;
+    margin-bottom: 10px;
+  }
+
+  @media (max-width: $breakpoint-sm) {
+    .choose-car-modal .car-box {
+      width: 100% !important;
+      height: 96px !important;
+    }
+  }
+
+  // Saved vehicles row stacking
+  .choose-car-modal .row.g-2.align-items-end > [class^="col-"],
+  .choose-car-modal .row.g-2.align-items-end > [class*=" col-"] {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  // Action buttons
+  .choose-car-modal .d-flex.justify-content-center.gap-2.mt-3 .btn {
+    width: 48%;
+  }
+  @media (max-width: $breakpoint-sm) {
+    .choose-car-modal .d-flex.justify-content-center.gap-2.mt-3 .btn {
+      width: 100%;
+    }
+  }
+
+  // Inputs sizing and spacing
+  .choose-car-modal .form-control,
+  .choose-car-modal .form-select {
+    min-height: 40px;
+  }
+}
+
+
