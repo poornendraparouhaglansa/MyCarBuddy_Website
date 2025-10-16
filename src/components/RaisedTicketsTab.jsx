@@ -50,7 +50,7 @@ const RaisedTicketsTab = () => {
       }
     } catch (error) {
       console.error("Error fetching tickets:", error);
-      showAlert("Failed to fetch tickets. Please try again.", "error");
+      // showAlert("Failed to fetch tickets. Please try again.", "error");
       setTickets([]);
     } finally {
       setLoading(false);
@@ -80,22 +80,62 @@ const RaisedTicketsTab = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const statusLower = (status || "").toLowerCase();
-    switch (statusLower) {
-      case "open":
-        return <span className="badge bg-warning">Open</span>;
-      case "in progress":
-      case "inprogress":
-        return <span className="badge bg-info">In Progress</span>;
-      case "resolved":
-      case "closed":
-        return <span className="badge bg-success">Resolved</span>;
-      case "pending":
-        return <span className="badge bg-secondary">Pending</span>;
-      default:
-        return <span className="badge bg-light text-dark">{status || "Unknown"}</span>;
-    }
+  const getStatusDisplay = (status, statusName) => {
+    // Use StatusName if available, otherwise fallback to status
+    const statusText = statusName || status;
+    const statusLower = (statusText || "").toLowerCase();
+    
+    const getStatusColor = () => {
+      switch (statusLower) {
+        case "open":
+          return "#ffc107"; // yellow
+        case "in progress":
+        case "inprogress":
+          return "#0dcaf0"; // cyan
+        case "resolved":
+        case "closed":
+          return "#198754"; // green
+        case "pending":
+          return "#6c757d"; // gray
+        default:
+          return "#6c757d"; // default gray
+      }
+    };
+
+    const getStatusIcon = () => {
+      switch (statusLower) {
+        case "open":
+          return "🔓";
+        case "in progress":
+        case "inprogress":
+          return "⚙️";
+        case "resolved":
+        case "closed":
+          return "✅";
+        case "pending":
+          return "⏳";
+        default:
+          return "❓";
+      }
+    };
+
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '4px 12px',
+        borderRadius: '20px',
+        backgroundColor: getStatusColor() + '20',
+        border: `1px solid ${getStatusColor()}`,
+        fontSize: '12px',
+        fontWeight: '500',
+        color: getStatusColor()
+      }}>
+        <span>{getStatusIcon()}</span>
+        <span>{statusText || "Unknown"}</span>
+      </div>
+    );
   };
 
   if (loading) {
@@ -113,14 +153,14 @@ const RaisedTicketsTab = () => {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h5 className="mb-0">🎫 Raised Tickets</h5>
-        <button
-          className="btn btn-primary btn-sm"
+        {/* <button
+          className="btn btn-primary "
           onClick={fetchTickets}
           disabled={loading}
         >
           <i className="fas fa-sync-alt me-1"></i>
           Refresh
-        </button>
+        </button> */}
       </div>
 
       {tickets.length === 0 ? (
@@ -134,36 +174,36 @@ const RaisedTicketsTab = () => {
       ) : (
         <div className="accordion" id="ticketsAccordion">
           {tickets.map((ticket, index) => (
-            <div key={ticket.ticketID || ticket.id || index} className="accordion-item">
+            <div key={ticket.Id || ticket.id || index} className="accordion-item">
               <h2 className="accordion-header" id={`heading${index}`}>
                 <button
-                  className={`accordion-button ${expandedTicket === (ticket.ticketID || ticket.id || index) ? "" : "collapsed"}`}
+                  className={`accordion-button ${expandedTicket === (ticket.Id || ticket.id || index) ? "" : "collapsed"}`}
                   type="button"
-                  onClick={() => toggleTicket(ticket.ticketID || ticket.id || index)}
-                  aria-expanded={expandedTicket === (ticket.ticketID || ticket.id || index)}
+                  onClick={() => toggleTicket(ticket.Id || ticket.id || index)}
+                  aria-expanded={expandedTicket === (ticket.Id || ticket.id || index)}
                   aria-controls={`collapse${index}`}
                 >
                   <div className="d-flex justify-content-between align-items-center w-100 me-3">
                     <div className="d-flex flex-column align-items-start">
                       <span className="fw-bold">
-                        Ticket #{ticket.ticketID || ticket.id || `T-${index + 1}`}
+                        Ticket #{ticket.TicketTrackId || ticket.Id || `T-${index + 1}`}
                       </span>
-                      <small className="text-muted">
-                        {ticket.subject || ticket.title || "Support Request"}
-                      </small>
+                      {/* <small className="text-muted">
+                        {ticket.CustomerName || "Support Request"}
+                      </small> */}
                     </div>
-                    <div className="d-flex flex-column align-items-end">
-                      {getStatusBadge(ticket.status)}
-                      <small className="text-muted mt-1">
-                        {formatDate(ticket.createdDate || ticket.createdAt || ticket.date)}
-                      </small>
-                    </div>
+                      <div className="d-flex flex-column align-items-end">
+                    
+                        <small className="text-muted mt-1">
+                          {formatDate(ticket.CreatedDate)}
+                        </small>
+                      </div>
                   </div>
                 </button>
               </h2>
               <div
                 id={`collapse${index}`}
-                className={`accordion-collapse collapse ${expandedTicket === (ticket.ticketID || ticket.id || index) ? "show" : ""}`}
+                className={`accordion-collapse collapse ${expandedTicket === (ticket.Id || ticket.id || index) ? "show" : ""}`}
                 aria-labelledby={`heading${index}`}
                 data-bs-parent="#ticketsAccordion"
               >
@@ -171,13 +211,13 @@ const RaisedTicketsTab = () => {
                   <div className="row">
                     <div className="col-md-8">
                       <h6 className="text-primary">Description</h6>
-                      <p className="mb-3">{ticket.description || ticket.message || "No description provided."}</p>
+                      <p className="mb-3">{ticket.Description || "No description provided."}</p>
                       
-                      {ticket.bookingID && (
+                      {ticket.BookingTrackID && (
                         <>
                           <h6 className="text-primary">Related Booking</h6>
                           <p className="mb-3">
-                            <span className="badge bg-info">Booking ID: {ticket.bookingID}</span>
+                            <span className="badge1 bg-info">Booking ID: {ticket.BookingTrackID}</span>
                           </p>
                         </>
                       )}
@@ -185,29 +225,23 @@ const RaisedTicketsTab = () => {
                     <div className="col-md-4">
                       <h6 className="text-primary">Ticket Details</h6>
                       <div className="mb-2">
-                        <strong>Status:</strong> {getStatusBadge(ticket.status)}
+                        <strong>Status:</strong> {getStatusDisplay(ticket.Status, ticket.StatusName)}
                       </div>
                       <div className="mb-2">
-                        <strong>Priority:</strong> 
-                        <span className={`badge ms-1 ${
-                          ticket.priority === 'high' ? 'bg-danger' :
-                          ticket.priority === 'medium' ? 'bg-warning' :
-                          'bg-secondary'
-                        }`}>
-                          {ticket.priority || 'Normal'}
-                        </span>
+                        <strong>Customer:</strong> {ticket.CustomerName}
                       </div>
                       <div className="mb-2">
-                        <strong>Created:</strong> {formatDate(ticket.createdDate || ticket.createdAt || ticket.date)}
+                        <strong>Phone:</strong> {ticket.CustomerPhone}
                       </div>
-                      {ticket.updatedDate && (
+                      <div className="mb-2">
+                        <strong>Email:</strong> {ticket.CustomerEmail}
+                      </div>
+                      <div className="mb-2">
+                        <strong>Created:</strong> {formatDate(ticket.CreatedDate)}
+                      </div>
+                      {ticket.StatusDate && (
                         <div className="mb-2">
-                          <strong>Last Updated:</strong> {formatDate(ticket.updatedDate)}
-                        </div>
-                      )}
-                      {ticket.resolvedDate && (
-                        <div className="mb-2">
-                          <strong>Resolved:</strong> {formatDate(ticket.resolvedDate)}
+                          <strong>Status Updated:</strong> {formatDate(ticket.StatusDate)}
                         </div>
                       )}
                     </div>

@@ -64,13 +64,13 @@ const FuelPopup = ({ fuels, selected, onSelect, onClose, loading }) => {
               filteredFuels.map((f) => (
                 <div key={f.id} className="col-6 col-sm-4 col-md-2 mb-3">
                   <div
-                    className={`card brand-card ${
+                    className={`card brand-card text-center ${
                       selected === f.id ? "selected" : ""
                     }`}
                     onClick={() => onSelect(f.id)}
                   >
                     <div className="fuel-icon-container p-3">
-                      <i className={`bi ${getFuelIcon(f.name)}`} style={{ fontSize: "2rem", color: getFuelColor(f.name) }}></i>
+                     <img src={f.image} alt={f.name} style={{ width: "50%", height: "50%", objectFit: "contain" }} />
                     </div>
                     <div className="card-body text-center p-2">
                       <h6 className="card-title mb-0">{f.name}</h6>

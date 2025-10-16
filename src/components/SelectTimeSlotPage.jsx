@@ -1011,8 +1011,8 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
     form.append("Longitude", formData.mapLocation.longitude);
     form.append("Latitude", formData.mapLocation.latitude);
     form.append("Notes", formData.technicianNote);
-    form.append("CouponCode", couponApplied ? formData.appliedCouponCode : "");
-    form.append("CouponAmount", getOriginalTotal() - getDiscountedTotal());
+    form.append("CouponCode", (couponApplied && paymentMethod === "razorpay") ? formData.appliedCouponCode : "");
+    form.append("CouponAmount", (couponApplied && paymentMethod === "razorpay") ? (getOriginalTotal() - getDiscountedTotal()) : 0);
     form.append("GSTAmount", getGST());
     form.append("GSTNumber", formData.gstNumber || null);
     form.append("OrganizationName", formData.organizationName || null);
@@ -1591,7 +1591,15 @@ const getGST = () => {
                     name="payment"
                     id="COS"
                     checked={paymentMethod === "COS"}
-                    onChange={() => setPaymentMethod("COS")}
+                    onChange={() => {
+                      setPaymentMethod("COS");
+                      // Remove applied coupon when switching to COS
+                      if (couponApplied) {
+                        setAppliedCoupon(null);
+                        setCouponApplied(false);
+                        setShowCouponPopup(false);
+                      }
+                    }}
                   />
                   <label className="form-check-label" htmlFor="COS">
                     Pay On Completion
@@ -1697,7 +1705,7 @@ const getGST = () => {
                         <div>Service Total: ₹{getOriginalTotal().toFixed(2)}</div>
                         <div>SGST (9%): ₹{(getGST() / 2).toFixed(2)}</div>
                         <div>CGST (9%): ₹{(getGST() / 2).toFixed(2)}</div>
-                        {couponApplied && (
+                        {couponApplied && paymentMethod === "razorpay" && (
                           <div className="text-muted">
                             (Saved ₹{(getOriginalTotal() - getDiscountedTotal()).toFixed(2)})
                           </div>
@@ -1709,61 +1717,80 @@ const getGST = () => {
                        <div className="d-flex justify-content-between border-top pt-2 mt-2">
                         <strong >Grand Total</strong>
                         <strong className="text-primary">
-                          ₹{getFinalTotal().toFixed(2)}
+                          ₹{paymentMethod === "razorpay" ? getFinalTotal().toFixed(2) : (getOriginalTotal() + getGST()).toFixed(2)}
                         </strong>
                       </div>
                 </div>
               )}
             </div>
 
-            {/* Coupon Section */}
-            <div className="card p-3 mt-3">
-              <h6 className="text-teal fw-semibold mb-3">Get Discount</h6>
+            {/* Coupon Section - Only for Razorpay payment */}
+            {paymentMethod === "razorpay" && (
+              <div className="card p-3 mt-3">
+                <h6 className="text-teal fw-semibold mb-3">Get Discount</h6>
 
-              {!couponApplied ? (
-                <>
-                  <div className="">
+                {!couponApplied ? (
+                  <>
                     <div className="">
+                      <div className="">
+                        <button
+                          className="btn  btn-outline-primary  px-3 py-2"
+                          onClick={() => setShowCouponPopup(true)}
+                        >
+                          View Coupons
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-tag-fill text-teal bg-light rounded-circle p-2"></i>
+                      <div>
+                        <div className="fw-medium">
+                          Hurray! You Saved ₹
+                          {(totalAmount - getDiscountedTotal()).toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-end">
+                      <span className="text-primary fw-bold">
+                        {appliedCoupon.Code}
+                      </span>
+                      <br />
+                      <span className="text-muted">Applied</span>
+                      <br />
                       <button
-                        className="btn  btn-outline-primary  px-3 py-2"
-                        onClick={() => setShowCouponPopup(true)}
+                        className="btn btn-outline-danger mt-1 px-2 py-1"
+                        onClick={() => {
+                          setAppliedCoupon(null);
+                          setCouponApplied(false);
+                        }}
                       >
-                        View Coupons
+                        Remove
                       </button>
                     </div>
                   </div>
-                </>
-              ) : (
-                <div className="d-flex justify-content-between align-items-center">
-                  <div className="d-flex align-items-center gap-2">
-                    <i className="bi bi-tag-fill text-teal bg-light rounded-circle p-2"></i>
-                    <div>
-                      <div className="fw-medium">
-                        Hurray! You Saved ₹
-                        {(totalAmount - getDiscountedTotal()).toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-end">
-                    <span className="text-primary fw-bold">
-                      {appliedCoupon.Code}
-                    </span>
-                    <br />
-                    <span className="text-muted">Applied</span>
-                    <br />
-                    <button
-                      className="btn btn-outline-danger mt-1 px-2 py-1"
-                      onClick={() => {
-                        setAppliedCoupon(null);
-                        setCouponApplied(false);
-                      }}
-                    >
-                      Remove
-                    </button>
+                )}
+              </div>
+            )}
+
+            {/* Info message for COS payment */}
+            {paymentMethod === "COS" && (
+              <div className="card p-3 mt-3">
+                <div className="d-flex align-items-center gap-2">
+                  <i className="bi bi-info-circle text-primary"></i>
+                  <div>
+                    <h6 className="text-primary fw-semibold mb-1">Pay On Service</h6>
+                    <p className="text-muted small mb-0">
+                      Coupons are not applicable for "Pay On Completion" option. 
+                      <br />
+                      Switch to online payment to avail discounts.
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {showCouponPopup && (
               <div

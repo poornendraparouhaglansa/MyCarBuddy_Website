@@ -58,9 +58,53 @@ const MyBookings = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState("");
   const [paymentStatus, setPaymentStatus] = useState(""); // "processing" | "success" | "error"
+  const [showRaisedTicketModal, setShowRaisedTicketModal] = useState(false);
+  const [ticketDescription, setTicketDescription] = useState("");
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
 
   const handleBack = () => {
     setSelectedBooking(null);
+  };
+
+  const handleRaisedTicket = () => {
+    setShowRaisedTicketModal(true);
+    setTicketDescription("");
+  };
+
+  const handleSubmitTicket = async () => {
+    if (!ticketDescription.trim()) {
+      showAlert("Please enter a description for the ticket.", "warning");
+      return;
+    }
+
+    try {
+      setIsSubmittingTicket(true);
+      const payload = {
+        custID: parseInt(decryptedCustId),
+        bookingID: selectedBooking.BookingID,
+        description: ticketDescription.trim()
+      };
+
+      const response = await axios.post(`${BaseURL}Tickets`, payload, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        showAlert("Ticket raised successfully!", "success");
+        setShowRaisedTicketModal(false);
+        setTicketDescription("");
+      } else {
+        showAlert("Failed to raise ticket. Please try again.", "error");
+      }
+    } catch (error) {
+      console.error("Error raising ticket:", error);
+      showAlert("Error while raising ticket. Please try again.", "error");
+    } finally {
+      setIsSubmittingTicket(false);
+    }
   };
 
   // Add booking packages to cart
@@ -147,6 +191,18 @@ const MyBookings = () => {
       window.removeEventListener('notificationReceived', handleNotification);
     };
   }, []); // 👀 Watch for URL search param changes
+
+  // If URL contains bookingId, auto-select that booking when data is loaded
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const targetId = params.get('bookingId');
+      if (!targetId) return;
+      if (!Array.isArray(bookings) || bookings.length === 0) return;
+      const found = bookings.find(b => String(b.BookingID) === String(targetId) || String(b.BookingTrackID) === String(targetId));
+      if (found) setSelectedBooking(found);
+    } catch (_) { /* no-op */ }
+  }, [bookings, location.search]);
 
   // Tab counts
   const { allCount, activeCount, completedCount, cancelledCount } = useMemo(() => {
@@ -332,13 +388,14 @@ useEffect(() => {
   const getBookingOriginalTotal = (booking) => {
     const base = Number(booking?.TotalPrice) || 0;
     const gst = Number(booking?.GSTAmount) || 0;
-    return base + gst;
+    return base;
   };
 
   const computeCouponDiscount = (originalTotal) => {
     if (!appliedCoupon) return 0;
     let discount = 0;
     if (appliedCoupon.DiscountType === "percentage") {
+
       discount = (originalTotal * appliedCoupon.DiscountValue) / 100;
       if (appliedCoupon.MaxDisAmount && discount > appliedCoupon.MaxDisAmount) {
         discount = appliedCoupon.MaxDisAmount;
@@ -379,19 +436,39 @@ useEffect(() => {
       form.append("BookingTrackID", selectedBooking.BookingTrackID);
       form.append("PaymentMethod", "Razorpay");
       form.append("BookingFrom", "web");
-      // Compute and send coupon amount (live if coupon applied)
-      if (!appliedCoupon){
-        form.append("CouponAmount", "0");
-      }else{
-        form.append("CouponAmount", Number(getBookingOriginalTotal(selectedBooking) - getBookingFinalTotalWithCoupon(selectedBooking)).toFixed(2));
+      
+      let finalTotal, gstAmount, couponAmount;
+      
+      if (appliedCoupon) {
+        // Calculate discount amount
+        couponAmount = Number(getBookingOriginalTotal(selectedBooking) - getBookingFinalTotalWithCoupon(selectedBooking)).toFixed(2);
+        
+        // Calculate new base amount after discount
+        const discountedBaseAmount = getBookingFinalTotalWithCoupon(selectedBooking);
+        
+        // Calculate new GST on discounted amount (18%)
+        gstAmount = Number((discountedBaseAmount * 0.18).toFixed(2));
+        
+        // Final total = discounted base + new GST
+        finalTotal = Number((discountedBaseAmount + gstAmount).toFixed(2));
+        
+        form.append("CouponAmount", couponAmount);
+        form.append("GSTAmount", gstAmount);
+        form.append("TotalAmount", discountedBaseAmount);
+      } else {
+        // No coupon applied, use original amounts
+        couponAmount = "0";
+        gstAmount = selectedBooking.GSTAmount;
+        finalTotal = Number((selectedBooking.TotalPrice + selectedBooking.GSTAmount - selectedBooking.CouponAmount).toFixed(2));
+        
+        form.append("CouponAmount", couponAmount);
+        form.append("GSTAmount", gstAmount);
+        form.append("TotalAmount", selectedBooking.TotalPrice);
       }
       
-      form.append("GSTAmount", selectedBooking.GSTAmount);
-      form.append("TotalAmount", selectedBooking.TotalPrice);
       form.append("BookingDate", selectedBooking.BookingDate);
       form.append("TimeSlot", selectedBooking.TimeSlot);
       form.append("Paynowtype", "Paynow");
-
 
       const res = await axios.put(`${BaseURL}Bookings/update-booking`, form, {
         headers: {
@@ -400,10 +477,8 @@ useEffect(() => {
       });
 
       if (res.status === 200 || res.status === 201) {
-        // alert("Booking resumed successfully!");
-          const finalTotal = (selectedBooking.TotalPrice + selectedBooking.GSTAmount - selectedBooking.CouponAmount).toFixed(2);
-          loadRazorpay(finalTotal, res.data);
-
+        // Send the calculated final total to Razorpay
+        loadRazorpay(finalTotal, res.data);
       } else {
         showAlert("Failed to resume booking. Please try again.");
       }
@@ -461,6 +536,27 @@ useEffect(() => {
       console.error("Error fetching time slots:", err);
     }
   };
+
+  // Fetch and filter cancel reasons
+const fetchCancelReasons = async () => {
+  try {
+      const response = await axios.get(`${BaseURL}AfterServiceLeads`, {
+          headers: {
+              Authorization: `Bearer ${token}`,
+          },
+      });
+      
+      // Filter for cancel reasons only
+      const cancelReasons = response.data.filter(item => 
+          item.ReasonType === "Cancel" && item.IsActive === true
+      );
+      
+     setCancelReasons(cancelReasons);
+  } catch (error) {
+      console.error("Error fetching cancel reasons:", error);
+      return [];
+  }
+};
 
   useEffect(() => {
     if (showResumeForm && resumeDate) {
@@ -567,11 +663,12 @@ useEffect(() => {
             if (res?.data?.success || res?.status === 200) {
               setPaymentStatus("success");
               setPaymentMessage("Payment was successful!");
+              fetchBookings();
           setShowResumeForm(false);
               // setSelectedResumeTimes([]);
               clearCart();
-          fetchBookings();
-              setShowResumeForm(false);
+        
+
             } else {
               setPaymentStatus("error");
               setPaymentMessage("Payment failed! Please try again.");
@@ -620,7 +717,7 @@ const handleCancel = async (bookingId ,paymentMethod, transactionID , type ,Amou
     }
     );
 if(paymentMethod === 'Razorpay' || paymentMethod === 'razorpay'){
-  alert("Refund has been initiated");
+    showAlert("Refund has been initiated");
     const res_refund = await axios.post(`${BaseURL}Refund/Refund`, {
       paymentId: transactionID,
       amount: Amount
@@ -659,16 +756,33 @@ const openCancelModal = () => {
   setSelectedReason('');
   setOtherReason('');
   setOtherChecked(false);
+  fetchCancelReasons();
 };
 
   // New function to handle submitting cancellation with reason
   const submitCancellation = async () => {
+    // Confirm before submitting cancellation
+    const confirm = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to cancel this booking?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Yes, cancel it",
+      cancelButtonText: "No, keep booking",
+    });
+
+    if (!confirm.isConfirmed) {
+      return;
+    }
+
     if (!selectedReason && !otherChecked) {
-      alert("Please select a reason or choose 'Other' and provide a reason.");
+      showAlert("Please select a reason or choose 'Other' and provide a reason.");
       return;
     }
     if (otherChecked && !otherReason.trim()) {
-      alert("Please provide a reason in the text area.");
+      showAlert("Please provide a reason in the text area.");
       return;
     }
 
@@ -909,9 +1023,34 @@ const BookingSkeleton = () => {
       </style>
       <div className="d-flex align-items-center justify-content-between mb-3">
         <h6 className="mb-0">My Bookings</h6>
-        <button className="btn btn-outline-secondary px-4 py-2" onClick={() => setShowFilters(s => !s)}>
-          <i className="bi bi-funnel me-1"></i> Filter
-        </button>
+        <button
+  className="btn btn-outline-secondary px-4 py-2"
+  onClick={() => {
+    setShowFilters(s => !s);
+    setSearchTerm("");
+    setActiveTab("All");
+    setSelectedBooking(null);
+    setShowCancelSection(false);
+    setShowFeedbackSection(false);
+    setShowResumeForm(false);
+    setShowPackagesOpen(false);
+    setExpandedPackageIdxs(new Set());
+    setCouponList([]);
+    setAppliedCoupon(null);
+    setCouponApplied(false);
+    setShowCouponPicker(false);
+    setIsProcessingBookAgain(false);
+    setShowPaymentModal(false);
+    setPaymentMessage("");
+    setPaymentStatus("");
+    setShowRaisedTicketModal(false);
+    setTicketDescription("");
+    setIsSubmittingTicket(false);
+  }}
+>
+  <i className="bi bi-funnel me-1"></i> Filter
+</button>
+
       </div>
 
       {showFilters && (
@@ -1326,12 +1465,24 @@ const BookingSkeleton = () => {
                     </a>
                   ) : null;
                 })()}
-        <button
+        
+
+        {(selectedBooking.BookingStatus === 'Pending' 
+        || selectedBooking.BookingStatus === 'Confirmed' 
+        || selectedBooking.BookingStatus === 'JourneyStarted') && (
+          <>
+          <button
                   className="btn btn-warning px-3 py-1"
           onClick={() => openCancelModal()}
         >
           Cancel
         </button>
+
+          </>
+        ) }
+
+
+
       </div>
           ) : null
           ) : (
@@ -1348,7 +1499,22 @@ const BookingSkeleton = () => {
         </button>
             ) : null
   )}
+
+{(selectedBooking.BookingStatus !== 'Cancelled') && (
+          <>
+
+        <button
+                  className="btn btn-warning px-3 py-1"
+          onClick={handleRaisedTicket}
+        >
+          Raised Ticket
+        </button>
+          </>
+        ) }
         </div>
+
+
+       
       </div>
 </div>
 
@@ -1632,7 +1798,7 @@ const BookingSkeleton = () => {
           {selectedBooking.TechID ? (
             <>
                 <div className="fw-bold">{selectedBooking.TechFullName}</div>
-                <div className="text-muted small">{selectedBooking.TechPhoneNumber}</div>
+                <div className="text-muted small">+91 70752 43939</div>
                 {selectedBooking.AssignedTimeSlot && (
                   <div className="text-muted small mt-1">
                     <strong>Time Slot:</strong> {selectedBooking.AssignedTimeSlot}
@@ -1671,21 +1837,14 @@ const BookingSkeleton = () => {
           ₹{selectedBooking.TotalPrice.toFixed(2)}
         </div>
       </div>
-      <div className="d-flex justify-content-end mb-2">
-        <div className="me-4 fw-semibold">SGST (9%)</div>
-        <div className="fw-bold text-primary">₹{(Number(selectedBooking.GSTAmount || 0) / 2).toFixed(2)}</div>
-        </div>
-      <div className="d-flex justify-content-end mb-2">
-        <div className="me-4 fw-semibold">CGST (9%)</div>
-        <div className="fw-bold text-primary">₹{(Number(selectedBooking.GSTAmount || 0) / 2).toFixed(2)}</div>
-      </div>
+
       {selectedBooking.CouponAmount > 0 && (
-        <div className="d-flex justify-content-end mb-2">
+      <div className="d-flex justify-content-end mb-2">
           <div className="me-4 fw-semibold">Coupon</div>
           <div className="fw-bold text-danger">
             -₹{selectedBooking.CouponAmount.toFixed(2)}
-          </div>
         </div>
+      </div>
       )}
       {appliedCoupon && (
         <div className="d-flex justify-content-end mb-2">
@@ -1695,6 +1854,34 @@ const BookingSkeleton = () => {
           </div>
         </div>
       )}
+      
+      <div className="d-flex justify-content-end mb-2">
+        <div className="me-4 fw-semibold">SGST (9%)</div>
+        <div className="fw-bold text-primary">
+          ₹{(() => {
+            if (appliedCoupon) {
+              const discountedBase = getBookingFinalTotalWithCoupon(selectedBooking);
+              const newGST = discountedBase * 0.18;
+              return (newGST / 2).toFixed(2);
+            }
+            return (Number(selectedBooking.GSTAmount || 0) / 2).toFixed(2);
+          })()}
+        </div>
+      </div>
+      <div className="d-flex justify-content-end mb-2">
+        <div className="me-4 fw-semibold">CGST (9%)</div>
+        <div className="fw-bold text-primary">
+          ₹{(() => {
+            if (appliedCoupon) {
+              const discountedBase = getBookingFinalTotalWithCoupon(selectedBooking);
+              const newGST = discountedBase * 0.18;
+              return (newGST / 2).toFixed(2);
+            }
+            return (Number(selectedBooking.GSTAmount || 0) / 2).toFixed(2);
+          })()}
+        </div>
+      </div>
+     
       <hr />
       <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
 
@@ -1702,18 +1889,26 @@ const BookingSkeleton = () => {
           <div className="me-1 fw-bold fs-5">Total</div>
         <div className="fw-bold text-success fs-5">
             {(() => {
-
-            
               if (appliedCoupon) {
-                const base = getBookingOriginalTotal(selectedBooking);
-                const final = couponApplied ? getBookingFinalTotalWithCoupon(selectedBooking) : base;
-                return `₹${final.toFixed(2)}`;
+                const discountedBase = getBookingFinalTotalWithCoupon(selectedBooking);
+                const newGST = discountedBase * 0.18;
+                const finalTotal = discountedBase + newGST;
+                return `₹${finalTotal.toFixed(2)}`;
               }
               const backendFinal = (selectedBooking.TotalPrice + selectedBooking.GSTAmount - selectedBooking.CouponAmount);
               return `₹${Number(backendFinal).toFixed(2)}`;
             })()}
         </div>
-          
+          {selectedBooking?.BookingStatus === 'Completed' &&
+           selectedBooking?.Payments?.[0]?.PaymentStatus === 'Success' &&
+           selectedBooking?.Payments?.[0]?.isRefunded !== true && (
+             <button
+               className="btn btn-outline-danger px-3 py-2"
+               onClick={handleRequestRefund}
+             >
+               Request Refund
+             </button>
+           )}
       </div>
 
       
@@ -1722,9 +1917,13 @@ const BookingSkeleton = () => {
 
       <div className="col-6">
           {(() => {
-            const fullTracking = Array.isArray(selectedBooking?.TechnicianTracking) ? selectedBooking.TechnicianTracking[0] : {};
-            const hasServiceStartedFull = !!fullTracking?.ServiceStartedAt;
-            return (selectedBooking?.PaymentMethod === 'COS' && selectedBooking?.BookingStatus !== 'Completed' && selectedBooking?.BookingStatus !== 'Cancelled' && selectedBooking?.BookingStatus !== 'Failed');
+           
+           return ((selectedBooking?.PaymentMethod === 'COS' && selectedBooking?.Payments?.[0]?.PaymentStatus !== 'Success')
+           &&  (selectedBooking?.BookingStatus === 'Pending'  
+             || selectedBooking?.BookingStatus === 'Confirmed' 
+             || selectedBooking?.BookingStatus === 'JourneyStarted')
+
+         );
           })() && (
             <div className="card p-3 border-0 shadow-sm rounded-4" style={{ maxWidth: 420 }}>
               <h6 className="mb-2">Have a coupon?</h6>
@@ -1768,14 +1967,11 @@ const BookingSkeleton = () => {
         </div>
 
       {(() => {
-            const fullTracking = Array.isArray(selectedBooking?.TechnicianTracking) ? selectedBooking.TechnicianTracking[0] : {};
-            const hasServiceStartedFull = !!fullTracking?.ServiceStartedAt;
-            return (selectedBooking?.PaymentMethod === 'COS' 
+            return ((selectedBooking?.PaymentMethod === 'COS' && selectedBooking?.Payments?.[0]?.PaymentStatus !== 'Success')
               &&  (selectedBooking?.BookingStatus === 'Pending'  
                 || selectedBooking?.BookingStatus === 'Confirmed' 
                 || selectedBooking?.BookingStatus === 'JourneyStarted')
-
-              && selectedBooking?.Payments?.PaymentStatus !== 'success'
+ 
             );
           })() && (
             <button className="btn btn-primary btn-lg px-4 py-2" onClick={handlePayNow}>Pay Now</button>
@@ -1794,7 +1990,7 @@ const BookingSkeleton = () => {
         background: 'rgba(255,255,255,0.95)',
         zIndex: 10,
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'start',
         justifyContent: 'center',
         borderRadius: '1rem',
       }}>
@@ -1904,94 +2100,187 @@ const BookingSkeleton = () => {
 )}
 
 {showPaymentModal && (
+     <div
+       style={{
+         position: "fixed",
+         inset: 0,
+         backgroundColor: "rgba(0,0,0,0.6)",
+         zIndex: 9999,
+         display: "flex",
+         alignItems: "center",
+         justifyContent: "center",
+       }}
+     >
+       <div
+         style={{
+           position: "relative",
+           backgroundColor: "#fff",
+           borderRadius: "12px",
+           padding: "20px",
+           width: "90%",
+           maxWidth: "350px",
+           textAlign: "center",
+           boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
+         }}
+       >
+         {paymentStatus === "processing" ? (
+           <>
+             <div
+               style={{
+                 width: 50,
+                 height: 50,
+                 margin: "0 auto 20px",
+                 border: "4px solid #1890ae",
+                 borderTop: "4px solid transparent",
+                 borderRadius: "50%",
+                 animation: "spin 1s linear infinite",
+               }}
+             />
+             <h4 style={{ marginBottom: 10 }}>Processing Payment</h4>
+             <p style={{ color: "#666", marginBottom: 20 }}>
+               Please wait... your booking is being processed.
+             </p>
+           </>
+         ) : (
+           <>
+             <img
+               src={
+                 paymentStatus === "success"
+                   ? "https://cdn-icons-png.flaticon.com/512/190/190411.png" // green check
+                   : "https://cdn-icons-png.flaticon.com/512/463/463612.png" // red cross
+               }
+               alt="Status Icon"
+               style={{ width: 50, height: 50, marginBottom: 20 }}
+             />
+             <h4 style={{ marginBottom: 10 }}>
+               {paymentStatus === "success" ? "Successful" : " Failed"}
+             </h4>
+             <p style={{ color: "#666", marginBottom: 20 }}>{paymentMessage}</p>
+             <button
+               onClick={()=>
+                {
+                  setShowPaymentModal(false);
+                  setAppliedCoupon(null);
+                  setCouponApplied(false);
+                  handleBack();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+               }
+               style={{
+                 backgroundColor: paymentStatus === "success" ? "#28a745" : "#dc3545",
+                 color: "#fff",
+                 padding: "8px 20px",
+                 border: "none",
+                 borderRadius: "6px",
+                 fontSize: "14px",
+                 cursor: "pointer",
+               }}
+             >
+               OK
+             </button>
+           </>
+         )}
+
+         {/* Spinner animation */}
+         <style>
+           {`
+             @keyframes spin {
+               0% { transform: rotate(0deg); }
+               100% { transform: rotate(360deg); }
+             }
+           `}
+         </style>
+       </div>
+     </div>
+   )}
+
+{/* Raised Ticket Modal */}
+{showRaisedTicketModal && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      zIndex: 9999,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
     <div
       style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(0,0,0,0.6)",
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        position: "relative",
+        backgroundColor: "#fff",
+        borderRadius: "12px",
+        padding: "20px",
+        width: "90%",
+        maxWidth: "500px",
+        boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
       }}
     >
-      <div
-        style={{
-          position: "relative",
-          backgroundColor: "#fff",
-          borderRadius: "12px",
-          padding: "20px",
-          width: "90%",
-          maxWidth: "350px",
-          textAlign: "center",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
-        }}
-      >
-        {paymentStatus === "processing" ? (
-          <>
-            <div
-              style={{
-                width: 50,
-                height: 50,
-                margin: "0 auto 20px",
-                border: "4px solid #1890ae",
-                borderTop: "4px solid transparent",
-                borderRadius: "50%",
-                animation: "spin 1s linear infinite",
-              }}
-            />
-            <h4 style={{ marginBottom: 10 }}>Processing Payment</h4>
-            <p style={{ color: "#666", marginBottom: 20 }}>
-              Please wait... your booking is being processed.
-            </p>
-          </>
-        ) : (
-          <>
-            <img
-              src={
-                paymentStatus === "success"
-                  ? "https://cdn-icons-png.flaticon.com/512/190/190411.png" // green check
-                  : "https://cdn-icons-png.flaticon.com/512/463/463612.png" // red cross
-              }
-              alt="Status Icon"
-              style={{ width: 50, height: 50, marginBottom: 20 }}
-            />
-            <h4 style={{ marginBottom: 10 }}>
-              {paymentStatus === "success" ? "Successful" : " Failed"}
-            </h4>
-            <p style={{ color: "#666", marginBottom: 20 }}>{paymentMessage}</p>
-            <button
-              onClick={() => {
-                setShowPaymentModal(false);
-                navigate("/profile?tab=mybookings"); // Redirect to bookings
-              }}
-              style={{
-                backgroundColor: paymentStatus === "success" ? "#28a745" : "#dc3545",
-                color: "#fff",
-                padding: "8px 20px",
-                border: "none",
-                borderRadius: "6px",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
-            >
-              OK
-            </button>
-          </>
-        )}
-
-        {/* Spinner animation */}
-        <style>
-          {`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}
-        </style>
+      <h4 style={{ marginBottom: 20, color: "#1890ae" }}>Raise a Ticket</h4>
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: "block", marginBottom: 8, fontWeight: "bold" }}>
+          Booking ID: #{selectedBooking?.BookingTrackID}
+        </label>
+        <label style={{ display: "block", marginBottom: 8, fontWeight: "bold" }}>
+          Description:
+        </label>
+        <textarea
+          value={ticketDescription}
+          onChange={(e) => setTicketDescription(e.target.value)}
+          placeholder="Please describe your issue or concern..."
+          style={{
+            width: "100%",
+            minHeight: "120px",
+            padding: "12px",
+            border: "1px solid #ddd",
+            borderRadius: "6px",
+            fontSize: "14px",
+            resize: "vertical",
+          }}
+        />
+      </div>
+      <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+        <button
+          onClick={() => {
+            setShowRaisedTicketModal(false);
+            setTicketDescription("");
+          }}
+          disabled={isSubmittingTicket}
+          style={{
+            backgroundColor: "#6c757d",
+            color: "#fff",
+            padding: "8px 20px",
+            border: "none",
+            borderRadius: "6px",
+            fontSize: "14px",
+            cursor: "pointer",
+            opacity: isSubmittingTicket ? 0.6 : 1,
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmitTicket}
+          disabled={isSubmittingTicket}
+          style={{
+            backgroundColor: "#1890ae",
+            color: "#fff",
+            padding: "8px 20px",
+            border: "none",
+            borderRadius: "6px",
+            fontSize: "14px",
+            cursor: "pointer",
+            opacity: isSubmittingTicket ? 0.6 : 1,
+          }}
+        >
+          {isSubmittingTicket ? "Submitting..." : "Submit Ticket"}
+        </button>
       </div>
     </div>
-  )}
+  </div>
+)}
 
     </div>
   );

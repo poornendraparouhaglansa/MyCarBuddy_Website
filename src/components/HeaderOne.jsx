@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import SignIn from "./SignIn";
 import RegisterModal from "./RegisterModal";
@@ -48,9 +48,10 @@ const HeaderOne = () => {
 
 	const [categories, setCategories] = useState([]);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const [isSearchOpen, setIsSearchOpen] = useState(false);
 
 	// New state for service search
-	const [serviceSearchTerm, setServiceSearchTerm] = useState("");
+    const [serviceSearchTerm, setServiceSearchTerm] = useState("");
 	const [decryptedUserId, setDecryptedUserId] = useState("");
  
 
@@ -76,6 +77,33 @@ const HeaderOne = () => {
 		setServiceSearchTerm(value);
 		debouncedNavigate(value);
 	};
+
+	// Close full-width search on Escape
+	useEffect(() => {
+		const onKeyDown = (e) => {
+			if (e.key === 'Escape') setIsSearchOpen(false);
+		};
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, []);
+
+    // Close search when clicking outside
+    const searchRef = useRef(null);
+    const searchBtnRef = useRef(null);
+    useEffect(() => {
+        if (!isSearchOpen) return;
+        const onDocClick = (e) => {
+            const withinPopup = searchRef.current && searchRef.current.contains(e.target);
+            const onTrigger = searchBtnRef.current && searchBtnRef.current.contains(e.target);
+            if (!withinPopup && !onTrigger) setIsSearchOpen(false);
+        };
+        // Slight delay so initial click that opens doesn't immediately close
+        const id = setTimeout(() => document.addEventListener('mousedown', onDocClick), 0);
+        return () => {
+            clearTimeout(id);
+            document.removeEventListener('mousedown', onDocClick);
+        };
+    }, [isSearchOpen]);
 
 	// const handleSearchSubmit = (e) => {
 	// 	e.preventDefault();
@@ -385,7 +413,27 @@ const HeaderOne = () => {
                     </li> */}
 									</ul>
 								</div>
-							</div>
+			</div>
+{isSearchOpen && (
+    <div style={{ position: 'absolute', zIndex: 1050 , display: 'none' }} ref={searchRef}>
+        <div className="position-absolute" style={{ marginTop: 100, right: '35%', left: 'auto' }}>
+            <div className="input-group" style={{ width: 260 }}>
+                <span className="input-group-text" style={{ background: '#fff' }}>
+                    <FaSearch style={{ color: '#116d6e' }} />
+                </span>
+                <input
+                    type="text"
+                    placeholder="Search packages..."
+                    value={serviceSearchTerm}
+                    onChange={handleSearchChange}
+                    className="form-control"
+                    autoFocus
+                />
+                <button className="btn btn-outline-secondary px-3 py-1" onClick={() => setIsSearchOpen(false)}>×</button>
+            </div>
+        </div>
+    </div>
+)}
 							<div className="col-auto">
 								<div className="header-links ps-0">
 									<ul>
@@ -492,126 +540,72 @@ const HeaderOne = () => {
 											className="header-grid-wrap d-flex align-items-center gap-6"
 										>
 
-										<div className="header-search d-xl-block">
-											{/* Search input and dropdown */}
-											<div className="position-relative ml-4 mr-50">
-												<FaSearch className="fasearch" />
-												<input
-													type="text"
-													placeholder="Search packages..."
-													value={serviceSearchTerm}
-													onChange={handleSearchChange}
-													className="searchInput"
-													style={{
-														flex: "1 1 auto",
-														minWidth: "100px",
-														maxWidth: "100%",
-													}}
-												/>
-											</div>
-										</div>
-											<div
-												className="navbar-right-desc-details signDiv d-none d-md-flex"
-												style={{
-													display: "flex",
-													alignItems: "center",
-													cursor: "pointer",
-												}}
-												onClick={() => {
-													if (user && (user.name || user.identifier)) {
-														navigate("/profile");
-													} else {
-														setSignInVisible(true); // Show sign-in modal
-													}
-												}}
-											>
+ <div className="search-area" style={{ height: '100%' }}>
+     <div 
+       className="single-search" 
+       onClick={(e) => e.stopPropagation()}
+       style={{ 
+         marginBottom: 'auto', 
+         marginTop: 'auto', 
+         height: 40, 
+         backgroundColor: 'white', 
+         borderRadius: 30, 
+        //  padding: 10,
+		background: '#8bb8b6',
+         display: 'flex',
+         alignItems: 'center'
+       }}
+     >
+       <input 
+         className="custom-input" 
+         type="text" 
+         placeholder="What are you looking for ..." 
+         value={serviceSearchTerm}
+         onChange={handleSearchChange}
+         onFocus={() => setIsSearchOpen(true)}
+         style={{
+           border: 0,
+           outline: 0,
+           width: isSearchOpen ? '150px' : '0px',
+           lineHeight: '40px',
+           transition: 'width 0.4s linear',
+           padding: isSearchOpen ? '0 10px' : '0',
+           fontSize: '16px',
+           background: 'transparent'
+         }}
+       />
+       <a 
+         href="#" 
+         className="icon-area" 
+         onClick={(e) => {
+           e.preventDefault();
+           setIsSearchOpen(!isSearchOpen);
+         }}
+         style={{
+           justifyContent: 'center',
+           alignItems: 'center',
+           borderRadius: '50%',
+           height: 40,
+           width: 40,
+           display: 'flex',
+           textDecoration: 'none',
+           color: '#262626',
+           background: isSearchOpen ? 'white' : 'transparent'
+         }}
+       >
+         <FaSearch style={{ color: '#116d6e' }} />
+       </a>
+     </div>
+   </div>
 
-												
-												{user?.name || user?.identifier ? (
-													<>
-														<div
-															style={{
-																width: "35px",
-																height: "35px",
-																borderRadius: "50%",
-																backgroundColor: "#f0f8ff",
-																display: "flex",
-																alignItems: "center",
-																justifyContent: "center",
-																marginBottom: "4px",
-																border: "2px solid #116d6e",
-																fontSize: "15px",
-																fontWeight: "600",
-																color: "#116d6e",
-															}}
-														>
-															{profileImage ? (
-																<img
-																	src={`${process.env.REACT_APP_CARBUDDY_IMAGE_URL}${profileImage}`}
-																	alt="Profile"
-																	className="rounded-circle border"
-																	style={{ width: "100%", height: "100%", objectFit: "cover" }}
-																	onError={(e) => {
-																		e.target.onerror = null;
-																		e.target.src = "/assets/img/avatar.png";
-																	}}
-																/>
-															) : (
-																<div className="avatar-placeholder">
-																	{(user?.name || user?.identifier || "U")
-																		.split(" ")
-																		.map((word) => word.charAt(0).toUpperCase())
-																		.slice(0, 2)
-																		.join("")}
-																</div>
-															)}
-														</div>
-														<span
-															className="header-grid-text1 fw-bold"
-															style={{
-																fontSize: "12px",
-																color: "#555",
-																// textAlign: "center",
-																marginLeft: "5px",
-															}}
-														>
-															Hello,
-															<h6
-																class="header-grid-title"
-																style={{ fontSize: "15px", color: "#136d6e", textDecoration: "underline" }}
-															>
-																{user.name || user.identifier}
-															</h6>
-														</span>
-													</>
-												) : (
-													<>
-														<span
-															className="header-grid-text1 fw-bold"
-															style={{
-																fontSize: "13px",
-																color: "#555",
-																marginBottom: "2px",
-															}}
-														>
-															Sign In
-															<h6
-																className="header-grid-title"
-																style={{
-																	fontSize: "15px",
-																	fontWeight: 600,
-																	color: "#116d6e",
-																	textDecoration: "underline",
-																}}
-															>
-																Account
-															</h6>
-														</span>
-													</>
-												)}
-											</div>
 
-											<div
+                                {/* <div className="header-search d-xl-block" ref={searchBtnRef}>
+                                    <Link  aria-label="Open search" style={{ color: '#116d6e' }} onClick={() => setIsSearchOpen(s => !s)}>
+										<FaSearch size={18} />
+									</Link>
+								</div> */}
+										
+										<div
 												className="navbar-right-desc-details "
 												style={{
 													display: "flex",
@@ -676,6 +670,108 @@ const HeaderOne = () => {
 														)}
 													</span>
 												</h6>
+											</div>
+
+
+											<div
+												className="navbar-right-desc-details signDiv d-none d-md-flex"
+												style={{
+													display: "flex",
+													alignItems: "center",
+													cursor: "pointer",
+												}}
+												onClick={() => {
+													if (user && (user.name || user.identifier)) {
+														navigate("/profile");
+													} else {
+														setSignInVisible(true); // Show sign-in modal
+													}
+												}}
+											>
+
+												
+												{user?.name || user?.identifier ? (
+													<>
+														<div
+															style={{
+																width: "35px",
+																height: "35px",
+																borderRadius: "50%",
+																backgroundColor: "#f0f8ff",
+																display: "flex",
+																alignItems: "center",
+																justifyContent: "center",
+																marginBottom: "4px",
+																border: "2px solid #116d6e",
+																fontSize: "15px",
+																fontWeight: "600",
+																color: "#116d6e",
+															}}
+														>
+															{profileImage ? (
+																<img
+																	src={`${process.env.REACT_APP_CARBUDDY_IMAGE_URL}${profileImage}`}
+																	alt="Profile"
+																	className="rounded-circle border"
+																	style={{ width: "100%", height: "100%", objectFit: "cover" }}
+																	onError={(e) => {
+																		e.target.onerror = null;
+																		e.target.src = "/assets/img/avatar.png";
+																	}}
+																/>
+															) : (
+																<div className="avatar-placeholder">
+																	{(user?.name || user?.identifier || "U")
+																		.split(" ")
+																		.map((word) => word.charAt(0).toUpperCase())
+																		.slice(0, 2)
+																		.join("")}
+																</div>
+															)}
+														</div>
+														 <span
+															className="header-grid-text1 fw-bold"
+															style={{
+																fontSize: "12px",
+																color: "#555",
+																// textAlign: "center",
+																marginLeft: "5px",
+															}}
+														>
+															Hello,
+															<h6
+																class="header-grid-title"
+																style={{ fontSize: "15px", color: "#136d6e", textDecoration: "underline" }}
+															>
+																{user.name || user.identifier}
+															</h6>
+														</span> 
+													</>
+												) : (
+													<>
+														<span
+															className="header-grid-text1 fw-bold"
+															style={{
+																fontSize: "13px",
+																color: "#555",
+																marginBottom: "2px",
+															}}
+														>
+															Sign In
+															<h6
+																className="header-grid-title"
+																style={{
+																	fontSize: "15px",
+																	fontWeight: 600,
+																	color: "#116d6e",
+																	textDecoration: "underline",
+																}}
+															>
+																Account
+															</h6>
+														</span>
+													</>
+												)}
 											</div>
 
 											<div

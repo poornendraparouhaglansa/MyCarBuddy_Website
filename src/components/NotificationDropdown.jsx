@@ -12,15 +12,20 @@ const NotificationDropdown = ({  }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
-  // Handle notification click: mark as read then navigate to bookings tab
-  const handleNotificationClick = async (notificationId, isRead) => {
+  // Handle notification click: mark as read then navigate to bookings tab with target booking
+  const handleNotificationClick = async (notification, isRead) => {
     try {
       if (!isRead) {
-        await markAsRead(notificationId);
+        await markAsRead(notification.id);
       }
     } finally {
       setIsOpen(false);
-      navigate('/profile?tab=mybookings');
+      const targetBookingId = notification?.relatedId || notification?.bookingId || notification?.bookingID || '';
+      if (targetBookingId) {
+        navigate(`/profile?tab=mybookings&bookingId=${encodeURIComponent(targetBookingId)}`);
+      } else {
+        navigate('/profile?tab=mybookings');
+      }
     }
   };
   const user = JSON.parse(localStorage.getItem("user"));
@@ -267,7 +272,7 @@ const NotificationDropdown = ({  }) => {
                       key={n.id}
                       className={`px-3 py-3 border-bottom ${unread ? '' : ''}`}
                       style={{ cursor: 'pointer', transition: 'background 0.2s ease' }}
-                      onClick={() => handleNotificationClick(n.id, n.isRead)}
+                      onClick={() => handleNotificationClick(n, n.isRead)}
                       onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
                       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >

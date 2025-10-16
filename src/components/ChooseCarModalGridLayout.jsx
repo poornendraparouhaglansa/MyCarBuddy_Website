@@ -159,7 +159,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
             setOtpSent(false);
             setIdentifier("");
             setOtp("");
-            showAlert && showAlert("Signed in successfully", "success");
+            // showAlert && showAlert("Signed in successfully", "success");
             
             // Dispatch event to update header
             window.dispatchEvent(new CustomEvent("userProfileUpdated"));
