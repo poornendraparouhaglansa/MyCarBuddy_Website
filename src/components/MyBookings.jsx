@@ -1507,7 +1507,7 @@ const BookingSkeleton = () => {
                   className="btn btn-warning px-3 py-1"
           onClick={handleRaisedTicket}
         >
-          Raised Ticket
+          Raise A Ticket
         </button>
           </>
         ) }
@@ -2218,7 +2218,7 @@ const BookingSkeleton = () => {
         boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
       }}
     >
-      <h4 style={{ marginBottom: 20, color: "#1890ae" }}>Raise a Ticket</h4>
+      <h4 style={{ marginBottom: 20, color: "#1890ae" }}>Raise A Ticket</h4>
       <div style={{ marginBottom: 20 }}>
         <label style={{ display: "block", marginBottom: 8, fontWeight: "bold" }}>
           Booking ID: #{selectedBooking?.BookingTrackID}

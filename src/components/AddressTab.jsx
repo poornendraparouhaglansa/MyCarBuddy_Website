@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import CryptoJS from "crypto-js";
+import Swal from "sweetalert2";
 import { useAlert } from "../context/AlertContext";
 
 const AddressTab = ({ custID = 0 }) => {
-  const [addresses, setAddresses] = useState([]);
-  const [selectedAddress, setSelectedAddress] = useState(null);
-    const { showAlert } = useAlert();
-       const user = JSON.parse(localStorage.getItem("user")) || {};
-     const token = user?.token || "";
+      const [addresses, setAddresses] = useState([]);
+      const [selectedAddress, setSelectedAddress] = useState(null);
+      const { showAlert } = useAlert();
+      const user = JSON.parse(localStorage.getItem("user")) || {};
+      const token = user?.token || "";
       const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;
       const secretKey = process.env.REACT_APP_ENCRYPT_SECRET_KEY;
       const bytes = CryptoJS.AES.decrypt(user.id, secretKey);
@@ -69,24 +70,41 @@ const AddressTab = ({ custID = 0 }) => {
   };   
   
   const handleDelete = async (id) => {
-  if (!window.confirm("Are you sure you want to delete this address?")) return;
+    try {
+      const result = await Swal.fire({
+        title: "Delete address?",
+        text: "This action cannot be undone.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Delete",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#d33",
+      });
 
-  try {
-    await axios.delete(
-      `${BaseURL}CustomerAddresses/addressid?addressid=${id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+      if (!result.isConfirmed) return;
 
-    // Remove deleted address from UI
-    setAddresses((prev) => prev.filter((addr) => addr.id !== id));
-  } catch (error) {
-    showAlert(error.response?.data?.message || "Something went wrong while deleting address.");
-  }
-};
+      await axios.delete(
+        `${BaseURL}CustomerAddresses/addressid?addressid=${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setAddresses((prev) => prev.filter((addr) => addr.id !== id));
+
+      await Swal.fire({
+        title: "Deleted",
+        text: "Address removed successfully.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      showAlert(error.response?.data?.message || "Something went wrong while deleting address.");
+    }
+  };
 
 
   const handleBack = () => {
@@ -145,7 +163,7 @@ const AddressTab = ({ custID = 0 }) => {
                     </div>
                   </div>
                   <hr />
-                  <p className="mb-1">{addr.address1}</p>
+                  <p className="mb-1">{addr.address2}</p>
                   {/* <p className="mb-0">{addr.address2}</p> */}
                   {/* {addr.isPrimary && (
                     <span className="badge bg-danger mt-2">Primary</span>
@@ -157,14 +175,46 @@ const AddressTab = ({ custID = 0 }) => {
         </div>
       ) : (
         <div className="card p-4 shadow-sm ">
-           <div className="d-flex justify-content-end mb-4">
-            <button className="btn btn-outline-secondary px-3 py-1" onClick={handleBack}>
-              <i className="bi bi-arrow-left"></i>
-            </button>
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <div className="d-flex flex-wrap gap-2 align-items-center">
+              <span
+                style={{
+                  display: "inline-block",
+                  padding: "2px 10px",
+                  borderRadius: "9999px",
+                  backgroundColor: "#eef7f7",
+                  color: "#116d6e",
+                  fontSize: 12,
+                  border: "1px solid #cfe7e6",
+                }}
+              >
+                {selectedAddress.name || "Saved Address"}
+              </span>
+              {selectedAddress.isPrimary ? (
+                <span
+                  style={{
+                    display: "inline-block",
+                    padding: "2px 10px",
+                    borderRadius: "9999px",
+                    backgroundColor: "#fde8e8",
+                    color: "#b42318",
+                    fontSize: 12,
+                    border: "1px solid #f5c2c0",
+                  }}
+                >
+                  Primary
+                </span>
+              ) : null}
+            </div>
+            <div>
+              <button className="btn btn-outline-secondary px-3 py-1" onClick={handleBack}>
+                <i className="bi bi-arrow-left"></i>
+              </button>
+            </div>
           </div>
-          <h5 className="mb-2">{selectedAddress.name}</h5>
-          <p className="mb-1">📞 {selectedAddress.phone}</p>
-          <p className="mb-1">🏠 {selectedAddress.address1}</p>
+
+          {/* <p className="mb-1">📞 {selectedAddress.phone}</p>
+          <p className="mb-1">🏠 {selectedAddress.address1}</p> */}
           <p className="mb-3">📍 {selectedAddress.address2}</p>
           <div className="ratio ratio-16x9 rounded overflow-hidden border">
             <iframe

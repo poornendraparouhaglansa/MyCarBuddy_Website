@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";
-import ChooseCarModal from "./ChooseCarModal";
+import ChooseCarModal from "./ChooseCarModalGridLayout";
 import { Helmet } from "react-helmet-async";
 
 const BaseURL = process.env.REACT_APP_CARBUDDY_BASE_URL;

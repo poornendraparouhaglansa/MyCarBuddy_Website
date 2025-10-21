@@ -364,7 +364,7 @@ const BookingVehicleDetails = ({
             {/* Registration Number */}
             <div className="col-md-6 mb-3">
               <label className="form-label fw-semibold">
-                Registration Number <span className="text-danger">*</span>
+                Registration Number
               </label>
               <div className="position-relative">
                 <input
@@ -395,7 +395,7 @@ const BookingVehicleDetails = ({
             {/* Year of Purchase */}
             <div className="col-md-6 mb-3">
               <label className="form-label fw-semibold">
-                Year of Purchase <span className="text-danger">*</span>
+                Year of Purchase
               </label>
               <input
                 type="text"

@@ -543,7 +543,10 @@ export default function ServiceCards() {
                               </button>
                               <button
                                 className="btn style-border2 ml-5"
-                                onClick={() => removeFromCart(pkg.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeFromCart(pkg.id);
+                                }}
                               >
                                 <i className="bi bi-trash" />
                               </button>

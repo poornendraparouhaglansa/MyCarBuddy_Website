@@ -539,6 +539,13 @@ div:where(.swal2-icon) .swal2-icon-content {
   font-size: 1.95em;
 }
 
+.mr-auto{
+  margin-right: auto !important;
+}
+.ml-auto{
+  margin-left: auto !important;
+}
+
 // #ea9300
 @media screen and (max-width: 768px) {
   .timeline-container  {

@@ -174,7 +174,7 @@ const SignIn = ({ isVisible, onClose, onRegister }) => {
 				<button className="modal-close" onClick={onClose}>
 					×
 				</button>
-				<h5 className="mb-4">Welcome Back</h5>
+				<h5 className="mb-4">Welcome to MyCarBuddy</h5>
 				<form onSubmit={otpSent ? handleVerifyOTP : handleSendOTP}>
 					<div className="mb-3 text-start">
 						<label className="form-label">Mobile Number</label>

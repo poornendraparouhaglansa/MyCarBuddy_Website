@@ -479,7 +479,7 @@ const HeaderOne = () => {
 										</Link>
 									</div>
 								</div>
-								<div className="col-auto">
+								<div className="col-auto m-auto">
 									<nav className="main-menu d-none d-lg-inline-block">
 										<ul>
 											<li>
@@ -534,7 +534,7 @@ const HeaderOne = () => {
 									</div>
 								</div>
 
-								<div className="col-auto m-auto d-xl-block ">
+								<div className="col-auto ml-auto d-xl-block ">
 									<div className="navbar-right-desc">
 										<div
 											className="header-grid-wrap d-flex align-items-center gap-6"

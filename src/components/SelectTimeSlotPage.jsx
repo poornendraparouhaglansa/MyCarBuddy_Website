@@ -115,6 +115,11 @@ const [paymentStatus, setPaymentStatus] = useState(""); // "success" or "failed"
 const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
   const [gstError, setGstError] = useState("");
 
+  const [emailError, setEmailError] = useState("");
+  const [fullNameError, setFullNameError] = useState("");
+  const [othersNameError, setOthersNameError] = useState("");
+  const [othersPhoneError, setOthersPhoneError] = useState("");
+
   // Preserve current step and refresh vehicle details when car selection changes
   useEffect(() => {
     const handleSelectedCarUpdated = () => {
@@ -129,6 +134,11 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
           modelID: parsedCar.model?.id || prev.modelID,
           fuelTypeID: parsedCar.fuel?.id || prev.fuelTypeID,
           VehicleID: parsedCar.VehicleID || prev.VehicleID,
+          registrationNumber: parsedCar.registrationNumber || prev.registrationNumber,
+          yearOfPurchase: parsedCar.yearOfPurchase || prev.yearOfPurchase,
+          engineType: parsedCar.engineType || prev.engineType,
+          kilometerDriven: parsedCar.kilometerDriven || prev.kilometerDriven,
+          transmissionType: parsedCar.transmissionType || prev.transmissionType,
         }));
         // Keep the current step; do not reset
       } catch (_) { /* no-op */ }
@@ -210,6 +220,11 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
         return;
       }
 
+      if (emailError) {
+        showAlert("Please enter a valid email address.");
+        return;
+      }
+
       if (
 
         !formData.pincode ||
@@ -224,6 +239,17 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
       if (formData.isBookingForOthers && (!formData.othersFullName.trim() || !formData.othersPhoneNumber.trim())) {
         showAlert("Please fill other person's name and phone number.");
         return;
+      }
+
+      if (formData.isBookingForOthers) {
+        if (othersNameError) {
+          showAlert("Please enter a valid other person name (letters and spaces only).");
+          return;
+        }
+        if (othersPhoneError) {
+          showAlert("Please enter a valid 10-digit other person phone number.");
+          return;
+        }
       }
 
         if (!formData.selectedSavedAddressID) {
@@ -303,7 +329,7 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
           );
 
           if (matchedCity.length === 0) {
-            showAlert("Service is not available in your selected location.");
+            showAlert("Service is currently not available in your area.");
             setServiceAvailable(false);
             setFormData((prev) => ({
               ...prev,
@@ -561,6 +587,49 @@ const [isCheckingNextDate, setIsCheckingNextDate] = useState(false);
         }
         return { ...updatedForm, [name]: upperValue };
       }
+
+      if (name === "email") {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (value && !emailRegex.test(value)) {
+          setEmailError("Please enter a valid email address.");
+        } else {
+          setEmailError("");
+        }
+        return { ...updatedForm, [name]: value };
+      }
+
+      if (name === "fullName") {
+        if (value && value.trim().length < 2) {
+          setFullNameError("Name must be at least 2 characters long.");
+        } else if (value && !/^[a-zA-Z\s]+$/.test(value.trim())) {
+          setFullNameError("Name can only contain letters and spaces.");
+        } else {
+          setFullNameError("");
+        }
+        return { ...updatedForm, [name]: value };
+      }
+
+      if (name === "othersFullName") {
+        if (value && value.trim().length < 2) {
+          setOthersNameError("Name must be at least 2 characters long.");
+        } else if (value && !/^[a-zA-Z\s]+$/.test(value.trim())) {
+          setOthersNameError("Name can only contain letters and spaces.");
+        } else {
+          setOthersNameError("");
+        }
+        return { ...updatedForm, [name]: value };
+      }
+
+      if (name === "othersPhoneNumber") {
+        const phoneRegex = /^[6-9]\d{9}$/;
+        if (value && !phoneRegex.test(value)) {
+          setOthersPhoneError("Please enter a valid 10-digit phone number starting with 6-9.");
+        } else {
+          setOthersPhoneError("");
+        }
+        return { ...updatedForm, [name]: value };
+      }
+
 
       if (
         name === "pincode" ||
@@ -1405,7 +1474,7 @@ const getGST = () => {
               ref={addressRef}
               className="border-start border-3 border-danger ps-3 pt-3 mt-4"
             >
-              <div className="card shadow-sm p-4 mb-4">
+             <div className="card shadow-sm p-4 mb-4">
                 <h5 className="mb-3 text-primary fw-bold">
                   👤 Customer Information
                 </h5>
@@ -1416,11 +1485,12 @@ const getGST = () => {
                     <input
                       type="text"
                       name="fullName"
-                      className="form-control"
+                      className={`form-control ${fullNameError ? "is-invalid" : ""}`}
                       placeholder="Full Name"
                       value={formData.fullName}
                       onChange={handlereInputChange}
                     />
+                    {fullNameError && <div className="invalid-feedback" style={{ color: "red" }}>{fullNameError}</div>}
                   </div>
                   <div className="col-md-4 mb-3">
                     <label className="form-label fw-semibold">Phone Number <span className="text-danger">*</span></label>
@@ -1432,6 +1502,8 @@ const getGST = () => {
                       value={formData.phone}
                       onChange={handlereInputChange}
                       readOnly
+                      onFocus={(e) => e.target.blur()}
+                      style={{ opacity: 0.6}}
                     />
                   </div>
                   <div className="col-md-4 mb-3">
@@ -1439,11 +1511,12 @@ const getGST = () => {
                     <input
                       type="email"
                       name="email"
-                      className="form-control"
+                      className={`form-control ${emailError ? "is-invalid" : ""}`}
                       placeholder="Email Address"
                       value={formData.email}
                       onChange={handlereInputChange}
                     />
+                    {emailError && <div className="invalid-feedback" style={{ color: "red" }}>{emailError}</div>}
                   </div>
                 </div>
 
@@ -1475,25 +1548,28 @@ const getGST = () => {
                       <input
                         type="text"
                         name="othersFullName"
-                        className="form-control"
+                        className={`form-control ${othersNameError ? "is-invalid" : ""}`}
                         placeholder="Other Person's Full Name"
                         value={formData.othersFullName}
                         onChange={handlereInputChange}
                       />
+                      {othersNameError && <div className="invalid-feedback" style={{ color: "red" }}>{othersNameError}</div>}
                     </div>
                     <div className="col-md-6 mb-3">
                       <input
                         type="tel"
                         name="othersPhoneNumber"
-                        className="form-control"
+                        className={`form-control ${othersPhoneError ? "is-invalid" : ""}`}
                         placeholder="Other Person's Phone Number"
                         value={formData.othersPhoneNumber}
                         onChange={handlereInputChange}
                       />
+                      {othersPhoneError && <div className="invalid-feedback" style={{ color: "red" }}>{othersPhoneError}</div>}
                     </div>
                   </div>
                 )}
               </div>
+
 
               <BookingAddressDetails
                 formData={formData}
@@ -1740,7 +1816,7 @@ const getGST = () => {
                         <div>CGST (9%): ₹{(getGST() / 2).toFixed(2)}</div>
                         {couponApplied && paymentMethod === "razorpay" && (
                           <div className="text-muted">
-                            (Saved ₹{(getOriginalTotal() - getDiscountedTotal()).toFixed(2)})
+                            (Coupon Saved ₹{(getOriginalTotal() - getDiscountedTotal()).toFixed(2)})
                           </div>
                         )}
                       </div>

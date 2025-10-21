@@ -59,6 +59,11 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 		fuelTypeID: "",
 	});
 
+		// Validation states
+    const [yearError, setYearError] = useState(false);
+	const [regError, setRegError] = useState(false);
+	const [regMessage, setRegMessage] = useState("");
+
 	// Bind IDs on selection
 	useEffect(() => {
 		setFormData((prev) => ({
@@ -68,6 +73,28 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 			fuelTypeID: fuel || "",
 		}));
 	}, [brand, model, fuel]);
+
+	// Reset modal form when it is opened from header
+	useEffect(() => {
+		if (!isVisible) return;
+		try {
+			setSelectionMethod("manual");
+			setBrand(null);
+			setModel("");
+			setFuel("");
+			setRegistrationNumber("");
+			setFormData({
+				registrationNumber: "",
+				yearOfPurchase: "",
+				engineType: "",
+				kilometerDriven: "",
+				transmissionType: "",
+				brandID: "",
+				modelID: "",
+				fuelTypeID: "",
+			});
+		} catch (_) { /* no-op */ }
+	}, [isVisible]);
 
     // OTP countdown
     useEffect(() => {
@@ -209,16 +236,18 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 
     // Fetch vehicle data by registration number
     const fetchVehicleByNumber = async (vehicleNumber) => {
+		const { custId, token } = getDecryptedCustAuth();
         if (!vehicleNumber || vehicleNumber.length < 5) return;
         
         setIsLoadingVehicleData(true);
         try {
             const response = await axios.get(
-                `${BaseURL}CustomerVehicles/VehicleNumber?VehicleNumber=${encodeURIComponent(vehicleNumber)}`
+                `${BaseURL}CustomerVehicles/VehicleNumber?VehicleNumber=${encodeURIComponent(vehicleNumber)}&CustId=${encodeURIComponent(custId)}`
             );
 
             if (response.data && Array.isArray(response.data) && response.data.length > 0) {
                 const vehicleData = response.data[0];
+				
                 
                 // Update form data with fetched vehicle information
                 setFormData(prev => ({
@@ -284,8 +313,37 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
                     position: 'top-end'
                 });
             }
+			else{
+
+				if(response?.message === 'You have already added this vehicle.'){
+					Swal.fire({
+						title: 'Already Exists',
+						text: 'This vehicle is already saved. Please select it from your saved cars.',
+						icon: 'info',
+						confirmButtonText: 'OK'
+					});
+				}
+				else{
+					Swal.fire({
+						title: 'Error',
+						text: response.data.message,
+						icon: 'error',
+						timer: 2000,
+					});
+				}
+			}
         } catch (error) {
             console.error("Error fetching vehicle data:", error);
+			// Swal.fire({
+			// 	title: 'Error',
+			// 	text: error.response.data.message,
+			// 	icon: 'error',
+			// 	timer: 2000,
+			// 	showConfirmButton: false,
+			// 	toast: true,
+			// 	position: 'top-end'
+			// });
+
             // Don't show error to user as this is optional functionality
         } finally {
             setIsLoadingVehicleData(false);
@@ -300,55 +358,63 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
         // Update the input value immediately
         setFormData((p) => ({ ...p, registrationNumber: upperValue }));
 
-        // Clear existing timeout
-        if (vehicleNumberTimeout) {
-            clearTimeout(vehicleNumberTimeout);
-        }
-
-        // Set new timeout for API call
-        const timeoutId = setTimeout(() => {
-            if (upperValue && upperValue.length >= 5) {
-                fetchVehicleByNumber(upperValue);
-            }
-        }, 500);
-
-        setVehicleNumberTimeout(timeoutId);
+         // Validate registration number
+		 const regRegex = /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/;
+		 let error = false;
+		 let message = "";
+ 
+		 if (upperValue.length === 0) {
+			message = "";
+		 } else if (upperValue.length < 10) {
+			 message = "";
+		 } else if (upperValue.length > 10) {
+			 message = "Must be exactly 10 characters.";
+			 error = true;
+		 } else if (upperValue.length === 10) {
+			 if (!regRegex.test(upperValue)) {
+				 error = true;
+				 message = "Invalid format. Use like TS08AB1234.";
+			 }
+		 }
+ 
+		 setRegError(error);
+		 setRegMessage(message);
+ 
+		 // Trigger API verification immediately when exactly 10 digits are entered
+		 if (upperValue.length === 10) {
+			 fetchVehicleByNumber(upperValue);
+			 if (isLoggedIn) {
+			 }
+		 }
     };
+
+	const fetchSavedVehicles = async () => {
+		const { custId, token } = getDecryptedCustAuth();
+		if (!custId || !token) {
+			setSavedVehicles([]);
+			return;
+		}
+		setLoadingSavedVehicles(true);
+		try {
+			const res = await axios.get(`${BaseURL}CustomerVehicles/CustId?CustId=${encodeURIComponent(custId)}`, {
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.data) ? res.data.data : []);
+			setSavedVehicles(list || []);
+		} catch (err) {
+			console.warn('Failed to fetch saved vehicles', err?.response?.data || err?.message);
+			setSavedVehicles([]);
+		} finally {
+			setLoadingSavedVehicles(false);
+		}
+	};
+
 
     // Fetch saved vehicles for logged-in users
     useEffect(() => {
-        const fetchSavedVehicles = async () => {
-            const { custId, token } = getDecryptedCustAuth();
-            if (!custId || !token) {
-                setSavedVehicles([]);
-                return;
-            }
-            setLoadingSavedVehicles(true);
-            try {
-                const res = await axios.get(`${BaseURL}CustomerVehicles/CustId?CustId=${encodeURIComponent(custId)}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.data) ? res.data.data : []);
-                setSavedVehicles(list || []);
-            } catch (err) {
-                console.warn('Failed to fetch saved vehicles', err?.response?.data || err?.message);
-                setSavedVehicles([]);
-            } finally {
-                setLoadingSavedVehicles(false);
-            }
-        };
-
+  
         if (isLoggedIn) fetchSavedVehicles();
     }, [isLoggedIn]);
-
-    // Cleanup timeout on unmount
-    useEffect(() => {
-        return () => {
-            if (vehicleNumberTimeout) {
-                clearTimeout(vehicleNumberTimeout);
-            }
-        };
-    }, [vehicleNumberTimeout]);
 
     // Debug fuel changes
     useEffect(() => {
@@ -364,7 +430,14 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
         if (!v) return;
         // Populate form and selections
         const vehicleNumber = (v.VehicleNumber || v.VehicleRegNo || "").toString().toUpperCase();
-        setFormData(p => ({ ...p, registrationNumber: vehicleNumber, yearOfPurchase: p.yearOfPurchase }));
+        // setFormData(p => ({
+        //     ...p,
+        //     registrationNumber: vehicleNumber,
+        //     yearOfPurchase: v.YearOfPurchase || "",
+        //     engineType: v.EngineType || "",
+        //     kilometerDriven: v.KilometersDriven || "",
+        //     transmissionType: v.TransmissionType || "",
+        // }));
         if (v.BrandID) setBrand(v.BrandID);
         if (v.ModelID) setModel(v.ModelID);
         if (v.FuelTypeID) setFuel(v.FuelTypeID);
@@ -388,6 +461,12 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
             },
             VehicleID: v.VehicleID || v.vehicleID,
             VehicleNumber: vehicleNumber,
+            // Extra fields to hydrate step 3 in SelectTimeSlotPage
+            registrationNumber: vehicleNumber,
+            yearOfPurchase: v.YearOfPurchase || "",
+            engineType: v.EngineType || "",
+            kilometerDriven: v.KilometersDriven || "",
+            transmissionType: v.TransmissionType || "",
         };
         try {
             localStorage.setItem('selectedCarDetails', JSON.stringify(selectedCarDetails));
@@ -403,6 +482,8 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
             toast: true,
             position: 'top-end'
         });
+        // Ensure the manual form is visible with populated fields
+        try { setSelectionMethod('manual'); } catch (_) {}
         try { window.dispatchEvent(new CustomEvent('selectedCarUpdated')); } catch (_) {}
         if (onCarSaved) {
             onCarSaved(selectedCarDetails);
@@ -516,6 +597,25 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 
+
+		// Validate registration number length
+		if (formData.registrationNumber.length !== 10) {
+			showAlert("Registration number must be exactly 10 characters.", "error");
+			return;
+		}
+
+		// Required fields validation for registration number and year of purchase
+		if (!formData.registrationNumber || !formData.transmissionType) {
+			showAlert("Please enter registration number and transmission type.");
+			return;
+		}
+
+
+		// Validate registration number
+		if (regError) {
+			return;
+		}
+
 		if (!brand || !model || !fuel) {
 			if (showAlert) {
 				showAlert( "Please select brand, model, and fuel type.");
@@ -525,17 +625,25 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 			return;
 		}
 
-		// Required fields validation for registration number and year of purchase
-		if (!formData.registrationNumber || !formData.yearOfPurchase) {
-			showAlert("Please enter registration number and year of purchase.");
+		// Validate year of purchase
+		const currentYear = new Date().getFullYear();
+		const year = parseInt(formData.yearOfPurchase, 10);
+		if (isNaN(year) || year < 1900 || year > currentYear) {
+			setYearError(true);
 			return;
 		}
 
-		const selectedCarDetails = {
-			brand: brands.find((b) => b.id === brand),
-			model: models.find((m) => m.id === model),
-			fuel: fuels.find((f) => f.id === fuel),
-		};
+		
+        const selectedCarDetails = {
+            brand: brands.find((b) => b.id === brand),
+            model: models.find((m) => m.id === model),
+            fuel: fuels.find((f) => f.id === fuel),
+            registrationNumber: formData.registrationNumber,
+            yearOfPurchase: formData.yearOfPurchase,
+            engineType: formData.engineType,
+            kilometerDriven: formData.kilometerDriven,
+            transmissionType: formData.transmissionType,
+        };
 
 		localStorage.setItem("selectedCarDetails", JSON.stringify(selectedCarDetails));
 
@@ -583,14 +691,19 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 					const errorMessage = apiData?.message || "Unable to save vehicle. Please check details.";
 					console.error(errorMessage);
 					if (showAlert) {
-						showAlert("", errorMessage);
+						showAlert(errorMessage);
 					}
-				} else if (apiData?.vehicleID) {
-					// store VehicleID with selected car
-					let saved = JSON.parse(localStorage.getItem("selectedCarDetails")) || {};
-					saved.VehicleID = apiData.vehicleID;
-					localStorage.setItem("selectedCarDetails", JSON.stringify(saved));
-				}
+                } else if (apiData?.vehicleID) {
+                    // store VehicleID with selected car and persist entered details
+                    let saved = JSON.parse(localStorage.getItem("selectedCarDetails")) || {};
+                    saved.VehicleID = apiData.vehicleID;
+                    saved.registrationNumber = formData.registrationNumber;
+                    saved.yearOfPurchase = formData.yearOfPurchase;
+                    saved.engineType = formData.engineType;
+                    saved.kilometerDriven = formData.kilometerDriven;
+                    saved.transmissionType = formData.transmissionType;
+                    localStorage.setItem("selectedCarDetails", JSON.stringify(saved));
+                }
 			} else {
 				showAlert && showAlert("Please sign in to save your vehicle.", "warning");
 				return;
@@ -606,6 +719,11 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
         }
         if (onClose) onClose();
 	};
+
+
+
+	
+
 
 	const handleBrandSelect = (id) => {
 		setBrand(id);
@@ -743,6 +861,8 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 					</div>
 				)}
 
+				<h6>or add new car</h6>
+
 				<form onSubmit={handleSubmit}>
 					{selectionMethod === "registration" ? (
 						<div className="mb-4">
@@ -766,7 +886,7 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 									<div className="position-relative">
 										<input
 											type="text"
-											className="form-control"
+											className={`form-control ${regError ? 'is-invalid' : ''}`}
 											value={formData.registrationNumber}
 											onChange={handleVehicleNumberChange}
 											style={{ textTransform: 'uppercase' }}
@@ -780,18 +900,33 @@ const ChooseCarModal = ({ isVisible, onClose, onCarSaved }) => {
 												</div>
 											</div>
 										)}
+										{regMessage && <div className="invalid-feedback">{regMessage}</div>}
 									</div>
 								</div>
 								<div className="col-12 col-md-6">
-									<label className="form-label small">Year of Purchase <span className="text-danger">*</span></label>
+									<label className="form-label small">Year of Purchase</label>
 									<input
 										type="text"
-										className="form-control"
+										className={`form-control ${yearError ? 'is-invalid' : ''}`}
 										value={formData.yearOfPurchase}
-										onChange={(e) => setFormData((p) => ({ ...p, yearOfPurchase: e.target.value }))}
+										onChange={(e) => {
+											const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+											setFormData((p) => ({ ...p, yearOfPurchase: value }));
+											if (value.length === 4) {
+												const currentYear = new Date().getFullYear();
+												const year = parseInt(value, 10);
+												if (isNaN(year) || year < 1900 || year > currentYear) {
+													setYearError(true);
+												} else {
+													setYearError(false);
+												}
+											} else {
+												setYearError(false);
+											}
+										}}
 										placeholder="e.g., 2020"
-										required
 									/>
+									{yearError && <div className="invalid-feedback">Enter a valid year from 1900 and {new Date().getFullYear()}.</div>}
 								</div>
 								<div className="col-12 col-md-6">
 									<label className="form-label small">Engine Type</label>
